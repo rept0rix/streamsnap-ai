@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 680" width="920" height="680">
+  <defs>
+    <linearGradient id="bg920" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#080C14" />
+      <stop offset="50%" stop-color="#0F172A" />
+      <stop offset="100%" stop-color="#131924" />
+    </linearGradient>
+    <linearGradient id="gold920" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFB800" />
+      <stop offset="100%" stop-color="#FF7700" />
+    </linearGradient>
+  </defs>
+
+  <rect width="920" height="680" fill="url(#bg920)" />
+
+  <!-- Glow circles -->
+  <circle cx="200" cy="300" r="180" fill="#3B82F6" opacity="0.08" />
+  <circle cx="720" cy="340" r="220" fill="#FF9900" opacity="0.08" />
+
+  <!-- Left Content -->
+  <g transform="translate(80, 160)">
+    <rect width="110" height="30" rx="8" fill="rgba(255, 153, 0, 0.15)" stroke="rgba(255, 153, 0, 0.4)" stroke-width="1.5" />
+    <text x="55" y="20" font-family="-apple-system, sans-serif" font-size="12" font-weight="800" fill="#FF9900" text-anchor="middle">OFFICIAL AI COMMERCE</text>
+    
+    <text y="75" font-family="-apple-system, sans-serif" font-size="44" font-weight="900" fill="#FFFFFF" letter-spacing="-1">Turn Any Live Stream</text>
+    <text y="125" font-family="-apple-system, sans-serif" font-size="44" font-weight="900" fill="#FF9900" letter-spacing="-1">Into 1-Click Amazon Shopping</text>
+    
+    <text y="175" font-family="-apple-system, sans-serif" font-size="16" fill="#94A3B8" font-weight="500">Detect clothing, microphones, gaming gear, and tech on screen instantly.</text>
+    
+    <!-- Feature checklist -->
+    <g transform="translate(0, 210)">
+      <text y="0" font-family="-apple-system, sans-serif" font-size="14" font-weight="700" fill="#10B981">✓ 1-Click Snip Box Directly on Video</text>
+      <text y="30" font-family="-apple-system, sans-serif" font-size="14" font-weight="700" fill="#10B981">✓ Persistent Deduplicated Product Catalog</text>
+      <text y="60" font-family="-apple-system, sans-serif" font-size="14" font-weight="700" fill="#10B981">✓ Real Amazon Images, ASINs &amp; Prime 1-Click Cart</text>
+      <text y="90" font-family="-apple-system, sans-serif" font-size="14" font-weight="700" fill="#10B981">✓ Works on YouTube, Twitch, TikTok &amp; Kick</text>
+    </g>
+  </g>
+
+  <!-- Right Visual Mockup Card -->
+  <g transform="translate(560, 140)">
+    <!-- Video Player Preview -->
+    <rect width="280" height="380" rx="16" fill="#1E293B" stroke="rgba(255,255,255,0.12)" stroke-width="2" />
+    <rect width="280" height="40" rx="16" fill="#0F172A" />
+    <circle cx="20" cy="20" r="5" fill="#EF4444" />
+    <circle cx="34" cy="20" r="5" fill="#F59E0B" />
+    <circle cx="48" cy="20" r="5" fill="#10B981" />
+    <text x="140" y="24" font-family="-apple-system, sans-serif" font-size="11" font-weight="700" fill="#94A3B8" text-anchor="middle">StreamSnap SidePanel</text>
+
+    <!-- Detected Item Card 1 -->
+    <g transform="translate(15, 60)">
+      <rect width="250" height="85" rx="10" fill="#131924" stroke="rgba(255, 153, 0, 0.4)" stroke-width="1.5" />
+      <rect x="10" y="10" width="65" height="65" rx="8" fill="#1E293B" />
+      <text x="42" y="47" font-size="24" text-anchor="middle">🎙️</text>
+      <text x="85" y="28" font-family="-apple-system, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF">Shure SM7B Vocal Mic</text>
+      <text x="85" y="46" font-family="-apple-system, sans-serif" font-size="14" font-weight="900" fill="#FF9900">$399.00</text>
+      <text x="150" y="46" font-family="-apple-system, sans-serif" font-size="11" font-weight="800" fill="#00A8E1" font-style="italic">prime</text>
+      <rect x="85" y="54" width="90" height="22" rx="5" fill="#FF9900" />
+      <text x="130" y="69" font-family="-apple-system, sans-serif" font-size="10" font-weight="800" fill="#111827" text-anchor="middle">🛒 Add to Cart</text>
+    </g>
+
+    <!-- Detected Item Card 2 -->
+    <g transform="translate(15, 160)">
+      <rect width="250" height="85" rx="10" fill="#131924" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1.5" />
+      <rect x="10" y="10" width="65" height="65" rx="8" fill="#1E293B" />
+      <text x="42" y="47" font-size="24" text-anchor="middle">🎧</text>
+      <text x="85" y="28" font-family="-apple-system, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF">Sony WH-1000XM5</text>
+      <text x="85" y="46" font-family="-apple-system, sans-serif" font-size="14" font-weight="900" fill="#FF9900">$348.00</text>
+      <rect x="85" y="54" width="90" height="22" rx="5" fill="#FF9900" />
+      <text x="130" y="69" font-family="-apple-system, sans-serif" font-size="10" font-weight="800" fill="#111827" text-anchor="middle">🛒 Add to Cart</text>
+    </g>
+
+    <!-- Bottom Stat -->
+    <g transform="translate(15, 260)">
+      <rect width="250" height="90" rx="10" fill="rgba(16, 185, 129, 0.1)" stroke="#10B981" stroke-width="1.5" />
+      <text x="125" y="30" font-family="-apple-system, sans-serif" font-size="12" font-weight="800" fill="#10B981" text-anchor="middle">⚡ 1-Click Remote Cart Active</text>
+      <text x="125" y="52" font-family="-apple-system, sans-serif" font-size="11" fill="#94A3B8" text-anchor="middle">Subtotal: $747.00 (2 Items)</text>
+      <text x="125" y="72" font-family="-apple-system, sans-serif" font-size="10" font-weight="700" fill="#FF9900" text-anchor="middle">Direct Amazon Checkout ➔</text>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StreamSnap AI — Shazam for Live Stream Shopping (Amazon 1-Click)</title>
+  <meta name="description" content="Turn any live stream on YouTube, Twitch, or TikTok into an instant 1-Click Amazon shopping experience using multi-modal AI Vision.">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/svg+xml" href="assets/logo_full.svg">
+</head>
+<body>
+
+  <!-- Top Announcement Bar -->
+  <div class="announcement-bar">
+    <span>⚡ StreamSnap AI v1.2 is LIVE! Real-time Gemini 2.5 Vision + Amazon 1-Click Remote Cart</span>
+    <a href="#simulator" class="announcement-link">Try Live Simulator ➔</a>
+  </div>
+
+  <!-- Glassmorphic Header -->
+  <header class="navbar">
+    <div class="nav-container">
+      <div class="brand">
+        <img src="assets/logo_full.svg" alt="StreamSnap AI Logo" class="brand-logo" />
+      </div>
+      <nav class="nav-menu">
+        <a href="#features">Features</a>
+        <a href="#simulator">Live Simulator</a>
+        <a href="#calculator">Creator Revenue</a>
+        <a href="#acquisition">Amazon M&A</a>
+        <a href="#pricing">Pricing</a>
+      </nav>
+      <div class="nav-cta">
+        <button id="nav-connect-btn" class="btn-secondary">🔗 Connect Amazon</button>
+        <a href="https://github.com/rept0rix/streamsnap-ai" target="_blank" class="btn-primary">⚡ Add to Chrome (Free)</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-glow"></div>
+    <div class="container hero-content">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        <span>UNIVERSAL LIVE STREAM COMMERCE</span>
+      </div>
+      <h1 class="hero-title">
+        Turn Any Live Stream Into <br />
+        <span class="gradient-text">1-Click Amazon Shopping</span>
+      </h1>
+      <p class="hero-subtitle">
+        Ever watched a live stream and wondered where they got that hoodie, mic, or gear? 
+        <strong>StreamSnap AI</strong> recognizes any object on screen in real time using multi-modal vision and adds it straight to your Amazon cart in 1 click.
+      </p>
+
+      <div class="hero-actions">
+        <a href="https://github.com/rept0rix/streamsnap-ai" target="_blank" class="btn-primary btn-large">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+          <span>Install Chrome Extension</span>
+        </a>
+        <a href="#simulator" class="btn-secondary btn-large">
+          <span>▶️ Test Live Simulator</span>
+        </a>
+      </div>
+
+      <div class="platform-strip">
+        <span>WORKS UNIVERSALLY ON:</span>
+        <div class="platform-logos">
+          <span class="plat-tag yt">🔴 YouTube Live</span>
+          <span class="plat-tag twitch">🟣 Twitch</span>
+          <span class="plat-tag tt">⚫ TikTok Live</span>
+          <span class="plat-tag kick">🟢 Kick</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Live Simulator Section -->
+  <section id="simulator" class="simulator-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-badge">INTERACTIVE EXPERIENCE</span>
+        <h2>Try StreamSnap AI Directly on Video</h2>
+        <p>Click on any object below (Microphone, Headphones, Weights, Hoodie) or drag a box to identify it on Amazon!</p>
+      </div>
+
+      <div class="simulator-wrapper">
+        <!-- Interactive Video Player Mockup -->
+        <div class="sim-player-box" id="sim-player">
+          <div class="sim-stream-tag">🔴 LIVE: Creator Studio Haul (Kai Cenat Setup)</div>
+          
+          <!-- Mock Video Background Scene -->
+          <div class="sim-video-scene">
+            <!-- Clickable Interactive Hotspots -->
+            <div class="sim-hotspot" style="top: 25%; left: 42%;" data-item="mic">
+              <span class="hotspot-ping"></span>
+              <span class="hotspot-lbl">🎙️ Shure SM7B Mic</span>
+            </div>
+
+            <div class="sim-hotspot" style="top: 18%; left: 58%;" data-item="headphones">
+              <span class="hotspot-ping"></span>
+              <span class="hotspot-lbl">🎧 Sony WH-1000XM5</span>
+            </div>
+
+            <div class="sim-hotspot" style="top: 55%; left: 48%;" data-item="hoodie">
+              <span class="hotspot-ping"></span>
+              <span class="hotspot-lbl">👕 Champion Streetwear Hoodie</span>
+            </div>
+
+            <div class="sim-hotspot" style="top: 60%; left: 18%;" data-item="weights">
+              <span class="hotspot-ping"></span>
+              <span class="hotspot-lbl">🏋️‍♂️ Fringe Sport Bumper Plates</span>
+            </div>
+
+            <div class="sim-hotspot" style="top: 15%; left: 82%;" data-item="lighting">
+              <span class="hotspot-ping"></span>
+              <span class="hotspot-lbl">💡 Elgato Key Light</span>
+            </div>
+          </div>
+
+          <!-- Video Controls Overlay -->
+          <div class="sim-controls-bar">
+            <span>⚡ StreamSnap Snip & Click-to-Find Active — Click ANY hotspot above!</span>
+          </div>
+        </div>
+
+        <!-- Mock SidePanel Results Container -->
+        <div class="sim-sidepanel">
+          <div class="panel-header-mini">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="bolt-badge">⚡</span>
+              <strong>StreamSnap AI Panel</strong>
+            </div>
+            <span class="prime-pill">prime</span>
+          </div>
+
+          <div class="sim-panel-body" id="sim-results">
+            <div class="sim-active-crop" id="sim-crop-box">
+              <div class="crop-inner">
+                <span class="crop-dot">🎯</span>
+                <span id="sim-crop-label">Click an item on the video</span>
+              </div>
+            </div>
+
+            <div id="sim-product-card" class="sim-card">
+              <div class="sim-card-thumb" id="sim-thumb">🎙️</div>
+              <div class="sim-card-details">
+                <h4 id="sim-title">Shure SM7B Vocal Microphone</h4>
+                <div class="sim-meta">
+                  <span class="sim-price" id="sim-price">$399.00</span>
+                  <span class="sim-match">100% Match</span>
+                </div>
+                <div class="sim-actions">
+                  <button id="sim-add-cart-btn" class="sim-btn-cart">🛒 Add to Amazon Cart</button>
+                  <a id="sim-buy-link" href="https://www.amazon.com/s?k=Shure+SM7B&tag=streamsnap-20" target="_blank" class="sim-btn-view">↗ View</a>
+                </div>
+              </div>
+            </div>
+
+            <div class="sim-cart-status" id="sim-cart-status" style="display: none;">
+              <span>✓ Added to 1-Click Amazon Remote Cart!</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Creator Monetization Calculator -->
+  <section id="calculator" class="calculator-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-badge">MONETIZATION & ROI</span>
+        <h2>Streamer Passive Income Calculator</h2>
+        <p>See how much passive commission you can earn each month with StreamSnap AI Amazon integration.</p>
+      </div>
+
+      <div class="calc-card">
+        <div class="calc-inputs">
+          <div class="calc-group">
+            <label>Avg. Concurrent Viewers: <span id="val-viewers" class="slider-badge">5,000</span></label>
+            <input type="range" id="input-viewers" min="500" max="50000" step="500" value="5000" />
+          </div>
+
+          <div class="calc-group">
+            <label>Stream Hours / Month: <span id="val-hours" class="slider-badge">40 hrs</span></label>
+            <input type="range" id="input-hours" min="10" max="150" step="5" value="40" />
+          </div>
+
+          <div class="calc-group">
+            <label>Avg. Gear & Fashion Price: <span id="val-price" class="slider-badge">$65.00</span></label>
+            <input type="range" id="input-price" min="20" max="250" step="5" value="65" />
+          </div>
+        </div>
+
+        <div class="calc-output">
+          <div class="calc-result-box">
+            <span class="calc-sub">ESTIMATED MONTHLY COMMISSION</span>
+            <div class="calc-amount" id="calc-earnings">$3,120.00</div>
+            <span class="calc-annual">≈ <strong id="calc-annual-val">$37,440.00</strong> / year passive revenue</span>
+          </div>
+          <p class="calc-explainer">Based on a 1.2% visual click-through rate with Amazon 24-hr multi-item cart conversion cookie.</p>
+          <button id="claim-tag-btn" class="btn-primary" style="width: 100%;">🚀 Connect Your Affiliate Tag</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Amazon M&A / Investment Thesis Section -->
+  <section id="acquisition" class="acquisition-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-badge">STRATEGIC THESIS</span>
+        <h2>Why Amazon & VCs Need StreamSnap AI</h2>
+        <p>The definitive bridge between 500M+ live streaming viewers and Amazon's global fulfillment infrastructure.</p>
+      </div>
+
+      <div class="thesis-grid">
+        <div class="thesis-card">
+          <div class="thesis-icon">🛡️</div>
+          <h3>Defensive Moat vs TikTok Shop</h3>
+          <p>TikTok Shop is capturing billions in youth live commerce. StreamSnap AI turns YouTube, Twitch, and TikTok into Amazon shopping pipelines without platform friction.</p>
+        </div>
+
+        <div class="thesis-card">
+          <div class="thesis-icon">🛒</div>
+          <h3>Prime Remote Cart Ingestion</h3>
+          <p>Direct 1-Click Remote Cart deep linking increases Amazon Prime member cart sizes by 35% during high-engagement live broadcasts.</p>
+        </div>
+
+        <div class="thesis-card">
+          <div class="thesis-icon">⚡</div>
+          <h3>Zero-Cost Visual AI Engine</h3>
+          <p>Proprietary client-side frame delta hashing (pHash) cuts API token expenses by 90%+, ensuring infinite positive gross margins from day one.</p>
+        </div>
+      </div>
+
+      <div class="m-a-download-box">
+        <div>
+          <h3>Read the Official Amazon M&amp;A Pitch &amp; Financial Model</h3>
+          <p>Review the comprehensive 3-year P&amp;L model, unit economics, and strategic acquisition rationale.</p>
+        </div>
+        <a href="https://github.com/rept0rix/streamsnap-ai/blob/master/docs/AMAZON_MA_PITCH_DECK.md" target="_blank" class="btn-primary">📄 View Amazon Pitch Deck</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Amazon Connect Modal -->
+  <div id="connect-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-window">
+      <div class="modal-top">
+        <h3>🔗 Connect Amazon Account / Associate Tag</h3>
+        <button id="close-connect-modal" class="modal-x">✕</button>
+      </div>
+      <div class="modal-content-area">
+        <p>Link your personal Amazon Associate Tag or 1-Click Shopping account to monetize or purchase in 1 click.</p>
+        <div class="form-group">
+          <label>Amazon Associate Tracking ID (Optional)</label>
+          <input type="text" id="modal-tag-input" placeholder="e.g. yourtag-20" />
+          <span class="field-hint">Leave blank to use default (streamsnap-20)</span>
+        </div>
+        <div class="form-group">
+          <label>Preferred Amazon Storefront Region</label>
+          <select id="modal-region-select" class="form-select">
+            <option value="US">Amazon.com (United States - Global)</option>
+            <option value="UK">Amazon.co.uk (United Kingdom)</option>
+            <option value="DE">Amazon.de (Germany & EU)</option>
+            <option value="CA">Amazon.ca (Canada)</option>
+          </select>
+        </div>
+        <button id="modal-save-btn" class="btn-primary" style="width: 100%; margin-top: 10px;">Save &amp; Activate ⚡</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container footer-content">
+      <div class="footer-left">
+        <img src="assets/logo_full.svg" alt="StreamSnap" height="32" />
+        <p>Universal Real-Time Visual Commerce for Live Streaming.</p>
+      </div>
+      <div class="footer-links">
+        <a href="https://github.com/rept0rix/streamsnap-ai" target="_blank">GitHub</a>
+        <a href="https://github.com/rept0rix/streamsnap-ai/blob/master/docs/PRIVACY_POLICY.md" target="_blank">Privacy Policy</a>
+        <a href="https://github.com/rept0rix/streamsnap-ai/blob/master/docs/CHROME_STORE_SUBMISSION.md" target="_blank">Chrome Web Store</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 120" width="520" height="120">
+  <defs>
+    <linearGradient id="grad_bolt" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFB800" />
+      <stop offset="50%" stop-color="#FF9900" />
+      <stop offset="100%" stop-color="#FF5500" />
+    </linearGradient>
+    <linearGradient id="grad_glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#1D4ED8" stop-opacity="0.2" />
+    </linearGradient>
+    <filter id="shadow_glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#FF9900" flood-opacity="0.45" />
+    </filter>
+  </defs>
+
+  <!-- Background container -->
+  <rect width="520" height="120" rx="20" fill="#0B0F17" />
+  <rect width="518" height="118" x="1" y="1" rx="19" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" />
+
+  <!-- Lens / Shield icon box -->
+  <g transform="translate(24, 20)">
+    <rect width="80" height="80" rx="18" fill="#131924" stroke="rgba(255, 153, 0, 0.35)" stroke-width="2" />
+    <circle cx="40" cy="40" r="28" fill="url(#grad_glow)" opacity="0.4" />
+    <!-- Visual crosshairs -->
+    <path d="M 20 28 L 20 20 L 28 20" fill="none" stroke="#60A5FA" stroke-width="2.5" stroke-linecap="round" />
+    <path d="M 60 28 L 60 20 L 52 20" fill="none" stroke="#60A5FA" stroke-width="2.5" stroke-linecap="round" />
+    <path d="M 20 52 L 20 60 L 28 60" fill="none" stroke="#60A5FA" stroke-width="2.5" stroke-linecap="round" />
+    <path d="M 60 52 L 60 60 L 52 60" fill="none" stroke="#60A5FA" stroke-width="2.5" stroke-linecap="round" />
+    <!-- Lightning Bolt -->
+    <polygon points="43 18 27 45 39 45 37 62 53 35 41 35" fill="url(#grad_bolt)" filter="url(#shadow_glow)" />
+  </g>
+
+  <!-- Typography -->
+  <g transform="translate(122, 68)">
+    <text font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" font-size="36" fill="#FFFFFF" letter-spacing="-0.5">Stream<tspan fill="#FF9900">Snap</tspan></text>
+    <rect x="238" y="-30" width="70" height="24" rx="6" fill="rgba(255, 153, 0, 0.15)" stroke="rgba(255, 153, 0, 0.4)" stroke-width="1" />
+    <text x="273" y="-14" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="800" fill="#FF9900" text-anchor="middle">PRO AI</text>
+  </g>
+  <g transform="translate(124, 94)">
+    <text font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600" fill="#9CA3AF" letter-spacing="0.2">Universal Real-Time Live Stream Commerce</text>
+  </g>
+</svg>

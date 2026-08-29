@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 280" width="440" height="280">
+  <defs>
+    <linearGradient id="bg440" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B0F17" />
+      <stop offset="100%" stop-color="#131924" />
+    </linearGradient>
+    <linearGradient id="gold440" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFB800" />
+      <stop offset="100%" stop-color="#FF5500" />
+    </linearGradient>
+  </defs>
+
+  <rect width="440" height="280" fill="url(#bg440)" />
+  <circle cx="220" cy="110" r="90" fill="#FF9900" opacity="0.08" />
+
+  <!-- Logo Mark -->
+  <g transform="translate(185, 45)">
+    <rect width="70" height="70" rx="16" fill="#1C2433" stroke="rgba(255, 153, 0, 0.4)" stroke-width="2" />
+    <polygon points="38 15 24 39 34 39 32 55 46 31 36 31" fill="url(#gold440)" />
+  </g>
+
+  <!-- Titles -->
+  <text x="220" y="155" font-family="-apple-system, sans-serif" font-size="24" font-weight="900" fill="#FFFFFF" text-anchor="middle">Stream<tspan fill="#FF9900">Snap</tspan> AI</text>
+  <text x="220" y="180" font-family="-apple-system, sans-serif" font-size="12" font-weight="700" fill="#60A5FA" text-anchor="middle">SHAZAM FOR LIVE STREAMS</text>
+  <text x="220" y="210" font-family="-apple-system, sans-serif" font-size="12" fill="#9CA3AF" text-anchor="middle">1-Click Amazon Shopping on YouTube &amp; Twitch</text>
+
+  <!-- Badge Strip -->
+  <g transform="translate(145, 230)">
+    <rect width="150" height="28" rx="14" fill="rgba(255, 153, 0, 0.15)" stroke="#FF9900" stroke-width="1" />
+    <text x="75" y="18" font-family="-apple-system, sans-serif" font-size="11" font-weight="800" fill="#FF9900" text-anchor="middle">⚡ Instant AI Vision</text>
+  </g>
+</svg>
