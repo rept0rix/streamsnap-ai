@@ -89,7 +89,9 @@
 
     const liveBtn = el("button", "streamsnap-floating-btn streamsnap-live-btn");
     liveBtn.title = "Click-to-Find: click any object on the video to identify it";
-    liveBtn.append(el("span", null, "🟢"), el("span", null, " Click-to-Find"));
+    // Two flex children; .streamsnap-floating-btn supplies the gap, so no
+    // leading whitespace in the labels.
+    liveBtn.append(el("span", null, "🟢"), el("span", null, "Click-to-Find"));
 
     liveBtn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -98,7 +100,7 @@
       liveBtn.classList.toggle("active", isLiveClickModeActive);
       liveBtn.replaceChildren(
         el("span", null, isLiveClickModeActive ? "🔴" : "🟢"),
-        el("span", null, isLiveClickModeActive ? " Click Anything Live" : " Click-to-Find")
+        el("span", null, isLiveClickModeActive ? "Click Anything Live" : "Click-to-Find")
       );
       showToast(
         parent,
@@ -110,7 +112,7 @@
 
     const snipBtn = el("button", "streamsnap-floating-btn streamsnap-snip-btn");
     snipBtn.title = "Draw a box around any item to search for it";
-    snipBtn.append(el("span", null, "🎯"), el("span", null, " Snip Box"));
+    snipBtn.append(el("span", null, "🎯"), el("span", null, "Snip Box"));
     snipBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       e.preventDefault();
@@ -119,7 +121,7 @@
 
     const scanBtn = el("button", "streamsnap-floating-btn");
     scanBtn.title = "Scan the whole frame (Alt+S)";
-    scanBtn.append(el("span", "streamsnap-bolt", "⚡"), el("span", null, " Scan Frame"));
+    scanBtn.append(el("span", "streamsnap-bolt", "⚡"), el("span", null, "Scan Frame"));
     scanBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       e.preventDefault();
@@ -542,7 +544,8 @@
     const bolt = el("span", null, "⚡");
     bolt.style.color = "#FF9900";
     // textContent for the message — it can contain a page title or API error.
-    toast.append(bolt, el("span", null, ` ${text}`));
+    // .streamsnap-toast is flex with a gap, so no leading whitespace.
+    toast.append(bolt, el("span", null, text));
     container.appendChild(toast);
 
     setTimeout(() => {
