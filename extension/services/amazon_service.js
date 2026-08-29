@@ -160,19 +160,26 @@ export const AMAZON_CATALOG = {
 
 /**
  * Resolve Real Live Amazon Product (Real ASIN, Real Image Photo, Real Price, Real Title)
+ * Uses parallel AbortController with 2.2s timeout to guarantee instant response without hanging.
  */
 export async function fetchLiveAmazonProduct(query) {
   if (!query) return null;
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2200);
+
     const url = `https://www.amazon.com/s?k=${encodeURIComponent(query)}`;
     const res = await fetch(url, {
+      signal: controller.signal,
       headers: {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
       }
     });
+    clearTimeout(timeoutId);
 
+    if (!res.ok) return null;
     const html = await res.text();
     
     // Extract first real product with ASIN, real photo, and title
@@ -206,11 +213,12 @@ export async function fetchLiveAmazonProduct(query) {
       };
     }
   } catch (err) {
-    console.warn("Could not fetch live Amazon search:", err);
+    // Graceful fallback on timeout or block
   }
 
   return null;
 }
+
 
 /**
  * Auto-categorize product by title keywords

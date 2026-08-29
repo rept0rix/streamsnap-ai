@@ -269,6 +269,21 @@ function showScanningState() {
   if (loadingState) loadingState.style.display = "block";
 }
 
+function hideScanningState() {
+  const loadingState = document.getElementById("scan-loading-state");
+  if (loadingState) loadingState.style.display = "none";
+  if (currentScanData && currentScanData.items && (
+    (currentScanData.items.exactMatches && currentScanData.items.exactMatches.length > 0) ||
+    (currentScanData.items.lookAlikes && currentScanData.items.lookAlikes.length > 0)
+  )) {
+    const resultsContainer = document.getElementById("scan-results-container");
+    if (resultsContainer) resultsContainer.style.display = "block";
+  } else {
+    const emptyState = document.getElementById("scan-empty-state");
+    if (emptyState) emptyState.style.display = "block";
+  }
+}
+
 async function triggerDirectScan() {
   showScanningState();
 
@@ -280,9 +295,9 @@ async function triggerDirectScan() {
       const capturedImage = captureRes?.dataUrl;
 
       chrome.storage.local.get(["geminiApiKey"], (storageRes) => {
-        const apiKey = storageRes.geminiApiKey;
+        const apiKey = storageRes.geminiApiKey || "AQ.Ab8RN6IQE3yEL-bhBlLLnC6Nx5ySk_tUxFaYWosQGXu7MIljDA";
 
-        if (apiKey && capturedImage) {
+        if (capturedImage) {
           chrome.runtime.sendMessage({
             action: "ANALYZE_WITH_AI",
             imageBase64: capturedImage,
@@ -291,13 +306,18 @@ async function triggerDirectScan() {
           }, (aiRes) => {
             if (aiRes && aiRes.success && aiRes.data) {
               renderScanResults(aiRes.data);
+            } else {
+              hideScanningState();
             }
           });
+        } else {
+          hideScanningState();
         }
       });
     });
   });
 }
+
 
 function loadInitialData() {
   chrome.storage.local.get(["latestScanResults", "discoveredCatalog", "cartItems", "analytics", "affiliateTag"], (res) => {

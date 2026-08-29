@@ -11,14 +11,14 @@
 
 /* Floating Action Button Group on Video */
 .streamsnap-btn-group {
-  position: absolute;
-  top: 18px;
-  right: 18px;
-  z-index: 2147483640;
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  pointer-events: auto;
+  position: absolute !important;
+  top: 18px !important;
+  right: 18px !important;
+  z-index: 2147483647 !important;
+  display: flex !important;
+  gap: 8px !important;
+  align-items: center !important;
+  pointer-events: auto !important;
 }
 
 .streamsnap-floating-btn {
@@ -38,7 +38,9 @@
   backdrop-filter: blur(8px);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
+  pointer-events: auto !important;
 }
+
 
 .streamsnap-snip-btn {
   background: linear-gradient(135deg, rgba(255, 153, 0, 0.95), rgba(255, 85, 0, 0.95));
@@ -98,14 +100,16 @@
 
 /* Interactive Snip Cropper Tool on Video */
 .streamsnap-interactive-cropper {
-  position: absolute;
-  inset: 0;
-  z-index: 2147483645;
-  background: rgba(0, 0, 0, 0.45);
-  cursor: crosshair;
-  user-select: none;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 2147483646 !important;
+  background: rgba(0, 0, 0, 0.45) !important;
+  cursor: crosshair !important;
+  user-select: none !important;
   backdrop-filter: blur(1.5px);
+  pointer-events: auto !important;
 }
+
 
 .streamsnap-cropper-banner {
   position: absolute;
