@@ -208,14 +208,25 @@ function openSourceFrameModal(prod) {
   const prodTitle = document.getElementById("modal-product-title");
   const prodPrice = document.getElementById("modal-product-price");
 
-  sourceImg.src = prod.sourceCrop || prod.image || getProductThumbnail(prod);
-  prodImg.src = prod.image || getProductThumbnail(prod);
-  streamTag.textContent = prod.streamTitle || prod.lastStream || "Live Stream Frame";
+  const fallbackSource = getProductThumbnail({ ...prod, title: "Video Stream Frame" });
+  const fallbackProduct = getProductThumbnail(prod);
+
+  const sourceSrc = prod.sourceCrop || (currentScanData && (currentScanData.frameSnapshot || currentScanData.croppedThumbnail)) || fallbackSource;
+  const prodSrc = prod.image || fallbackProduct;
+
+  sourceImg.src = sourceSrc;
+  sourceImg.onerror = () => { sourceImg.src = fallbackSource; };
+
+  prodImg.src = prodSrc;
+  prodImg.onerror = () => { prodImg.src = fallbackProduct; };
+
+  streamTag.textContent = prod.streamTitle || prod.lastStream || (currentScanData?.streamType) || "Live Video Stream";
   prodTitle.textContent = prod.title || "Amazon Product";
   prodPrice.textContent = `$${Number(prod.price || 29.99).toFixed(2)}`;
 
   modal.style.display = "flex";
 }
+
 
 function initListeners() {
   chrome.storage.onChanged.addListener((changes, area) => {

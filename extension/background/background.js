@@ -203,12 +203,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         };
       })
       .then(async (results) => {
+        if (results.exactMatches) results.exactMatches.forEach(i => i.sourceCrop = croppedImage);
+        if (results.lookAlikes) results.lookAlikes.forEach(i => i.sourceCrop = croppedImage);
+
         const enriched = await enrichProductsWithRealAmazon(results);
         await saveDiscoveredProducts(enriched, streamContext, croppedImage);
 
         latestScanResults = {
           streamType: `🎯 Cropped: ${streamContext?.title || 'Live Stream'}`,
           croppedThumbnail: croppedImage,
+          frameSnapshot: croppedImage,
           items: enriched,
           capturedAt: new Date().toLocaleTimeString()
         };
@@ -255,11 +259,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         };
       })
       .then(async (results) => {
+        if (results.exactMatches) results.exactMatches.forEach(i => i.sourceCrop = imageBase64);
+        if (results.lookAlikes) results.lookAlikes.forEach(i => i.sourceCrop = imageBase64);
+
         const enriched = await enrichProductsWithRealAmazon(results);
         await saveDiscoveredProducts(enriched, streamContext, imageBase64);
 
         latestScanResults = {
           streamType: streamContext?.title || "Live Stream",
+          frameSnapshot: imageBase64,
           items: enriched,
           capturedAt: new Date().toLocaleTimeString()
         };
@@ -274,6 +282,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       });
     return true;
   }
+
 
 
   if (message.action === "TRACK_AMAZON_CLICK") {
