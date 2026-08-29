@@ -343,6 +343,46 @@
 
 
 
+  async function captureTargetVideoFrame(video, container) {
+    // 1. Try direct video element drawImage (Fastest, zero background UI!)
+    try {
+      if (video && video.videoWidth > 0 && video.videoHeight > 0) {
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.90);
+        if (dataUrl && dataUrl.length > 500) {
+          return dataUrl;
+        }
+      }
+    } catch (e) {
+      console.warn("Direct video canvas capture blocked by CORS, falling back to viewport crop:", e);
+    }
+
+    // 2. Fallback: Capture visible tab and strictly crop to the video element bounds!
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ action: "CAPTURE_VISIBLE_TAB" }, async (captureRes) => {
+        const screenshotUrl = captureRes?.dataUrl;
+        if (!screenshotUrl) {
+          resolve(null);
+          return;
+        }
+        const targetEl = video || container;
+        const rect = targetEl.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        const absX = Math.max(0, rect.left * dpr);
+        const absY = Math.max(0, rect.top * dpr);
+        const absW = Math.max(10, rect.width * dpr);
+        const absH = Math.max(10, rect.height * dpr);
+
+        const cropped = await cropFromScreenshot(screenshotUrl, absX, absY, absW, absH);
+        resolve(cropped);
+      });
+    });
+  }
+
   async function triggerStreamScan(video, container, isSilent = false) {
     if (!isSilent) {
       renderLaserScan(container);
@@ -363,66 +403,36 @@
       showToast(container, `Scanning "${streamTitle.slice(0, 30)}..." with StreamSnap AI ⚡`);
     }
 
-    // Capture Frame
-    chrome.runtime.sendMessage({ action: "CAPTURE_VISIBLE_TAB" }, (captureRes) => {
-      const capturedImage = captureRes?.dataUrl;
+    // Capture ONLY the clean video frame
+    const capturedImage = await captureTargetVideoFrame(video, container);
 
-      chrome.storage.local.get(["geminiApiKey"], (storageRes) => {
-        const apiKey = storageRes.geminiApiKey;
+    chrome.storage.local.get(["geminiApiKey"], (storageRes) => {
+      const apiKey = storageRes.geminiApiKey;
 
-        if (apiKey && capturedImage) {
-          if (!isSilent) showToast(container, "⚡ Running Live Vision on frame...");
-          chrome.runtime.sendMessage({
-            action: "ANALYZE_WITH_AI",
-            imageBase64: capturedImage,
-            apiKey: apiKey,
-            streamContext: { title: streamTitle, channel: channelName }
-          }, (aiRes) => {
-            if (aiRes && aiRes.success) {
-              if (aiRes.data) renderBoundingBoxes(container, aiRes.data.items);
-              if (!isSilent) showToast(container, `✓ Products detected and added to Catalog!`);
-            } else {
-              console.warn("AI analysis fallback:", aiRes?.error);
-              fallbackCatalogScan(container, streamTitle);
-            }
-          });
-        } else {
-          // Contextual Catalog matching fallback
-          fallbackCatalogScan(container, streamTitle);
-        }
-      });
+      if (apiKey && capturedImage) {
+        if (!isSilent) showToast(container, "⚡ Running Live Multi-Object Vision...");
+        chrome.runtime.sendMessage({
+          action: "ANALYZE_WITH_AI",
+          imageBase64: capturedImage,
+          apiKey: apiKey,
+          streamContext: { title: streamTitle, channel: channelName }
+        }, (aiRes) => {
+          if (aiRes && aiRes.success && aiRes.data) {
+            renderBoundingBoxes(container, aiRes.data.items);
+            if (!isSilent) showToast(container, `✓ Products identified and matched!`);
+          } else {
+            console.warn("AI analysis error:", aiRes?.error);
+            if (!isSilent) showToast(container, `⚠️ AI Scan error. Check API key in Setup.`);
+          }
+        });
+      } else if (!apiKey) {
+        if (!isSilent) showToast(container, "⚠️ Please enter your Gemini API Key in the Setup tab ⚙️");
+      } else {
+        if (!isSilent) showToast(container, "⚠️ Could not capture video frame. Please retry.");
+      }
     });
   }
 
-  function fallbackCatalogScan(container, streamTitle) {
-    let streamType = "tech_podcast";
-    const lowerTitle = streamTitle.toLowerCase();
-    const url = window.location.href.toLowerCase();
-
-    if (lowerTitle.includes("game") || lowerTitle.includes("gaming") || url.includes("twitch.tv") || lowerTitle.includes("ranked")) {
-      streamType = "gaming_stream";
-    } else if (lowerTitle.includes("haul") || lowerTitle.includes("fashion") || lowerTitle.includes("lifestyle") || url.includes("tiktok")) {
-      streamType = "lifestyle_haul";
-    } else if (window.__STREAMSNAP_DEMO_PRESET__) {
-      streamType = window.__STREAMSNAP_DEMO_PRESET__;
-    }
-
-    setTimeout(() => {
-      const demoData = getPresetItems(streamType);
-      renderBoundingBoxes(container, demoData);
-
-      chrome.runtime.sendMessage({
-        action: "SAVE_SCAN_RESULTS",
-        data: {
-          streamType: streamTitle || streamType,
-          items: demoData,
-          capturedAt: new Date().toLocaleTimeString()
-        }
-      });
-
-      showToast(container, `⚡ Found ${demoData.exactMatches.length + demoData.lookAlikes.length} products! View in Side Panel ➔`);
-    }, 600);
-  }
 
 
   function renderLaserScan(container) {
@@ -438,25 +448,46 @@
   }
 
   function renderBoundingBoxes(container, scanData) {
+    if (!scanData) return;
     // Remove previous boxes
     container.querySelectorAll(".streamsnap-bbox").forEach((el) => el.remove());
 
+    const exacts = scanData.exactMatches || [];
+    const lookalikes = scanData.lookAlikes || [];
+    const requests = scanData.unidentifiedRequests || [];
+
     const allItems = [
-      ...scanData.exactMatches.map((m) => ({ ...m, badge: "🟢 Exact" })),
-      ...scanData.lookAlikes.map((m) => ({ ...m, badge: "🟡 Similar" })),
-      ...scanData.unidentifiedRequests.map((m) => ({ ...m, badge: "❓ Request" }))
+      ...exacts.map((m) => ({ ...m, badge: "🟢 Exact" })),
+      ...lookalikes.map((m) => ({ ...m, badge: "🟡 Similar" })),
+      ...requests.map((m) => ({ ...m, badge: "❓ Request" }))
     ];
 
     allItems.forEach((item) => {
-      if (!item.boundingBox) return;
+      let topPct, leftPct, widthPct, heightPct;
+      if (item.box_2d && Array.isArray(item.box_2d) && item.box_2d.length >= 4) {
+        const [ymin, xmin, ymax, xmax] = item.box_2d;
+        topPct = ymin / 10;
+        leftPct = xmin / 10;
+        widthPct = Math.max(4, (xmax - xmin) / 10);
+        heightPct = Math.max(4, (ymax - ymin) / 10);
+      } else if (item.boundingBox) {
+        topPct = item.boundingBox.ymin;
+        leftPct = item.boundingBox.xmin;
+        widthPct = item.boundingBox.xmax - item.boundingBox.xmin;
+        heightPct = item.boundingBox.ymax - item.boundingBox.ymin;
+      } else {
+        return;
+      }
+
       const box = document.createElement("div");
       box.className = "streamsnap-bbox";
-      box.style.top = `${item.boundingBox.ymin}%`;
-      box.style.left = `${item.boundingBox.xmin}%`;
-      box.style.width = `${item.boundingBox.xmax - item.boundingBox.xmin}%`;
-      box.style.height = `${item.boundingBox.ymax - item.boundingBox.ymin}%`;
+      box.style.top = `${topPct}%`;
+      box.style.left = `${leftPct}%`;
+      box.style.width = `${widthPct}%`;
+      box.style.height = `${heightPct}%`;
 
-      box.innerHTML = `<div class="streamsnap-bbox-tag">${item.badge} ${item.detectionLabel || item.label || item.title}</div>`;
+      const displayLabel = item.detectionLabel || item.title?.slice(0, 30) || item.label || "Product";
+      box.innerHTML = `<div class="streamsnap-bbox-tag">${item.badge} ${displayLabel}</div>`;
 
       box.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -466,14 +497,15 @@
       container.appendChild(box);
     });
 
-    // Auto fade out bounding boxes after 6 seconds
+    // Auto fade out bounding boxes after 7 seconds
     setTimeout(() => {
       container.querySelectorAll(".streamsnap-bbox").forEach((el) => {
         el.style.opacity = "0";
         setTimeout(() => el.remove(), 400);
       });
-    }, 6000);
+    }, 7000);
   }
+
 
   function showToast(container, text) {
     const existing = container.querySelector(".streamsnap-toast");

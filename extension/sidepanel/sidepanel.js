@@ -549,6 +549,8 @@ function createProductCard(prod, type = "exact") {
     ? `<span class="product-prime">prime</span>`
     : `<span style="color:#F59E0B; font-weight:700; font-size:10px;">⚡ ${prod.similarityScore || 90}% Match</span>`;
 
+  const googleSearchUrl = `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(title)}`;
+
   card.innerHTML = `
     <div class="product-thumb">
       <img src="${thumbUrl}" alt="${title}" referrerpolicy="no-referrer" />
@@ -559,6 +561,7 @@ function createProductCard(prod, type = "exact") {
         <div class="product-meta-row">
           <span class="product-price">$${priceStr}</span>
           ${matchPill}
+          <span class="store-badge amazon">🛒 Amazon</span>
         </div>
         <div class="product-match-desc">${prod.matchReason || prod.detectionLabel || 'Detected in live stream'}</div>
       </div>
@@ -570,7 +573,10 @@ function createProductCard(prod, type = "exact") {
           <span>🛒 Add</span>
         </button>
         <a href="${getAmazonProductUrl(asin, title, userAffiliateTag)}" target="_blank" class="view-btn amazon-link" title="Open on Amazon">
-          <span>↗</span>
+          <span>Amazon ↗</span>
+        </a>
+        <a href="${googleSearchUrl}" target="_blank" class="view-btn web-search-link" title="Search on Web / Google Shopping">
+          <span>🌐 Web</span>
         </a>
       </div>
     </div>
@@ -614,6 +620,7 @@ function createCatalogProductCard(prod) {
   const priceStr = Number(prod.price || 29.99).toFixed(2);
   const thumbUrl = getProductThumbnail(prod);
   const fallbackSvg = getProductThumbnail({ ...prod, image: null });
+  const googleSearchUrl = `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(title)}`;
 
   card.innerHTML = `
     <div class="product-thumb">
@@ -625,6 +632,7 @@ function createCatalogProductCard(prod) {
         <div class="product-meta-row">
           <span class="product-price">$${priceStr}</span>
           <span class="catalog-seen-tag">Seen ${prod.sightingCount || 1}x</span>
+          <span class="store-badge amazon">🛒 Amazon</span>
         </div>
         <div class="product-match-desc">📁 ${prod.category || 'Gear'} • From: ${prod.streamTitle?.slice(0, 24) || 'Stream'}</div>
       </div>
@@ -638,12 +646,16 @@ function createCatalogProductCard(prod) {
         <a href="${getAmazonProductUrl(asin, title, userAffiliateTag)}" target="_blank" class="view-btn amazon-link" title="Open on Amazon">
           <span>↗</span>
         </a>
+        <a href="${googleSearchUrl}" target="_blank" class="view-btn web-search-link" title="Compare on Web / Google Shopping">
+          <span>🌐 Web</span>
+        </a>
         <button class="view-btn delete-btn" title="Delete from catalog" style="color:#EF4444;">
           <span>✕</span>
         </button>
       </div>
     </div>
   `;
+
 
   // Image error fallback
   const imgEl = card.querySelector(".product-thumb img");

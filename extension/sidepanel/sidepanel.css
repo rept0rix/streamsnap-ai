@@ -571,6 +571,40 @@ body {
   border-color: var(--primary-gold);
 }
 
+.web-search-link {
+  background: rgba(59, 130, 246, 0.12) !important;
+  border-color: rgba(59, 130, 246, 0.35) !important;
+  color: #60A5FA !important;
+}
+
+.web-search-link:hover {
+  background: rgba(59, 130, 246, 0.25) !important;
+  border-color: #60A5FA !important;
+}
+
+.store-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.store-badge.amazon {
+  background: rgba(255, 153, 0, 0.15);
+  color: var(--primary-gold);
+  border: 1px solid rgba(255, 153, 0, 0.3);
+}
+
+.store-badge.web {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60A5FA;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+
 /* Catalog Search Bar & Stats */
 .catalog-header-bar {
   margin-bottom: 12px;
