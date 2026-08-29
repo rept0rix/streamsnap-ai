@@ -1,0 +1,31 @@
+name = "streamsnap-lens"
+main = "src/index.js"
+compatibility_date = "2026-08-01"
+
+# PUBLIC_BASE_URL must be this Worker's own reachable URL. Google Lens fetches
+# the crop from /img/:key, so a wrong value here fails every request.
+# After the first `wrangler deploy`, set it to the printed workers.dev URL.
+[vars]
+PUBLIC_BASE_URL = "https://streamsnap-lens.YOUR-SUBDOMAIN.workers.dev"
+
+# Leave empty while developing to accept any origin. Once the extension is
+# published, set this to its chrome-extension:// origin.
+ALLOWED_ORIGINS = ""
+
+# Cached Lens results and rate-limit counters.
+[[kv_namespaces]]
+binding = "CACHE"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+# Temporary crop storage. Objects live for seconds and are deleted after the
+# Lens call returns.
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "streamsnap-crops"
+
+# Secrets are set with `wrangler secret put`, never in this file:
+#   BRIGHTDATA_API_KEY
+#   BRIGHTDATA_ZONE
+
+[observability]
+enabled = true

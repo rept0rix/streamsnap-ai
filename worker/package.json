@@ -1,0 +1,16 @@
+{
+  "name": "streamsnap-lens-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Resolves live-stream crops to real Amazon listings via Google Lens.",
+  "scripts": {
+    "test": "node test/parser.test.mjs",
+    "dev": "wrangler dev",
+    "deploy": "npm test && wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^3.90.0"
+  }
+}

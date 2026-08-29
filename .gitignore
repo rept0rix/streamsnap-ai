@@ -5,3 +5,8 @@ node_modules/
 
 # Build output — release zips are produced by tools/package.sh
 dist/
+
+# Worker
+worker/node_modules/
+worker/.wrangler/
+.dev.vars
