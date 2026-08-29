@@ -78,7 +78,14 @@
             <span class="radar-icon">🤖</span>
           </div>
           <h3>AI Vision Scanning...</h3>
-          <p id="loading-status-text">Pinpointing products and retrieving live Amazon prices...</p>
+          <p id="loading-status-text">Identifying products in the current frame...</p>
+        </div>
+
+        <div id="scan-error-state" class="empty-state" style="display: none;">
+          <span class="empty-icon">⚠️</span>
+          <h3>Scan Failed</h3>
+          <p id="scan-error-text">Something went wrong.</p>
+          <button id="retry-scan-btn" class="direct-scan-btn">↻ Try Again</button>
         </div>
 
         <div id="scan-results-container" class="results-view" style="display: none;">
@@ -101,7 +108,7 @@
           <!-- Filter Pills for Live Scan -->
           <div class="filter-pills-row" id="live-filter-pills">
             <button class="filter-pill active" data-filter="all">All Items</button>
-            <button class="filter-pill" data-filter="exact">Exact (100%)</button>
+            <button class="filter-pill" data-filter="exact">Best Matches</button>
             <button class="filter-pill" data-filter="lookalike">Look-Alikes</button>
           </div>
 
@@ -109,8 +116,8 @@
           <div class="tier-section" id="tier1-section">
             <div class="tier-header">
               <span class="tier-indicator tier-1"></span>
-              <h4>Tier 1: Exact Verified Matches</h4>
-              <span class="tier-pill exact-pill">100% Match</span>
+              <h4>Tier 1: Best Matches</h4>
+              <span class="tier-pill exact-pill">High Confidence</span>
             </div>
             <div id="exact-matches-list" class="cards-list"></div>
           </div>
@@ -211,13 +218,13 @@
           </div>
           <div class="metric-card highlight">
             <div class="metric-val" id="metric-earnings">$0.00</div>
-            <div class="metric-lbl">Est. Earnings ($)</div>
+            <div class="metric-lbl">Projected ($)</div>
           </div>
         </div>
 
         <div class="analytics-card">
-          <div class="analytics-card-title">🔗 Active Affiliate Monetization</div>
-          <p class="analytics-card-desc">Earn 3% - 10% commission on every product purchased within 24h of stream click.</p>
+          <div class="analytics-card-title">🔗 Affiliate Tracking</div>
+          <p class="analytics-card-desc">Amazon Associates pays 1%–10% depending on category, on qualifying purchases made within 24h of a click. The figure above is a projection from list prices and published rate cards — not reported earnings. Your actual payouts appear only in your Amazon Associates dashboard.</p>
           <div class="affiliate-tag-display">
             <span>Tracking ID:</span>
             <code id="active-tag-label">streamsnap-20</code>
@@ -322,9 +329,9 @@
     <!-- Footer Status -->
     <footer class="panel-footer">
       <div class="footer-info">
-        <span>StreamSnap AI v1.2</span>
+        <span>StreamSnap AI v1.3</span>
         <span>•</span>
-        <span>Amazon Associates Active</span>
+        <span id="footer-storage-note">Data stored locally</span>
       </div>
     </footer>
   </div>

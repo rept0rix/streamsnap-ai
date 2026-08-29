@@ -1,8 +1,36 @@
 /**
- * StreamSnap AI — Production Side Panel Controller (UI/UX Pro Max)
+ * StreamSnap AI — Side Panel Controller
+ *
+ * Rendering rule: product titles, match reasons and stream titles originate
+ * from the vision model and from page metadata. None of it is trusted, so
+ * cards are built with createElement/textContent rather than innerHTML.
  */
 
-import { getAmazonCartUrl, getAmazonProductUrl } from "../services/amazon_service.js";
+import {
+  getAmazonCartUrl,
+  getAmazonProductUrl,
+  getWebSearchUrl,
+  isVerifiedAsin
+} from "../services/amazon_service.js";
+
+const state = {
+  scan: null,
+  catalog: [],
+  cart: [],
+  categoryFilter: "all",
+  searchQuery: "",
+  tierFilter: "all",
+  affiliateTag: "streamsnap-20"
+};
+
+/** Maps the filter pill values in the HTML to catalog category names. */
+const CATEGORY_ALIASES = {
+  fitness: ["gym & fitness"],
+  fashion: ["streetwear & apparel"],
+  audio: ["audio & mic", "headphones", "gaming & gear"],
+  lighting: ["studio lighting"],
+  costume: ["cosplay & costume"]
+};
 
 document.addEventListener("DOMContentLoaded", () => {
   initTabs();
@@ -13,384 +41,382 @@ document.addEventListener("DOMContentLoaded", () => {
   loadInitialData();
 });
 
-let currentScanData = null;
-let currentCatalog = [];
-let currentCart = [];
-let currentFilterCategory = "all";
-let currentSearchQuery = "";
-let liveActiveFilter = "all";
-let userAffiliateTag = "streamsnap-20";
+// ---------------------------------------------------------------------------
+// DOM helpers
+// ---------------------------------------------------------------------------
+
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text != null) node.textContent = String(text);
+  return node;
+}
+
+function byId(id) {
+  return document.getElementById(id);
+}
+
+function show(id, visible, display = "block") {
+  const node = byId(id);
+  if (node) node.style.display = visible ? display : "none";
+}
+
+function truncate(value, max) {
+  const str = String(value ?? "");
+  return str.length > max ? `${str.slice(0, max)}…` : str;
+}
+
+function formatPrice(price) {
+  return typeof price === "number" && Number.isFinite(price) ? `$${price.toFixed(2)}` : null;
+}
+
+// ---------------------------------------------------------------------------
+// Tabs
+// ---------------------------------------------------------------------------
 
 function initTabs() {
   const tabBtns = document.querySelectorAll(".tab-btn");
   tabBtns.forEach((btn) => {
     btn.addEventListener("click", () => {
       tabBtns.forEach((b) => b.classList.remove("active"));
-      document.querySelectorAll(".tab-pane").forEach((pane) => pane.classList.remove("active"));
-
+      document.querySelectorAll(".tab-pane").forEach((p) => p.classList.remove("active"));
       btn.classList.add("active");
-      const targetId = `tab-${btn.dataset.tab}`;
-      const targetPane = document.getElementById(targetId);
-      if (targetPane) targetPane.classList.add("active");
+      byId(`tab-${btn.dataset.tab}`)?.classList.add("active");
 
-      if (btn.dataset.tab === "catalog") {
-        renderCatalog();
-      } else if (btn.dataset.tab === "analytics") {
-        renderAnalytics();
-      } else if (btn.dataset.tab === "cart") {
-        chrome.storage.local.get(["cartItems"], (res) => {
-          renderCart(res.cartItems || []);
-        });
-      }
+      if (btn.dataset.tab === "catalog") renderCatalog();
+      else if (btn.dataset.tab === "analytics") renderAnalytics();
+      else if (btn.dataset.tab === "cart") renderCart(state.cart);
     });
   });
 }
 
+// ---------------------------------------------------------------------------
+// Settings
+// ---------------------------------------------------------------------------
+
+function flashSaved(button) {
+  const original = button.textContent;
+  button.textContent = "Saved ✓";
+  button.style.background = "#10B981";
+  setTimeout(() => {
+    button.textContent = original;
+    button.style.background = "";
+  }, 1500);
+}
 
 function initSettings() {
-  const keyInput = document.getElementById("gemini-api-key-input");
-  const saveKeyBtn = document.getElementById("save-api-key-btn");
-  const keyStatus = document.getElementById("api-key-status");
-  const autoScanSelect = document.getElementById("auto-scan-select");
-  const confSlider = document.getElementById("confidence-slider");
-  const confVal = document.getElementById("confidence-val");
-  const tagInput = document.getElementById("affiliate-tag-input");
-  const saveTagBtn = document.getElementById("save-tag-btn");
+  const keyInput = byId("gemini-api-key-input");
+  const saveKeyBtn = byId("save-api-key-btn");
+  const keyStatus = byId("api-key-status");
+  const autoScanSelect = byId("auto-scan-select");
+  const confSlider = byId("confidence-slider");
+  const confVal = byId("confidence-val");
+  const tagInput = byId("affiliate-tag-input");
+  const saveTagBtn = byId("save-tag-btn");
 
-  // Load existing settings
-  chrome.storage.local.get(["geminiApiKey", "autoScanIntervalSec", "minConfidence", "affiliateTag"], (res) => {
-    if (res) {
-      if (res.geminiApiKey) {
-        keyInput.value = res.geminiApiKey;
-        keyStatus.textContent = "Active: Gemini 2.5 Flash ⚡";
-        keyStatus.style.color = "#10B981";
+  function paintKeyStatus(hasKey) {
+    if (!keyStatus) return;
+    keyStatus.textContent = hasKey
+      ? "Key saved — Gemini Vision active"
+      : "No API key. Scanning is disabled until you add one.";
+    keyStatus.style.color = hasKey ? "#10B981" : "#F59E0B";
+  }
+
+  chrome.storage.local.get(
+    ["geminiApiKey", "autoScanIntervalSec", "minConfidence", "affiliateTag"],
+    (res = {}) => {
+      if (keyInput && res.geminiApiKey) keyInput.value = res.geminiApiKey;
+      paintKeyStatus(Boolean(res.geminiApiKey));
+
+      if (autoScanSelect && res.autoScanIntervalSec !== undefined) {
+        autoScanSelect.value = String(res.autoScanIntervalSec);
       }
-      if (res.autoScanIntervalSec !== undefined) {
-        autoScanSelect.value = res.autoScanIntervalSec.toString();
-      }
-      if (res.minConfidence !== undefined) {
+      if (confSlider && res.minConfidence !== undefined) {
         confSlider.value = res.minConfidence;
-        confVal.textContent = `${res.minConfidence}%`;
+        if (confVal) confVal.textContent = `${res.minConfidence}%`;
       }
       if (res.affiliateTag) {
-        tagInput.value = res.affiliateTag;
-        userAffiliateTag = res.affiliateTag;
-        document.getElementById("active-tag-label").textContent = res.affiliateTag;
+        state.affiliateTag = res.affiliateTag;
+        if (tagInput) tagInput.value = res.affiliateTag;
+        const label = byId("active-tag-label");
+        if (label) label.textContent = res.affiliateTag;
       }
     }
-  });
+  );
 
-  // Save Gemini Key
-  saveKeyBtn.addEventListener("click", () => {
+  saveKeyBtn?.addEventListener("click", () => {
     const key = keyInput.value.trim();
     chrome.storage.local.set({ geminiApiKey: key }, () => {
-      saveKeyBtn.textContent = "Saved ✓";
-      saveKeyBtn.style.background = "#10B981";
-      keyStatus.textContent = key ? "Active: Gemini 2.5 Flash ⚡" : "Mode: Contextual Catalog";
-      keyStatus.style.color = key ? "#10B981" : "#9CA3AF";
-      setTimeout(() => {
-        saveKeyBtn.textContent = "Save";
-        saveKeyBtn.style.background = "";
-      }, 1500);
+      paintKeyStatus(Boolean(key));
+      flashSaved(saveKeyBtn);
     });
   });
 
-  // Auto-scan change
-  autoScanSelect.addEventListener("change", () => {
-    const interval = parseInt(autoScanSelect.value, 10);
-    chrome.storage.local.set({ autoScanIntervalSec: interval });
+  autoScanSelect?.addEventListener("change", () => {
+    chrome.storage.local.set({ autoScanIntervalSec: parseInt(autoScanSelect.value, 10) || 0 });
   });
 
-  // Confidence slider
-  confSlider.addEventListener("input", () => {
-    confVal.textContent = `${confSlider.value}%`;
+  confSlider?.addEventListener("input", () => {
+    if (confVal) confVal.textContent = `${confSlider.value}%`;
   });
-  confSlider.addEventListener("change", () => {
+  confSlider?.addEventListener("change", () => {
     chrome.storage.local.set({ minConfidence: parseInt(confSlider.value, 10) });
   });
 
-  // Save Affiliate Tag
-  saveTagBtn.addEventListener("click", () => {
-    const tag = tagInput.value.trim() || "streamsnap-20";
-    userAffiliateTag = tag;
+  saveTagBtn?.addEventListener("click", () => {
+    const raw = tagInput.value.trim();
+    if (raw && !/^[A-Za-z0-9_-]{3,25}$/.test(raw)) {
+      tagInput.setCustomValidity("Use 3-25 letters, numbers, hyphens or underscores.");
+      tagInput.reportValidity();
+      return;
+    }
+    tagInput.setCustomValidity("");
+    const tag = raw || "streamsnap-20";
+    state.affiliateTag = tag;
     chrome.storage.local.set({ affiliateTag: tag }, () => {
-      saveTagBtn.textContent = "Saved ✓";
-      saveTagBtn.style.background = "#10B981";
-      document.getElementById("active-tag-label").textContent = tag;
-      setTimeout(() => {
-        saveTagBtn.textContent = "Save";
-        saveTagBtn.style.background = "";
-      }, 1500);
+      const label = byId("active-tag-label");
+      if (label) label.textContent = tag;
+      flashSaved(saveTagBtn);
+      renderCatalog();
     });
   });
 }
+
+// ---------------------------------------------------------------------------
+// Filters
+// ---------------------------------------------------------------------------
 
 function initCatalogFilters() {
-  // Category Pills
-  const catPills = document.querySelectorAll("#catalog-category-pills .filter-pill");
-  catPills.forEach((pill) => {
+  document.querySelectorAll("#catalog-category-pills .filter-pill").forEach((pill) => {
     pill.addEventListener("click", () => {
-      catPills.forEach((p) => p.classList.remove("active"));
+      document
+        .querySelectorAll("#catalog-category-pills .filter-pill")
+        .forEach((p) => p.classList.remove("active"));
       pill.classList.add("active");
-      currentFilterCategory = pill.dataset.cat;
+      state.categoryFilter = pill.dataset.cat;
       renderCatalog();
     });
   });
 
-  // Search Input
-  const searchInput = document.getElementById("catalog-search-input");
-  if (searchInput) {
-    searchInput.addEventListener("input", (e) => {
-      currentSearchQuery = e.target.value.toLowerCase().trim();
-      renderCatalog();
-    });
-  }
+  byId("catalog-search-input")?.addEventListener("input", (e) => {
+    state.searchQuery = e.target.value.toLowerCase().trim();
+    renderCatalog();
+  });
 
-  // Clear Catalog
-  const clearBtn = document.getElementById("clear-catalog-btn");
-  if (clearBtn) {
-    clearBtn.addEventListener("click", () => {
-      if (confirm("Are you sure you want to clear your persistent product catalog?")) {
-        chrome.runtime.sendMessage({ action: "CLEAR_CATALOG" });
-      }
-    });
-  }
+  byId("clear-catalog-btn")?.addEventListener("click", () => {
+    if (confirm("Clear your saved product history? This cannot be undone.")) {
+      chrome.runtime.sendMessage({ action: "CLEAR_CATALOG" });
+    }
+  });
 
-  // Live Filter Pills
-  const livePills = document.querySelectorAll("#live-filter-pills .filter-pill");
-  livePills.forEach((pill) => {
+  document.querySelectorAll("#live-filter-pills .filter-pill").forEach((pill) => {
     pill.addEventListener("click", () => {
-      livePills.forEach((p) => p.classList.remove("active"));
+      document
+        .querySelectorAll("#live-filter-pills .filter-pill")
+        .forEach((p) => p.classList.remove("active"));
       pill.classList.add("active");
-      liveActiveFilter = pill.dataset.filter;
-      applyLiveFilter();
+      state.tierFilter = pill.dataset.filter;
+      applyTierFilter();
     });
   });
 }
 
-function applyLiveFilter() {
-  const tier1 = document.getElementById("tier1-section");
-  const tier2 = document.getElementById("tier2-section");
-  if (!tier1 || !tier2) return;
-
-  if (liveActiveFilter === "all") {
-    tier1.style.display = "block";
-    tier2.style.display = "block";
-  } else if (liveActiveFilter === "exact") {
-    tier1.style.display = "block";
-    tier2.style.display = "none";
-  } else if (liveActiveFilter === "lookalike") {
-    tier1.style.display = "none";
-    tier2.style.display = "block";
-  }
+function applyTierFilter() {
+  show("tier1-section", state.tierFilter !== "lookalike");
+  show("tier2-section", state.tierFilter !== "exact");
 }
+
+// ---------------------------------------------------------------------------
+// Source frame modal
+// ---------------------------------------------------------------------------
 
 function initModal() {
-  const modal = document.getElementById("source-frame-modal");
-  const closeBtn = document.getElementById("close-modal-btn");
-
-  closeBtn.addEventListener("click", () => {
+  const modal = byId("source-frame-modal");
+  byId("close-modal-btn")?.addEventListener("click", () => {
     modal.style.display = "none";
   });
-
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) {
-      modal.style.display = "none";
-    }
+  modal?.addEventListener("click", (e) => {
+    if (e.target === modal) modal.style.display = "none";
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal) modal.style.display = "none";
   });
 }
 
 function openSourceFrameModal(prod) {
-  const modal = document.getElementById("source-frame-modal");
-  const sourceImg = document.getElementById("modal-source-img");
-  const prodImg = document.getElementById("modal-product-img");
-  const streamTag = document.getElementById("modal-stream-name");
-  const prodTitle = document.getElementById("modal-product-title");
-  const prodPrice = document.getElementById("modal-product-price");
-  const detectionLabel = document.getElementById("modal-detection-label");
+  const modal = byId("source-frame-modal");
+  const sourceImg = byId("modal-source-img");
+  const prodImg = byId("modal-product-img");
 
-  const fallbackSource = getProductThumbnail({ ...prod, title: "Video Stream Frame" });
-  const fallbackProduct = getProductThumbnail(prod);
-
-  const sourceSrc = prod.sourceCrop || (currentScanData && (currentScanData.croppedThumbnail || currentScanData.frameSnapshot)) || fallbackSource;
-  const prodSrc = prod.image || fallbackProduct;
+  const fallback = placeholderThumbnail(prod);
+  const sourceSrc =
+    prod.sourceCrop || prod.thumbnail || state.scan?.croppedThumbnail || state.scan?.frameSnapshot || fallback;
 
   sourceImg.src = sourceSrc;
-  sourceImg.onerror = () => { sourceImg.src = fallbackSource; };
+  sourceImg.onerror = () => {
+    sourceImg.src = fallback;
+  };
 
-  prodImg.src = prodSrc;
-  prodImg.onerror = () => { prodImg.src = fallbackProduct; };
+  prodImg.src = prod.image || fallback;
+  prodImg.onerror = () => {
+    prodImg.src = fallback;
+  };
 
-  streamTag.textContent = prod.streamTitle || prod.lastStream || (currentScanData?.streamType) || "Live Video Stream";
-  prodTitle.textContent = prod.title || "Amazon Product";
-  prodPrice.textContent = `$${Number(prod.price || 29.99).toFixed(2)}`;
-
-  if (detectionLabel) {
-    detectionLabel.textContent = prod.detectionLabel || prod.matchReason || `${prod.title} (detected in live video frame)`;
-  }
+  byId("modal-stream-name").textContent =
+    prod.streamTitle || prod.lastStream || state.scan?.streamType || "Live Stream";
+  byId("modal-product-title").textContent = prod.title || "Detected item";
+  byId("modal-product-price").textContent = formatPrice(prod.price) || "Price not confirmed";
+  byId("modal-detection-label").textContent =
+    prod.matchReason || prod.detectionLabel || "Detected in the live video frame";
 
   modal.style.display = "flex";
 }
 
-
+// ---------------------------------------------------------------------------
+// Messaging
+// ---------------------------------------------------------------------------
 
 function initListeners() {
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === "local") {
-      if (changes.isScanning && changes.isScanning.newValue) {
-        showScanningState();
-      }
-      if (changes.latestScanResults && changes.latestScanResults.newValue) {
-        renderScanResults(changes.latestScanResults.newValue);
-      }
-      if (changes.discoveredCatalog && changes.discoveredCatalog.newValue) {
-        currentCatalog = changes.discoveredCatalog.newValue;
-        renderCatalog();
-      }
-      if (changes.cartItems && changes.cartItems.newValue) {
-        renderCart(changes.cartItems.newValue);
-      }
-      if (changes.analytics && changes.analytics.newValue) {
-        renderAnalytics(changes.analytics.newValue);
-      }
+    if (area !== "local") return;
+    if (changes.isScanning?.newValue) showScanningState();
+    if (changes.latestScanResults?.newValue) renderScanResults(changes.latestScanResults.newValue);
+    if (changes.discoveredCatalog) {
+      state.catalog = changes.discoveredCatalog.newValue || [];
+      renderCatalog();
     }
+    if (changes.cartItems) renderCart(changes.cartItems.newValue || []);
+    if (changes.analytics?.newValue) renderAnalytics(changes.analytics.newValue);
   });
 
   chrome.runtime.onMessage.addListener((message) => {
-    if (message.action === "SCAN_RESULTS_UPDATED") {
-      renderScanResults(message.data);
-    }
-    if (message.action === "CATALOG_UPDATED") {
-      currentCatalog = message.discoveredCatalog;
-      renderCatalog();
-    }
-    if (message.action === "CART_UPDATED") {
-      renderCart(message.cartItems);
-    }
-    if (message.action === "ANALYTICS_UPDATED") {
-      renderAnalytics(message.analytics);
+    switch (message.action) {
+      case "SCAN_RESULTS_UPDATED":
+        renderScanResults(message.data);
+        break;
+      case "SCAN_FAILED":
+        showScanError(message.error);
+        break;
+      case "CATALOG_UPDATED":
+        state.catalog = message.discoveredCatalog || [];
+        renderCatalog();
+        break;
+      case "CART_UPDATED":
+        renderCart(message.cartItems || []);
+        break;
+      case "ANALYTICS_UPDATED":
+        renderAnalytics(message.analytics);
+        break;
     }
   });
 
-  // Direct Scan Button Handlers
-  const directBtn = document.getElementById("direct-scan-btn");
-  const radarBtn = document.getElementById("radar-scan-trigger");
-  const rescanBtn = document.getElementById("rescan-btn");
-  const clearCartBtn = document.getElementById("clear-cart-btn");
+  byId("direct-scan-btn")?.addEventListener("click", triggerDirectScan);
+  byId("radar-scan-trigger")?.addEventListener("click", triggerDirectScan);
+  byId("rescan-btn")?.addEventListener("click", triggerDirectScan);
+  byId("retry-scan-btn")?.addEventListener("click", triggerDirectScan);
 
-  if (directBtn) directBtn.addEventListener("click", triggerDirectScan);
-  if (radarBtn) radarBtn.addEventListener("click", triggerDirectScan);
-  if (rescanBtn) rescanBtn.addEventListener("click", triggerDirectScan);
-  if (clearCartBtn) {
-    clearCartBtn.addEventListener("click", () => {
-      chrome.storage.local.set({ cartItems: [] }, () => {
-        renderCart([]);
-      });
-    });
-  }
+  byId("clear-cart-btn")?.addEventListener("click", () => {
+    chrome.runtime.sendMessage({ action: "CLEAR_CART" });
+  });
 }
-
 
 function showScanningState() {
-  const emptyState = document.getElementById("scan-empty-state");
-  const loadingState = document.getElementById("scan-loading-state");
-  const resultsContainer = document.getElementById("scan-results-container");
-  if (emptyState) emptyState.style.display = "none";
-  if (resultsContainer) resultsContainer.style.display = "none";
-  if (loadingState) loadingState.style.display = "block";
+  show("scan-empty-state", false);
+  show("scan-error-state", false);
+  show("scan-results-container", false);
+  show("scan-loading-state", true);
 }
 
-function hideScanningState() {
-  const loadingState = document.getElementById("scan-loading-state");
-  if (loadingState) loadingState.style.display = "none";
-  if (currentScanData && currentScanData.items && (
-    (currentScanData.items.exactMatches && currentScanData.items.exactMatches.length > 0) ||
-    (currentScanData.items.lookAlikes && currentScanData.items.lookAlikes.length > 0)
-  )) {
-    const resultsContainer = document.getElementById("scan-results-container");
-    if (resultsContainer) resultsContainer.style.display = "block";
-  } else {
-    const emptyState = document.getElementById("scan-empty-state");
-    if (emptyState) emptyState.style.display = "block";
-  }
+function showScanError(message) {
+  show("scan-loading-state", false);
+  show("scan-results-container", false);
+  show("scan-empty-state", false);
+  const text = byId("scan-error-text");
+  if (text) text.textContent = message || "The scan could not be completed.";
+  show("scan-error-state", true);
 }
 
-async function triggerDirectScan() {
+function triggerDirectScan() {
   showScanningState();
 
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    const activeTab = tabs[0];
-    const streamTitle = activeTab ? activeTab.title : "Live Stream";
+  chrome.storage.local.get(["geminiApiKey"], (res = {}) => {
+    if (!res.geminiApiKey) {
+      showScanError("Add your Gemini API key in the Setup tab to start scanning.");
+      return;
+    }
 
-    chrome.runtime.sendMessage({ action: "CAPTURE_VISIBLE_TAB" }, (captureRes) => {
-      const capturedImage = captureRes?.dataUrl;
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const streamTitle = tabs?.[0]?.title || "Live Stream";
 
-      chrome.storage.local.get(["geminiApiKey"], (storageRes) => {
-        const apiKey = storageRes.geminiApiKey || "";
-
-        if (capturedImage) {
-
-          chrome.runtime.sendMessage({
-            action: "ANALYZE_WITH_AI",
-            imageBase64: capturedImage,
-            apiKey: apiKey,
-            streamContext: { title: streamTitle }
-          }, (aiRes) => {
-            if (aiRes && aiRes.success && aiRes.data) {
-              renderScanResults(aiRes.data);
-            } else {
-              hideScanningState();
-            }
-          });
-        } else {
-          hideScanningState();
+      chrome.runtime.sendMessage({ action: "CAPTURE_VISIBLE_TAB" }, (capture) => {
+        if (!capture?.dataUrl) {
+          showScanError(
+            capture?.error ||
+              "Could not capture this tab. StreamSnap works on YouTube, Twitch, TikTok, Facebook and Kick."
+          );
+          return;
         }
+
+        chrome.runtime.sendMessage(
+          {
+            action: "ANALYZE_WITH_AI",
+            imageBase64: capture.dataUrl,
+            apiKey: res.geminiApiKey,
+            streamContext: { title: streamTitle }
+          },
+          (aiRes) => {
+            if (aiRes?.success && aiRes.data) renderScanResults(aiRes.data);
+            else showScanError(aiRes?.error || "Analysis failed.");
+          }
+        );
       });
     });
   });
 }
 
-
 function loadInitialData() {
-  chrome.storage.local.get(["latestScanResults", "discoveredCatalog", "cartItems", "analytics", "affiliateTag"], (res) => {
-    if (res) {
+  chrome.storage.local.get(
+    ["latestScanResults", "discoveredCatalog", "cartItems", "analytics", "affiliateTag"],
+    (res = {}) => {
+      if (res.affiliateTag) state.affiliateTag = res.affiliateTag;
+      state.catalog = res.discoveredCatalog || [];
+      state.cart = res.cartItems || [];
+
       if (res.latestScanResults) renderScanResults(res.latestScanResults);
-      if (res.discoveredCatalog) {
-        currentCatalog = res.discoveredCatalog;
-        renderCatalog();
-      }
-      if (res.cartItems) renderCart(res.cartItems);
-      if (res.analytics) renderAnalytics(res.analytics);
-      if (res.affiliateTag) userAffiliateTag = res.affiliateTag;
+      renderCatalog();
+      renderCart(state.cart);
+      renderAnalytics(res.analytics);
     }
-  });
+  );
 }
 
+// ---------------------------------------------------------------------------
+// Live scan rendering
+// ---------------------------------------------------------------------------
+
 function renderScanResults(data) {
-  if (!data || !data.items) return;
-  currentScanData = data;
+  if (!data?.items) return;
+  state.scan = data;
 
-  const emptyState = document.getElementById("scan-empty-state");
-  const loadingState = document.getElementById("scan-loading-state");
-  const resultsContainer = document.getElementById("scan-results-container");
-  const streamTag = document.getElementById("stream-name-tag");
-  const countBadge = document.getElementById("scanned-count");
-
-  if (emptyState) emptyState.style.display = "none";
-  if (loadingState) loadingState.style.display = "none";
-  if (resultsContainer) resultsContainer.style.display = "block";
+  show("scan-empty-state", false);
+  show("scan-loading-state", false);
+  show("scan-error-state", false);
+  show("scan-results-container", true);
 
   const { exactMatches = [], lookAlikes = [] } = data.items;
-  const totalCount = (exactMatches?.length || 0) + (lookAlikes?.length || 0);
-  if (countBadge) countBadge.textContent = totalCount;
+  const total = exactMatches.length + lookAlikes.length;
 
+  const countBadge = byId("scanned-count");
+  if (countBadge) countBadge.textContent = total;
+
+  const streamTag = byId("stream-name-tag");
   if (streamTag) {
-    const rawTitle = data.streamType ? data.streamType.replace(/^🔴\s*/, '') : 'LIVE STREAM';
-    streamTag.textContent = `🔴 ${rawTitle.slice(0, 32)}${rawTitle.length > 32 ? '...' : ''}`;
+    const label = truncate(String(data.streamType || "Live Stream").replace(/^🔴\s*/, ""), 32);
+    streamTag.textContent = data.fromCache ? `🔴 ${label} · cached` : `🔴 ${label}`;
   }
 
-  const cropBox = document.getElementById("crop-preview-box");
-  const cropImg = document.getElementById("crop-preview-img");
+  const cropBox = byId("crop-preview-box");
+  const cropImg = byId("crop-preview-img");
   if (data.croppedThumbnail && cropBox && cropImg) {
     cropImg.src = data.croppedThumbnail;
     cropBox.style.display = "block";
@@ -398,391 +424,343 @@ function renderScanResults(data) {
     cropBox.style.display = "none";
   }
 
-  // Render Tier 1 (Exact Matches)
-  const exactList = document.getElementById("exact-matches-list");
-  if (exactList) {
-    exactList.innerHTML = "";
-    if (exactMatches && exactMatches.length > 0) {
-      exactMatches.forEach((prod) => {
-        exactList.appendChild(createProductCard(prod, "exact"));
-      });
-    } else {
-      exactList.innerHTML = `<div class="empty-state-mini" style="font-size:11px; color:#9CA3AF; padding:8px 0;">No exact brand barcode matches in this frame.</div>`;
-    }
-  }
+  renderList("exact-matches-list", exactMatches, "No high-confidence matches in this frame.");
+  renderList("lookalikes-list", lookAlikes, "No look-alike suggestions for this frame.");
 
-  // Render Tier 2 (Look-Alikes)
-  const lookalikeList = document.getElementById("lookalikes-list");
-  if (lookalikeList) {
-    lookalikeList.innerHTML = "";
-    if (lookAlikes && lookAlikes.length > 0) {
-      lookAlikes.forEach((prod) => {
-        lookalikeList.appendChild(createProductCard(prod, "lookalike"));
-      });
-    } else {
-      lookalikeList.innerHTML = `<div class="empty-state-mini" style="font-size:11px; color:#9CA3AF; padding:8px 0;">No look-alike items needed.</div>`;
-    }
-  }
-
-  applyLiveFilter();
+  applyTierFilter();
 }
 
-/**
- * Render Persistent Deduplicated Catalog Tab
- */
-function renderCatalog() {
-  const catalogCountBadge = document.getElementById("catalog-count");
-  const statsText = document.getElementById("catalog-stats-text");
-  const emptyState = document.getElementById("catalog-empty-state");
-  const list = document.getElementById("catalog-cards-list");
+function renderList(containerId, items, emptyMessage) {
+  const container = byId(containerId);
+  if (!container) return;
+  container.replaceChildren();
 
-  if (catalogCountBadge) catalogCountBadge.textContent = currentCatalog.length;
-
-  // Apply filters
-  let filtered = currentCatalog;
-  if (currentFilterCategory !== "all") {
-    filtered = filtered.filter(item => (item.category || "").toLowerCase() === currentFilterCategory.toLowerCase());
-  }
-  if (currentSearchQuery) {
-    filtered = filtered.filter(item => 
-      (item.title || "").toLowerCase().includes(currentSearchQuery) ||
-      (item.category || "").toLowerCase().includes(currentSearchQuery) ||
-      (item.streamTitle || "").toLowerCase().includes(currentSearchQuery)
-    );
-  }
-
-  if (statsText) {
-    const totalVal = currentCatalog.reduce((sum, i) => sum + Number(i.price || 0), 0);
-    statsText.textContent = `${currentCatalog.length} Unique Products • $${totalVal.toFixed(2)} Total Value`;
-  }
-
-  if (!list) return;
-
-  if (filtered.length === 0) {
-    list.innerHTML = "";
-    if (emptyState) emptyState.style.display = "block";
+  if (!items.length) {
+    const empty = el("div", "empty-state-mini", emptyMessage);
+    empty.style.cssText = "font-size:11px;color:#9CA3AF;padding:8px 0;";
+    container.appendChild(empty);
     return;
   }
 
-  if (emptyState) emptyState.style.display = "none";
-  list.innerHTML = "";
-
-  filtered.forEach((prod) => {
-    list.appendChild(createCatalogProductCard(prod));
-  });
+  items.forEach((prod) => container.appendChild(createProductCard(prod)));
 }
 
-function getProductThumbnail(prod) {
-  const title = (prod.title || prod.detectionLabel || "").toLowerCase();
-  
-  if (prod.image && prod.image.startsWith("http") && !prod.image.includes("placeholder")) {
-    return prod.image;
-  }
-  
-  let icon = "🛍️";
-  let bg = "#FF9900";
-  let categoryLabel = prod.category || "Amazon Item";
+// ---------------------------------------------------------------------------
+// Catalog rendering
+// ---------------------------------------------------------------------------
 
-  if (title.includes("plate") || title.includes("weight") || title.includes("dumbbell") || title.includes("gym") || title.includes("fitness")) {
-    icon = "🏋️‍♂️";
-    bg = "#2563EB";
-    categoryLabel = "Gym & Fitness";
-  } else if (title.includes("costume") || title.includes("bodysuit") || title.includes("cosplay")) {
-    icon = "🦸‍♂️";
-    bg = "#DC2626";
-    categoryLabel = "Cosplay";
-  } else if (title.includes("hoodie") || title.includes("jacket") || title.includes("shirt") || title.includes("streetwear")) {
-    icon = "👕";
-    bg = "#10B981";
-    categoryLabel = "Streetwear";
-  } else if (title.includes("mic") || title.includes("microphone") || title.includes("shure")) {
-    icon = "🎙️";
-    bg = "#6366F1";
-    categoryLabel = "Audio & Mic";
-  } else if (title.includes("headphone") || title.includes("sony") || title.includes("airpods")) {
-    icon = "🎧";
-    bg = "#8B5CF6";
-    categoryLabel = "Headphones";
-  } else if (title.includes("light") || title.includes("strobe") || title.includes("govee") || title.includes("elgato")) {
-    icon = "💡";
-    bg = "#F59E0B";
-    categoryLabel = "Lighting";
-  } else if (title.includes("cup") || title.includes("tumbler") || title.includes("stanley") || title.includes("bottle")) {
-    icon = "🥤";
-    bg = "#EC4899";
-    categoryLabel = "Drinkware";
-  } else if (title.includes("deck") || title.includes("controller") || title.includes("keyboard") || title.includes("pc")) {
-    icon = "🎮";
-    bg = "#14B8A6";
-    categoryLabel = "Gaming";
+function renderCatalog() {
+  const countBadge = byId("catalog-count");
+  if (countBadge) countBadge.textContent = state.catalog.length;
+
+  let filtered = state.catalog;
+
+  if (state.categoryFilter !== "all") {
+    const allowed = CATEGORY_ALIASES[state.categoryFilter] || [state.categoryFilter];
+    filtered = filtered.filter((item) => allowed.includes(String(item.category || "").toLowerCase()));
+  }
+
+  if (state.searchQuery) {
+    const q = state.searchQuery;
+    filtered = filtered.filter((item) =>
+      [item.title, item.category, item.streamTitle]
+        .some((field) => String(field || "").toLowerCase().includes(q))
+    );
+  }
+
+  const summary = byId("catalog-summary-text");
+  if (summary) {
+    const priced = state.catalog.filter((i) => typeof i.price === "number");
+    const total = priced.reduce((sum, i) => sum + i.price, 0);
+    summary.textContent = priced.length
+      ? `${state.catalog.length} products • $${total.toFixed(2)} across ${priced.length} priced`
+      : `${state.catalog.length} products saved`;
+  }
+
+  const list = byId("catalog-cards-list");
+  if (!list) return;
+  list.replaceChildren();
+
+  if (!filtered.length) {
+    show("catalog-empty-state", true);
+    return;
+  }
+
+  show("catalog-empty-state", false);
+  filtered.forEach((prod) => list.appendChild(createProductCard(prod, { catalog: true })));
+}
+
+// ---------------------------------------------------------------------------
+// Product card
+// ---------------------------------------------------------------------------
+
+function placeholderThumbnail(prod) {
+  const title = String(prod.title || prod.detectionLabel || "").toLowerCase();
+  const table = [
+    [["plate", "weight", "dumbbell", "gym", "fitness"], "🏋️", "#2563EB", "Gym & Fitness"],
+    [["costume", "bodysuit", "cosplay"], "🦸", "#DC2626", "Cosplay"],
+    [["hoodie", "jacket", "shirt", "streetwear"], "👕", "#10B981", "Streetwear"],
+    [["mic", "microphone", "shure"], "🎙️", "#6366F1", "Audio"],
+    [["headphone", "airpods", "sony"], "🎧", "#8B5CF6", "Headphones"],
+    [["light", "govee", "elgato"], "💡", "#F59E0B", "Lighting"],
+    [["cup", "tumbler", "stanley", "bottle"], "🥤", "#EC4899", "Drinkware"],
+    [["deck", "controller", "keyboard"], "🎮", "#14B8A6", "Gaming"]
+  ];
+
+  let [icon, bg, label] = ["🛍️", "#FF9900", prod.category || "Detected item"];
+  for (const [keywords, i, b, l] of table) {
+    if (keywords.some((k) => title.includes(k))) {
+      [icon, bg, label] = [i, b, l];
+      break;
+    }
   }
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
     <rect width="120" height="120" rx="16" fill="#131924" stroke="${bg}" stroke-width="2"/>
-    <circle cx="60" cy="46" r="28" fill="${bg}" opacity="0.25" />
+    <circle cx="60" cy="46" r="28" fill="${bg}" opacity="0.25"/>
     <text x="60" y="55" font-size="32" text-anchor="middle" dominant-baseline="middle">${icon}</text>
-    <text x="60" y="96" font-size="9" font-weight="bold" fill="#F3F4F6" font-family="sans-serif" text-anchor="middle">${categoryLabel}</text>
+    <text x="60" y="96" font-size="9" font-weight="bold" fill="#F3F4F6" font-family="sans-serif" text-anchor="middle">${label}</text>
   </svg>`;
-
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
-function createProductCard(prod, type = "exact") {
-  const card = document.createElement("div");
-  card.className = "product-card";
+function createProductCard(prod, { catalog = false } = {}) {
+  const card = el("div", "product-card");
+  const title = prod.title || "Detected item";
+  const verified = Boolean(prod.verified) && isVerifiedAsin(prod.asin);
+  const fallback = placeholderThumbnail(prod);
 
-  const asin = prod.asin || "B0002E4Z8M";
-  const title = prod.title || "Amazon Live Stream Product";
-  
-  let priceStr = "29.99";
-  if (typeof prod.price === "number") {
-    priceStr = prod.price.toFixed(2);
-  } else if (typeof prod.price === "string") {
-    const num = parseFloat(prod.price.replace(/[^0-9.]/g, ""));
-    priceStr = isNaN(num) ? "29.99" : num.toFixed(2);
-  }
-
-  const thumbUrl = getProductThumbnail(prod);
-  const fallbackSvg = getProductThumbnail({ ...prod, image: null });
-
-  const matchPill = type === "exact"
-    ? `<span class="product-prime">prime</span>`
-    : `<span style="color:#F59E0B; font-weight:700; font-size:10px;">⚡ ${prod.similarityScore || 90}% Match</span>`;
-
-  const googleSearchUrl = `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(title)}`;
-
-  card.innerHTML = `
-    <div class="product-thumb">
-      <img src="${thumbUrl}" alt="${title}" referrerpolicy="no-referrer" />
-    </div>
-    <div class="product-details">
-      <div>
-        <div class="product-title" title="${title}">${title}</div>
-        <div class="product-meta-row">
-          <span class="product-price">$${priceStr}</span>
-          ${matchPill}
-          <span class="store-badge amazon">🛒 Amazon</span>
-        </div>
-        <div class="product-match-desc">${prod.matchReason || prod.detectionLabel || 'Detected in live stream'}</div>
-      </div>
-      <div class="card-actions">
-        <button class="source-frame-btn" title="View exact video frame">
-          <span>📸 Frame</span>
-        </button>
-        <button class="add-cart-btn" data-asin="${asin}">
-          <span>🛒 Add</span>
-        </button>
-        <a href="${getAmazonProductUrl(asin, title, userAffiliateTag)}" target="_blank" class="view-btn amazon-link" title="Open on Amazon">
-          <span>Amazon ↗</span>
-        </a>
-        <a href="${googleSearchUrl}" target="_blank" class="view-btn web-search-link" title="Search on Web / Google Shopping">
-          <span>🌐 Web</span>
-        </a>
-      </div>
-    </div>
-  `;
-
-  // Image error fallback
-  const imgEl = card.querySelector(".product-thumb img");
-  if (imgEl) {
-    imgEl.addEventListener("error", () => {
-      imgEl.src = fallbackSvg;
-    });
-  }
-
-  // Source Frame modal trigger
-  const frameBtn = card.querySelector(".source-frame-btn");
-  frameBtn.addEventListener("click", () => {
-    openSourceFrameModal(prod);
+  // --- thumbnail ---
+  const thumb = el("div", "product-thumb");
+  const img = document.createElement("img");
+  img.src = prod.image || prod.thumbnail || prod.sourceCrop || fallback;
+  img.alt = title;
+  img.referrerPolicy = "no-referrer";
+  img.loading = "lazy";
+  img.addEventListener("error", () => {
+    img.src = fallback;
   });
+  thumb.appendChild(img);
 
-  // Track click on link
-  const amazonLink = card.querySelector(".amazon-link");
+  // --- details ---
+  const details = el("div", "product-details");
+  const top = el("div");
+
+  const titleNode = el("div", "product-title", title);
+  titleNode.title = title;
+  top.appendChild(titleNode);
+
+  const metaRow = el("div", "product-meta-row");
+  const price = formatPrice(prod.price);
+  metaRow.appendChild(
+    price ? el("span", "product-price", price) : el("span", "product-price-unknown", "Price on Amazon")
+  );
+
+  if (verified) {
+    metaRow.appendChild(el("span", "product-verified", "✓ Verified listing"));
+  } else {
+    const pill = el("span", "product-unverified", "Visual match");
+    pill.title = "Identified from the video. Opens an Amazon search rather than a specific listing.";
+    metaRow.appendChild(pill);
+  }
+
+  if (catalog) {
+    metaRow.appendChild(el("span", "catalog-seen-tag", `Seen ${prod.sightingCount || 1}×`));
+  } else if (typeof prod.confidence === "number" && prod.confidence > 0) {
+    metaRow.appendChild(el("span", "product-confidence", `${prod.confidence}% confidence`));
+  }
+  top.appendChild(metaRow);
+
+  const desc = catalog
+    ? `${prod.category || "Gear"} • ${truncate(prod.streamTitle || "Stream", 24)}`
+    : prod.matchReason || prod.detectionLabel || "Detected in the live stream";
+  top.appendChild(el("div", "product-match-desc", desc));
+
+  // --- actions ---
+  const actions = el("div", "card-actions");
+
+  const frameBtn = el("button", "source-frame-btn");
+  frameBtn.title = "View the video frame this came from";
+  frameBtn.appendChild(el("span", null, "📸 Frame"));
+  frameBtn.addEventListener("click", () => openSourceFrameModal(prod));
+  actions.appendChild(frameBtn);
+
+  if (verified) {
+    const addBtn = el("button", "add-cart-btn");
+    addBtn.appendChild(el("span", null, "🛒 Add"));
+    addBtn.addEventListener("click", () => addToCart(prod, addBtn));
+    actions.appendChild(addBtn);
+  }
+
+  const amazonLink = el("a", "view-btn amazon-link");
+  amazonLink.href = getAmazonProductUrl(prod.asin, title, state.affiliateTag);
+  amazonLink.target = "_blank";
+  amazonLink.rel = "noopener noreferrer";
+  amazonLink.title = verified ? "Open this listing on Amazon" : "Search Amazon for this item";
+  amazonLink.appendChild(el("span", null, verified ? "Amazon ↗" : "Search ↗"));
   amazonLink.addEventListener("click", () => {
-    chrome.runtime.sendMessage({ action: "TRACK_AMAZON_CLICK", price: parseFloat(priceStr), category: prod.category });
+    chrome.runtime.sendMessage({ action: "TRACK_AMAZON_CLICK" });
   });
+  actions.appendChild(amazonLink);
 
-  // Add to Cart action
-  const addBtn = card.querySelector(".add-cart-btn");
-  addBtn.addEventListener("click", () => {
-    addToCart({ ...prod, asin, title, price: parseFloat(priceStr), image: thumbUrl }, addBtn);
-  });
+  const webLink = el("a", "view-btn web-search-link");
+  webLink.href = getWebSearchUrl(title);
+  webLink.target = "_blank";
+  webLink.rel = "noopener noreferrer";
+  webLink.title = "Compare prices on Google Shopping";
+  webLink.appendChild(el("span", null, "🌐 Web"));
+  actions.appendChild(webLink);
 
-  return card;
-}
-
-function createCatalogProductCard(prod) {
-  const card = document.createElement("div");
-  card.className = "product-card";
-
-  const asin = prod.asin || "B0002E4Z8M";
-  const title = prod.title || "Amazon Product";
-  const priceStr = Number(prod.price || 29.99).toFixed(2);
-  const thumbUrl = getProductThumbnail(prod);
-  const fallbackSvg = getProductThumbnail({ ...prod, image: null });
-  const googleSearchUrl = `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(title)}`;
-
-  card.innerHTML = `
-    <div class="product-thumb">
-      <img src="${thumbUrl}" alt="${title}" referrerpolicy="no-referrer" />
-    </div>
-    <div class="product-details">
-      <div>
-        <div class="product-title" title="${title}">${title}</div>
-        <div class="product-meta-row">
-          <span class="product-price">$${priceStr}</span>
-          <span class="catalog-seen-tag">Seen ${prod.sightingCount || 1}x</span>
-          <span class="store-badge amazon">🛒 Amazon</span>
-        </div>
-        <div class="product-match-desc">📁 ${prod.category || 'Gear'} • From: ${prod.streamTitle?.slice(0, 24) || 'Stream'}</div>
-      </div>
-      <div class="card-actions">
-        <button class="source-frame-btn" title="View source video snapshot">
-          <span>📸 Frame</span>
-        </button>
-        <button class="add-cart-btn" data-asin="${asin}">
-          <span>🛒 Add</span>
-        </button>
-        <a href="${getAmazonProductUrl(asin, title, userAffiliateTag)}" target="_blank" class="view-btn amazon-link" title="Open on Amazon">
-          <span>↗</span>
-        </a>
-        <a href="${googleSearchUrl}" target="_blank" class="view-btn web-search-link" title="Compare on Web / Google Shopping">
-          <span>🌐 Web</span>
-        </a>
-        <button class="view-btn delete-btn" title="Delete from catalog" style="color:#EF4444;">
-          <span>✕</span>
-        </button>
-      </div>
-    </div>
-  `;
-
-
-  // Image error fallback
-  const imgEl = card.querySelector(".product-thumb img");
-  if (imgEl) {
-    imgEl.addEventListener("error", () => {
-      imgEl.src = fallbackSvg;
+  if (catalog) {
+    const delBtn = el("button", "view-btn delete-btn");
+    delBtn.title = "Remove from history";
+    delBtn.style.color = "#EF4444";
+    delBtn.appendChild(el("span", null, "✕"));
+    delBtn.addEventListener("click", () => {
+      chrome.runtime.sendMessage({ action: "DELETE_CATALOG_ITEM", id: prod.id });
     });
+    actions.appendChild(delBtn);
   }
 
-  // Source Frame modal trigger
-  const frameBtn = card.querySelector(".source-frame-btn");
-  frameBtn.addEventListener("click", () => {
-    openSourceFrameModal(prod);
-  });
-
-  // Track click on link
-  const amazonLink = card.querySelector(".amazon-link");
-  amazonLink.addEventListener("click", () => {
-    chrome.runtime.sendMessage({ action: "TRACK_AMAZON_CLICK", price: parseFloat(priceStr), category: prod.category });
-  });
-
-  // Add to Cart
-  const addBtn = card.querySelector(".add-cart-btn");
-  addBtn.addEventListener("click", () => {
-    addToCart({ ...prod, asin, title, price: parseFloat(priceStr), image: thumbUrl }, addBtn);
-  });
-
-  // Delete
-  const delBtn = card.querySelector(".delete-btn");
-  delBtn.addEventListener("click", () => {
-    chrome.runtime.sendMessage({ action: "DELETE_CATALOG_ITEM", id: prod.id });
-  });
-
+  details.append(top, actions);
+  card.append(thumb, details);
   return card;
 }
 
 function addToCart(prod, buttonEl) {
-  const originalText = buttonEl.innerHTML;
-  buttonEl.innerHTML = `<span>✓ Cart</span>`;
+  const original = buttonEl.textContent;
+  buttonEl.textContent = "✓ Added";
   buttonEl.style.background = "#10B981";
 
-  chrome.runtime.sendMessage({
-    action: "ADD_TO_CART",
-    product: prod
-  }, (res) => {
-    if (res && res.cartItems) {
-      renderCart(res.cartItems);
+  chrome.runtime.sendMessage(
+    {
+      action: "ADD_TO_CART",
+      product: {
+        asin: prod.asin,
+        title: prod.title,
+        price: typeof prod.price === "number" ? prod.price : null,
+        image: prod.image || prod.thumbnail || null,
+        category: prod.category
+      }
+    },
+    (res) => {
+      if (res?.cartItems) renderCart(res.cartItems);
     }
-  });
-
-  const directCartUrl = getAmazonCartUrl(prod.asin, prod.title, 1, userAffiliateTag);
-  window.open(directCartUrl, "_blank");
+  );
 
   setTimeout(() => {
-    buttonEl.innerHTML = originalText;
+    buttonEl.textContent = original;
     buttonEl.style.background = "";
-  }, 2000);
+  }, 1800);
 }
 
+// ---------------------------------------------------------------------------
+// Cart
+// ---------------------------------------------------------------------------
+
 function renderCart(items) {
-  currentCart = items || [];
-  const countBadge = document.getElementById("cart-count");
-  const emptyState = document.getElementById("cart-empty-state");
-  const contentView = document.getElementById("cart-content-view");
-  const list = document.getElementById("cart-items-list");
-  const subtotalEl = document.getElementById("cart-subtotal");
-  const checkoutBtn = document.getElementById("amazon-checkout-btn");
+  state.cart = items || [];
 
-  const totalQuantity = currentCart.reduce((sum, item) => sum + (item.quantity || 1), 0);
-  if (countBadge) countBadge.textContent = totalQuantity;
+  const countBadge = byId("cart-count");
+  if (countBadge) {
+    countBadge.textContent = state.cart.reduce((sum, i) => sum + (i.quantity || 1), 0);
+  }
 
-  if (currentCart.length === 0) {
-    if (emptyState) emptyState.style.display = "block";
-    if (contentView) contentView.style.display = "none";
+  if (!state.cart.length) {
+    show("cart-empty-state", true);
+    show("cart-content-view", false);
     return;
   }
 
-  if (emptyState) emptyState.style.display = "none";
-  if (contentView) contentView.style.display = "block";
-  list.innerHTML = "";
+  show("cart-empty-state", false);
+  show("cart-content-view", true);
 
-  let totalPrice = 0;
-  currentCart.forEach((item) => {
-    const itemTotal = Number(item.price) * (item.quantity || 1);
-    totalPrice += itemTotal;
+  const list = byId("cart-items-list");
+  if (!list) return;
+  list.replaceChildren();
 
-    const row = document.createElement("div");
-    row.className = "product-card";
+  let subtotal = 0;
+  let hasUnpriced = false;
+
+  state.cart.forEach((item) => {
+    const quantity = item.quantity || 1;
+    if (typeof item.price === "number") subtotal += item.price * quantity;
+    else hasUnpriced = true;
+
+    const row = el("div", "product-card");
     row.style.marginBottom = "8px";
-    row.innerHTML = `
-      <div class="product-thumb" style="width: 50px; height: 50px;">
-        <img src="${item.image}" alt="${item.title}" />
-      </div>
-      <div class="product-details">
-        <div class="product-title">${item.title}</div>
-        <div class="product-meta-row">
-          <span class="product-price">$${Number(item.price).toFixed(2)}</span>
-          <span style="font-size:11px; color:#9CA3AF;">Qty: ${item.quantity || 1}</span>
-        </div>
-      </div>
-    `;
+
+    const thumb = el("div", "product-thumb");
+    thumb.style.cssText = "width:50px;height:50px;";
+    const img = document.createElement("img");
+    img.src = item.image || placeholderThumbnail(item);
+    img.alt = item.title || "Cart item";
+    img.addEventListener("error", () => {
+      img.src = placeholderThumbnail(item);
+    });
+    thumb.appendChild(img);
+
+    const details = el("div", "product-details");
+    details.appendChild(el("div", "product-title", item.title || "Item"));
+
+    const meta = el("div", "product-meta-row");
+    meta.appendChild(
+      el("span", "product-price", formatPrice(item.price) || "Price on Amazon")
+    );
+    const qty = el("span", null, `Qty: ${quantity}`);
+    qty.style.cssText = "font-size:11px;color:#9CA3AF;";
+    meta.appendChild(qty);
+
+    const remove = el("button", "view-btn delete-btn", "✕");
+    remove.title = "Remove from cart";
+    remove.style.color = "#EF4444";
+    remove.addEventListener("click", () => {
+      chrome.runtime.sendMessage({
+        action: "REMOVE_CART_ITEM",
+        title: item.title,
+        asin: item.asin
+      });
+    });
+    meta.appendChild(remove);
+
+    details.appendChild(meta);
+    row.append(thumb, details);
     list.appendChild(row);
   });
 
-  if (subtotalEl) subtotalEl.textContent = `$${totalPrice.toFixed(2)}`;
+  const subtotalEl = byId("cart-subtotal");
+  if (subtotalEl) {
+    subtotalEl.textContent = hasUnpriced
+      ? `$${subtotal.toFixed(2)}+`
+      : `$${subtotal.toFixed(2)}`;
+  }
 
-  if (currentCart.length > 0 && checkoutBtn) {
-    checkoutBtn.href = getAmazonCartUrl(currentCart[0].asin, currentCart[0].title, currentCart[0].quantity || 1, userAffiliateTag);
+  // Previously only the first item was sent to Amazon. Send the whole cart.
+  const checkoutBtn = byId("amazon-checkout-btn");
+  if (checkoutBtn) {
+    checkoutBtn.href = getAmazonCartUrl(state.cart, state.affiliateTag);
+    checkoutBtn.rel = "noopener noreferrer";
   }
 }
 
+// ---------------------------------------------------------------------------
+// Analytics
+// ---------------------------------------------------------------------------
+
 function renderAnalytics(data) {
-  chrome.storage.local.get(["analytics", "affiliateTag"], (res) => {
-    const analytics = data || res.analytics || { totalScans: 0, amazonClicks: 0, cartAdds: 0, estimatedEarnings: 0 };
-    const tag = res.affiliateTag || "streamsnap-20";
+  chrome.storage.local.get(["analytics", "affiliateTag"], (res = {}) => {
+    const analytics = data ||
+      res.analytics || { totalScans: 0, amazonClicks: 0, cartAdds: 0, estimatedEarnings: 0 };
 
-    const scansEl = document.getElementById("metric-scans");
-    const clicksEl = document.getElementById("metric-clicks");
-    const cartEl = document.getElementById("metric-cart");
-    const earningsEl = document.getElementById("metric-earnings");
-    const tagEl = document.getElementById("active-tag-label");
+    const set = (id, value) => {
+      const node = byId(id);
+      if (node) node.textContent = value;
+    };
 
-    if (scansEl) scansEl.textContent = analytics.totalScans || 0;
-    if (clicksEl) clicksEl.textContent = analytics.amazonClicks || 0;
-    if (cartEl) cartEl.textContent = analytics.cartAdds || 0;
-    if (earningsEl) earningsEl.textContent = `$${Number(analytics.estimatedEarnings || 0).toFixed(2)}`;
-    if (tagEl) tagEl.textContent = tag;
+    set("metric-scans", analytics.totalScans || 0);
+    set("metric-clicks", analytics.amazonClicks || 0);
+    set("metric-cart", analytics.cartAdds || 0);
+    set("metric-earnings", `$${Number(analytics.estimatedEarnings || 0).toFixed(2)}`);
+    set("active-tag-label", res.affiliateTag || state.affiliateTag);
   });
 }
-

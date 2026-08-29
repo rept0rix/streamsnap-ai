@@ -513,6 +513,44 @@ body {
   font-weight: 800;
 }
 
+/* Price we could not confirm against a real listing. */
+.product-price-unknown {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Matched against a manually verified ASIN — safe to deep link. */
+.product-verified {
+  font-size: 9px;
+  background: rgba(16, 185, 129, 0.16);
+  color: #10B981;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* Visual detection only — links to a search, never a fabricated listing. */
+.product-unverified {
+  font-size: 9px;
+  background: rgba(156, 163, 175, 0.16);
+  color: #9CA3AF;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: help;
+}
+
+.product-confidence {
+  font-size: 9px;
+  color: var(--text-secondary);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .product-match-desc {
   font-size: 10px;
   color: var(--text-secondary);
