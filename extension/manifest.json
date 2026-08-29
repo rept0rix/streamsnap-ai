@@ -1,0 +1,71 @@
+{
+  "manifest_version": 3,
+  "name": "StreamSnap AI — Live Stream Visual Shopping",
+  "version": "1.2.0",
+  "description": "Shazam for Live Streams: Instant visual product detection and 1-Click Amazon Cart for YouTube, Twitch, TikTok & Facebook Live.",
+
+  "icons": {
+    "16": "assets/icons/icon16.png",
+    "48": "assets/icons/icon48.png",
+    "128": "assets/icons/icon128.png"
+  },
+  "action": {
+    "default_title": "Open StreamSnap AI",
+    "default_icon": {
+      "16": "assets/icons/icon16.png",
+      "48": "assets/icons/icon48.png",
+      "128": "assets/icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background/background.js",
+    "type": "module"
+  },
+
+  "side_panel": {
+    "default_path": "sidepanel/sidepanel.html"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; img-src 'self' data: https: blob:;"
+  },
+  "permissions": [
+
+    "sidePanel",
+    "activeTab",
+    "scripting",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "*://*.youtube.com/*",
+    "*://*.twitch.tv/*",
+    "*://*.tiktok.com/*",
+    "*://*.facebook.com/*",
+    "*://*.kick.com/*",
+    "<all_urls>"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.youtube.com/*",
+        "*://*.twitch.tv/*",
+        "*://*.tiktok.com/*",
+        "*://*.facebook.com/*",
+        "*://*.kick.com/*",
+        "<all_urls>"
+      ],
+      "js": ["content/content.js"],
+      "css": ["content/content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/*",
+        "demo/*"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

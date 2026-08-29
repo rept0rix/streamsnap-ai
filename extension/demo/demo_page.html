@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StreamSnap AI — Live Stream Testbed</title>
+  <link rel="stylesheet" href="demo_styles.css">
+  <link rel="stylesheet" href="../content/content.css">
+</head>
+<body>
+  <!-- Top Navigation Bar -->
+  <header class="demo-navbar">
+    <div class="demo-brand">
+      <div class="demo-logo-icon">⚡</div>
+      <div>
+        <span class="demo-title">StreamSnap AI</span>
+        <span class="demo-badge">LIVE TESTBED</span>
+      </div>
+    </div>
+
+    <!-- Channel Presets -->
+    <div class="channel-selector">
+      <span style="font-size:12px; color:var(--text-muted);">Switch Live Stream:</span>
+      <button class="channel-btn active" data-preset="tech_podcast">🎙️ Tech Podcast</button>
+      <button class="channel-btn" data-preset="gaming_stream">🎮 Gaming Battlestation</button>
+      <button class="channel-btn" data-preset="lifestyle_haul">👗 TikTok Haul</button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <div class="demo-container">
+    <!-- Stream Column -->
+    <div class="stream-column">
+      <div class="player-wrapper" id="player-container">
+        <!-- Canvas-Driven Simulated Video Stream -->
+        <canvas id="stream-canvas" width="1280" height="720" style="display:none;"></canvas>
+        <video id="demo-video-player" autoplay loop muted playsinline></video>
+      </div>
+
+      <!-- Stream Meta -->
+      <div class="stream-meta-card">
+        <div class="stream-title-row">
+          <div class="live-indicator"><span class="live-dot"></span> LIVE</div>
+          <div>
+            <h2 id="stream-title" style="font-size: 16px; font-weight: 700;">Tech Talk Weekly Live #42: Ultimate Creator Studio Tour</h2>
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;" id="stream-author">Hosted by Alex Rivera • Streaming to 14,280 viewers</div>
+          </div>
+        </div>
+        <div class="stream-stats">
+          <span>👥 14.2K Watching</span>
+          <span>👍 8.4K Likes</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat Column -->
+    <div class="chat-column">
+      <div class="chat-header">
+        <span>💬 Live Stream Chat</span>
+        <span style="font-size: 11px; color: #00D084;">● Connected</span>
+      </div>
+      <div class="chat-messages" id="chat-box">
+        <div class="chat-msg"><span class="chat-user" style="color: #FF7B00;">@dev_sam:</span><span class="chat-msg-text">What microphone is Alex using?? Sounds super crisp!</span></div>
+        <div class="chat-msg"><span class="chat-user" style="color: #00D084;">@gamer_kat:</span><span class="chat-msg-text">That olive hoodie is fire 🔥</span></div>
+        <div class="chat-msg chat-msg-highlight"><span class="chat-user" style="color: #FF9900;">⚡ StreamSnap AI:</span><span class="chat-msg-text">Click "Scan Live Products" on the player to get instant Amazon links!</span></div>
+        <div class="chat-msg"><span class="chat-user" style="color: #38BDF8;">@tech_dan:</span><span class="chat-msg-text">Look at that Elgato key light diffusion, looks amazing.</span></div>
+      </div>
+      <div class="chat-input-area">
+        <input type="text" class="chat-input" placeholder="Send a message in chat..." readonly />
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Set default preset for Content Script recognition
+    window.__STREAMSNAP_DEMO_PRESET__ = "tech_podcast";
+
+    // Setup Video Stream Canvas Generator
+    const canvas = document.getElementById("stream-canvas");
+    const ctx = canvas.getContext("2d");
+    const video = document.getElementById("demo-video-player");
+
+    let currentPreset = "tech_podcast";
+    let frameCount = 0;
+
+    const PRESET_CONFIGS = {
+      tech_podcast: {
+        title: "Tech Talk Weekly Live #42: Ultimate Creator Studio Tour",
+        author: "Hosted by Alex Rivera • Streaming to 14,280 viewers",
+        bgGradient: ["#141E30", "#243B55"],
+        items: [
+          { text: "🎙️ SHURE SM7B", x: 640, y: 380, color: "#00D084" },
+          { text: "🎧 AIRPODS MAX", x: 640, y: 180, color: "#00D084" },
+          { text: "💡 ELGATO KEY LIGHT", x: 1080, y: 180, color: "#00D084" },
+          { text: "🧥 OLIVE HOODIE", x: 640, y: 520, color: "#FFA41C" },
+          { text: "☕ CERAMIC MUG", x: 320, y: 580, color: "#A855F7" }
+        ]
+      },
+      gaming_stream: {
+        title: "VALORANT Ranked Grind to Radiant with Full Elgato Setup",
+        author: "Streaming on Twitch • 28,490 viewers",
+        bgGradient: ["#0F2027", "#2C5364"],
+        items: [
+          { text: "🎧 SONY WH-1000XM5", x: 640, y: 220, color: "#00D084" },
+          { text: "🕹️ STREAM DECK MK.2", x: 920, y: 560, color: "#00D084" },
+          { text: "🌈 GOVEE NEON LIGHT", x: 340, y: 140, color: "#FFA41C" },
+          { text: "🖱️ LEATHER DESK PAD", x: 640, y: 620, color: "#FFA41C" }
+        ]
+      },
+      lifestyle_haul: {
+        title: "Fall Fashion & Cozy Room Essentials Try-on Haul ✨",
+        author: "TikTok Live • 42,100 viewers",
+        bgGradient: ["#3A1C71", "#D76D77"],
+        items: [
+          { text: "🥤 STANLEY TUMBLER 40OZ", x: 420, y: 480, color: "#00D084" },
+          { text: "🧥 FLEECE HOODIE", x: 640, y: 380, color: "#FFA41C" },
+          { text: "✨ GOLD NECKLACE", x: 640, y: 320, color: "#A855F7" }
+        ]
+      }
+    };
+
+    function drawStreamFrame() {
+      frameCount++;
+      const config = PRESET_CONFIGS[currentPreset];
+
+      // Draw background gradient
+      const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      grad.addColorStop(0, config.bgGradient[0]);
+      grad.addColorStop(1, config.bgGradient[1]);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw studio grid & lighting ambience
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+      ctx.lineWidth = 1;
+      for (let x = 0; x < canvas.width; x += 60) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+
+      // Draw simulated studio host avatar / scene
+      ctx.fillStyle = "rgba(255, 153, 0, 0.08)";
+      ctx.beginPath();
+      ctx.arc(640, 360, 220 + Math.sin(frameCount * 0.05) * 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Draw Audio Waveform (Simulated Voice)
+      ctx.fillStyle = "#FF9900";
+      for (let i = 0; i < 40; i++) {
+        const height = Math.abs(Math.sin((frameCount + i * 4) * 0.1)) * 60 + 10;
+        ctx.fillRect(400 + i * 12, 680 - height, 6, height);
+      }
+
+      // Render Interactive Stream Objects
+      config.items.forEach((item) => {
+        ctx.save();
+        ctx.fillStyle = "rgba(19, 25, 33, 0.85)";
+        ctx.strokeStyle = item.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(item.x - 110, item.y - 30, 220, 60, 10);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "bold 15px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(item.text, item.x, item.y + 6);
+        ctx.restore();
+      });
+
+      requestAnimationFrame(drawStreamFrame);
+    }
+
+    // Capture Canvas to Video Stream
+    const stream = canvas.captureStream(30);
+    video.srcObject = stream;
+    drawStreamFrame();
+
+    // Preset Switching
+    document.querySelectorAll(".channel-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".channel-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        currentPreset = btn.dataset.preset;
+        window.__STREAMSNAP_DEMO_PRESET__ = currentPreset;
+
+        const config = PRESET_CONFIGS[currentPreset];
+        document.getElementById("stream-title").textContent = config.title;
+        document.getElementById("stream-author").textContent = config.author;
+
+        // Auto trigger video hook scan refresh if content script exists
+        const activeVideo = document.querySelector("video");
+        if (activeVideo && activeVideo.parentElement) {
+          const scanBtn = activeVideo.parentElement.querySelector(".streamsnap-floating-btn");
+          if (scanBtn) {
+            scanBtn.style.animation = "snap-pulse 0.4s 2";
+          }
+        }
+      });
+    });
+
+    // Simulated Chat Messages Stream
+    const chatBox = document.getElementById("chat-box");
+    const fakeMessages = [
+      { user: "@stream_viewer99", text: "Is that the Shure SM7B? Best mic in the game!" },
+      { user: "@sarah_style", text: "Where did you get that tumbler cup? Need the link!" },
+      { user: "@alex_fan", text: "Those Sony headphones have unmatched ANC honestly" },
+      { user: "@tech_geek", text: "StreamSnap detected all 4 items on screen instantly 🔥" }
+    ];
+
+    let chatIdx = 0;
+    setInterval(() => {
+      const msg = fakeMessages[chatIdx % fakeMessages.length];
+      chatIdx++;
+      const div = document.createElement("div");
+      div.className = "chat-msg";
+      div.innerHTML = `<span class="chat-user" style="color:#38BDF8;">${msg.user}:</span> <span class="chat-msg-text">${msg.text}</span>`;
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }, 4000);
+  </script>
+
+  <!-- Load Extension Content Script for standalone browser testing -->
+  <script src="../content/content.js"></script>
+</body>
+</html>

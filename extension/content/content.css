@@ -1,0 +1,294 @@
+/* StreamSnap AI — Content Script & Overlay Styles */
+
+:root {
+  --snap-primary: #FF9900;
+  --snap-primary-hover: #FFAC33;
+  --snap-glow: rgba(255, 153, 0, 0.45);
+  --snap-dark-bg: rgba(19, 25, 33, 0.88);
+  --snap-border: rgba(255, 153, 0, 0.35);
+  --snap-text: #FFFFFF;
+}
+
+/* Floating Action Button Group on Video */
+.streamsnap-btn-group {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 2147483640;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  pointer-events: auto;
+}
+
+.streamsnap-floating-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--snap-dark-bg);
+  color: var(--snap-text);
+  border: 1px solid var(--snap-border);
+  padding: 8px 14px;
+  border-radius: 9999px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 12px var(--snap-glow);
+  backdrop-filter: blur(8px);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.streamsnap-snip-btn {
+  background: linear-gradient(135deg, rgba(255, 153, 0, 0.95), rgba(255, 85, 0, 0.95));
+  color: #131921;
+  border-color: #FF9900;
+  font-weight: 700;
+  box-shadow: 0 4px 20px rgba(255, 153, 0, 0.5);
+}
+
+.streamsnap-snip-btn:hover {
+  background: #FF9900;
+  color: #000;
+  transform: translateY(-2px) scale(1.04);
+}
+
+.streamsnap-live-btn {
+  background: linear-gradient(135deg, #10B981, #059669);
+  color: #FFFFFF;
+  border-color: #10B981;
+  font-weight: 700;
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+}
+
+.streamsnap-live-btn.active {
+  background: linear-gradient(135deg, #EF4444, #DC2626);
+  border-color: #EF4444;
+  animation: live-mode-pulse 1.5s infinite;
+}
+
+@keyframes live-mode-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+}
+
+/* Click Target Ripple Pulse on Video */
+.streamsnap-click-pulse {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  margin-left: -30px;
+  margin-top: -30px;
+  border-radius: 50%;
+  border: 3px solid #FF9900;
+  background: rgba(255, 153, 0, 0.3);
+  box-shadow: 0 0 25px #FF9900, inset 0 0 15px #FF9900;
+  pointer-events: none;
+  z-index: 2147483647;
+  animation: snap-pulse-expand 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes snap-pulse-expand {
+  0% { transform: scale(0.3); opacity: 1; }
+  60% { transform: scale(1.6); opacity: 0.8; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+
+/* Interactive Snip Cropper Tool on Video */
+.streamsnap-interactive-cropper {
+  position: absolute;
+  inset: 0;
+  z-index: 2147483645;
+  background: rgba(0, 0, 0, 0.45);
+  cursor: crosshair;
+  user-select: none;
+  backdrop-filter: blur(1.5px);
+}
+
+.streamsnap-cropper-banner {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #131921;
+  color: #FFFFFF;
+  border: 2px solid #FF9900;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 153, 0, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  pointer-events: auto;
+  animation: snap-toast-in 0.3s ease-out;
+  z-index: 2147483648;
+}
+
+.streamsnap-cropper-close-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: #FFFFFF;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.streamsnap-cropper-close-btn:hover {
+  background: #EF4444;
+  color: #FFFFFF;
+  transform: scale(1.15);
+}
+
+
+.streamsnap-cropper-selection {
+  position: absolute;
+  border: 2px solid #FF9900;
+  background: rgba(255, 153, 0, 0.2);
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 153, 0, 0.6);
+  pointer-events: none;
+  border-radius: 4px;
+}
+
+
+/* YouTube Native Player Control Bar Icon */
+.streamsnap-ytp-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 40px !important;
+  height: 100% !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: transform 0.15s ease !important;
+}
+
+.streamsnap-ytp-btn:hover {
+  transform: scale(1.2) !important;
+  filter: drop-shadow(0 0 8px var(--snap-primary));
+}
+
+.streamsnap-bolt {
+  color: var(--snap-primary);
+  font-size: 15px;
+  animation: snap-pulse 2s infinite;
+}
+
+@keyframes snap-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.15); }
+}
+
+/* Video Scanning Laser Beam Effect */
+.streamsnap-scan-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2147483630;
+  overflow: hidden;
+  border: 2px solid var(--snap-primary);
+  border-radius: 8px;
+  box-shadow: inset 0 0 30px var(--snap-glow);
+  animation: snap-overlay-fade 2.2s forwards;
+}
+
+.streamsnap-scan-laser {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, var(--snap-primary), #FFFFFF, var(--snap-primary), transparent);
+  box-shadow: 0 0 15px var(--snap-primary), 0 0 30px var(--snap-primary);
+  animation: snap-laser-move 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes snap-laser-move {
+  0% { top: 0%; }
+  100% { top: 98%; }
+}
+
+@keyframes snap-overlay-fade {
+  0% { opacity: 0; }
+  15% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Bounding Box Highlights over Detected Products */
+.streamsnap-bbox {
+  position: absolute;
+  border: 2px solid var(--snap-primary);
+  background: rgba(255, 153, 0, 0.12);
+  border-radius: 6px;
+  pointer-events: auto;
+  cursor: pointer;
+  z-index: 2147483635;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 10px var(--snap-glow);
+  animation: snap-bbox-appear 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.streamsnap-bbox:hover {
+  background: rgba(255, 153, 0, 0.25);
+  border-color: #FFFFFF;
+  box-shadow: 0 0 18px var(--snap-primary);
+  transform: scale(1.02);
+}
+
+.streamsnap-bbox-tag {
+  position: absolute;
+  top: -24px;
+  left: 0;
+  background: #131921;
+  color: #FF9900;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--snap-primary);
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+}
+
+@keyframes snap-bbox-appear {
+  0% { opacity: 0; transform: scale(0.9); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Toast Notifications */
+.streamsnap-toast {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #131921;
+  border: 1px solid var(--snap-primary);
+  color: #FFFFFF;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 2147483645;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7), 0 0 15px var(--snap-glow);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: snap-toast-in 0.3s ease-out;
+}
+
+@keyframes snap-toast-in {
+  0% { opacity: 0; transform: translate(-50%, 15px); }
+  100% { opacity: 1; transform: translate(-50%, 0); }
+}
