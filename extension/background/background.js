@@ -30,7 +30,7 @@ const DEFAULTS = {
   cartItems: [],
   autoScanIntervalSec: 0, // 0 = manual
   minConfidence: 75,
-  affiliateTag: "streamsnap-20"
+  affiliateTag: "streamsnap03-20"
 };
 
 const AUTO_SCAN_ALARM = "streamsnap-auto-scan";

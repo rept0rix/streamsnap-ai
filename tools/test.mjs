@@ -112,7 +112,7 @@ test("an all-unverified cart falls back to search", () => {
 
 test("a malformed affiliate tag falls back to the default", () => {
   const url = getAmazonProductUrl("B0002E4Z8M", "", "bad tag with spaces!");
-  assert.ok(url.includes("tag=streamsnap-20"));
+  assert.ok(url.includes("tag=streamsnap03-20"));
 });
 
 test("query strings are escaped", () => {

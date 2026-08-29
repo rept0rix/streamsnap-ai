@@ -8,7 +8,7 @@
  * which is both a bad user experience and a Chrome Web Store policy problem.
  */
 
-const DEFAULT_AFFILIATE_TAG = "streamsnap-20";
+const DEFAULT_AFFILIATE_TAG = "streamsnap03-20";
 
 /** Real, manually verified ASINs. Used to upgrade a detection to a direct link. */
 export const VERIFIED_PRODUCTS = {

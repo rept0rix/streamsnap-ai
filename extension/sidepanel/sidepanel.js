@@ -20,7 +20,7 @@ const state = {
   categoryFilter: "all",
   searchQuery: "",
   tierFilter: "all",
-  affiliateTag: "streamsnap-20"
+  affiliateTag: "streamsnap03-20"
 };
 
 /** Maps the filter pill values in the HTML to catalog category names. */
@@ -171,7 +171,7 @@ function initSettings() {
       return;
     }
     tagInput.setCustomValidity("");
-    const tag = raw || "streamsnap-20";
+    const tag = raw || "streamsnap03-20";
     state.affiliateTag = tag;
     chrome.storage.local.set({ affiliateTag: tag }, () => {
       const label = byId("active-tag-label");

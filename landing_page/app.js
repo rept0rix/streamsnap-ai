@@ -20,7 +20,7 @@ const SIM_PRODUCTS = {
     match: "100% Exact Match",
     icon: "🎙️",
     asin: "B0002E4Z8M",
-    link: "https://www.amazon.com/dp/B0002E4Z8M?tag=streamsnap-20"
+    link: "https://www.amazon.com/dp/B0002E4Z8M?tag=streamsnap03-20"
   },
   headphones: {
     title: "Sony WH-1000XM5 Noise Canceling Headphones",
@@ -28,7 +28,7 @@ const SIM_PRODUCTS = {
     match: "98% Visual Match",
     icon: "🎧",
     asin: "B09XS7JWHH",
-    link: "https://www.amazon.com/dp/B09XS7JWHH?tag=streamsnap-20"
+    link: "https://www.amazon.com/dp/B09XS7JWHH?tag=streamsnap03-20"
   },
   hoodie: {
     title: "Champion Men's Powerblend Fleece Oversized Streetwear Hoodie",
@@ -36,7 +36,7 @@ const SIM_PRODUCTS = {
     match: "94% Visual Match",
     icon: "👕",
     asin: "B09KND9W8Z",
-    link: "https://www.amazon.com/s?k=Champion+Hoodie&tag=streamsnap-20"
+    link: "https://www.amazon.com/s?k=Champion+Hoodie&tag=streamsnap03-20"
   },
   weights: {
     title: "Fringe Sport Black Bumper Plates (Pair of 45lb)",
@@ -44,7 +44,7 @@ const SIM_PRODUCTS = {
     match: "96% Exact Match",
     icon: "🏋️‍♂️",
     asin: "B07H8K9110",
-    link: "https://www.amazon.com/s?k=Fringe+Sport+Bumper+Plates&tag=streamsnap-20"
+    link: "https://www.amazon.com/s?k=Fringe+Sport+Bumper+Plates&tag=streamsnap03-20"
   },
   lighting: {
     title: "Elgato Key Light — 2800 Lumen Studio LED Panel",
@@ -52,7 +52,7 @@ const SIM_PRODUCTS = {
     match: "100% Exact Match",
     icon: "💡",
     asin: "B07W755322",
-    link: "https://www.amazon.com/dp/B07W755322?tag=streamsnap-20"
+    link: "https://www.amazon.com/dp/B07W755322?tag=streamsnap03-20"
   }
 };
 
@@ -209,7 +209,7 @@ function initModals() {
 
   if (saveTagBtn && inputTag) {
     saveTagBtn.addEventListener("click", () => {
-      const tag = inputTag.value.trim() || "streamsnap-20";
+      const tag = inputTag.value.trim() || "streamsnap03-20";
       localStorage.setItem("streamsnap_tag", tag);
       saveTagBtn.textContent = "✓ Connected & Activated!";
       saveTagBtn.style.background = "#10B981";
