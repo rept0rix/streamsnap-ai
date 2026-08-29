@@ -2,3 +2,6 @@
 *.log
 node_modules/
 .system_generated/
+
+# Build output — release zips are produced by tools/package.sh
+dist/

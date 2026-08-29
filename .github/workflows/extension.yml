@@ -1,0 +1,48 @@
+name: Validate Extension
+
+on:
+  push:
+    branches: ["master", "main"]
+  pull_request:
+    branches: ["master", "main"]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Validate manifest, modules and markup
+        run: node tools/validate.mjs
+
+      - name: Run commerce layer tests
+        run: node tools/test.mjs
+
+      - name: Confirm manifest version matches the latest release zip
+        run: |
+          VERSION=$(node -p "require('./extension/manifest.json').version")
+          echo "manifest version: $VERSION"
+          if ls streamsnap-extension-v*.zip >/dev/null 2>&1; then
+            if ! ls "streamsnap-extension-v${VERSION}.zip" >/dev/null 2>&1; then
+              echo "::warning::No release zip for v${VERSION}. Run tools/package.sh before tagging."
+            fi
+          fi
+
+      - name: Build packaged extension
+        run: bash tools/package.sh
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: streamsnap-extension
+          path: dist/*.zip
+          if-no-files-found: error
