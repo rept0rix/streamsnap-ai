@@ -59,6 +59,46 @@ export const VERIFIED_PRODUCTS = {
     category: "Headphones",
     price: 549.0,
     image: "https://m.media-amazon.com/images/I/81jqUPkIVRL._AC_SL1500_.jpg"
+  },
+  B0DHJ3SRDL: {
+    asin: "B0DHJ3SRDL",
+    title: "Apple iPhone 16 Pro Max (Desert Titanium)",
+    brand: "Apple",
+    category: "Phones & Tech",
+    price: 1199.0,
+    image: "https://m.media-amazon.com/images/I/81+23E2GgQL._AC_SL1500_.jpg"
+  },
+  B0HDSPFHR2: {
+    asin: "B0HDSPFHR2",
+    title: "Sampeel Airport Outfits 2-Piece Lounge Matching Set",
+    brand: "Sampeel",
+    category: "Fashion & Apparel",
+    price: 39.99,
+    image: "https://m.media-amazon.com/images/I/71j1n-1Pq-L._AC_SL1500_.jpg"
+  },
+  B0HGDV476B: {
+    asin: "B0HGDV476B",
+    title: "Ninja HydraSense Intelligent Water Filtration System",
+    brand: "Ninja",
+    category: "Home & Kitchen",
+    price: 199.99,
+    image: "https://m.media-amazon.com/images/I/71UqI4pWv1L._AC_SL1500_.jpg"
+  },
+  B08285CV9C: {
+    asin: "B08285CV9C",
+    title: "Replacement Analog 3D Thumbstick Joystick for Controller",
+    brand: "Generic",
+    category: "Gaming & Gear",
+    price: 9.99,
+    image: "https://m.media-amazon.com/images/I/61k2YfR1L-L._AC_SL1500_.jpg"
+  },
+  B0FRY24FNG: {
+    asin: "B0FRY24FNG",
+    title: "The Complete Matrix Trilogy (3-Pack 4K Ultra HD)",
+    brand: "Warner Bros",
+    category: "Movies & Media",
+    price: 49.99,
+    image: "https://m.media-amazon.com/images/I/81h9iZf5vVL._AC_SL1500_.jpg"
   }
 };
 
