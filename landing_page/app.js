@@ -19,6 +19,7 @@ const SIM_PRODUCTS = {
     price: "$399.00",
     match: "100% Exact Match",
     icon: "🎙️",
+    image: "https://m.media-amazon.com/images/I/71P4q+HqKQL._AC_SL1500_.jpg",
     asin: "B0002E4Z8M",
     link: "https://www.amazon.com/dp/B0002E4Z8M?tag=streamsnap03-20"
   },
@@ -27,6 +28,7 @@ const SIM_PRODUCTS = {
     price: "$348.00",
     match: "98% Visual Match",
     icon: "🎧",
+    image: "https://m.media-amazon.com/images/I/61vJtKbAssL._AC_SL1500_.jpg",
     asin: "B09XS7JWHH",
     link: "https://www.amazon.com/dp/B09XS7JWHH?tag=streamsnap03-20"
   },
@@ -35,6 +37,7 @@ const SIM_PRODUCTS = {
     price: "$38.50",
     match: "94% Visual Match",
     icon: "👕",
+    image: "https://m.media-amazon.com/images/I/71j1n-1Pq-L._AC_SL1500_.jpg",
     asin: "B09KND9W8Z",
     link: "https://www.amazon.com/s?k=Champion+Hoodie&tag=streamsnap03-20"
   },
@@ -43,6 +46,7 @@ const SIM_PRODUCTS = {
     price: "$179.00",
     match: "96% Exact Match",
     icon: "🏋️‍♂️",
+    image: "https://m.media-amazon.com/images/I/61k2YfR1L-L._AC_SL1500_.jpg",
     asin: "B07H8K9110",
     link: "https://www.amazon.com/s?k=Fringe+Sport+Bumper+Plates&tag=streamsnap03-20"
   },
@@ -51,6 +55,7 @@ const SIM_PRODUCTS = {
     price: "$199.99",
     match: "100% Exact Match",
     icon: "💡",
+    image: "https://m.media-amazon.com/images/I/61LpX3fXQAL._AC_SL1500_.jpg",
     asin: "B07W755322",
     link: "https://www.amazon.com/dp/B07W755322?tag=streamsnap03-20"
   }
@@ -75,7 +80,13 @@ function initSimulator() {
       if (!item) return;
 
       if (cropLabel) cropLabel.textContent = `🎯 Cropped: ${item.title.slice(0, 30)}...`;
-      if (thumb) thumb.textContent = item.icon;
+      if (thumb) {
+        if (item.image) {
+          thumb.innerHTML = `<img src="${item.image}" alt="${item.title}" style="width:100%;height:100%;object-fit:contain;border-radius:6px;" />`;
+        } else {
+          thumb.textContent = item.icon;
+        }
+      }
       if (title) title.textContent = item.title;
       if (price) price.textContent = item.price;
       if (buyLink) buyLink.href = item.link;

@@ -421,7 +421,8 @@ body {
 .sim-video-scene {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at center, #1E293B 0%, #0F172A 70%, #020408 100%);
+  background: linear-gradient(180deg, rgba(7, 10, 15, 0.4) 0%, rgba(7, 10, 15, 0.7) 100%),
+              url("assets/streamsnap_live_youtube.png") center top / cover no-repeat;
   display: flex;
   align-items: center;
   justify-content: center;
