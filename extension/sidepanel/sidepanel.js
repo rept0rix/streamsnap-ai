@@ -295,9 +295,10 @@ async function triggerDirectScan() {
       const capturedImage = captureRes?.dataUrl;
 
       chrome.storage.local.get(["geminiApiKey"], (storageRes) => {
-        const apiKey = storageRes.geminiApiKey || "AQ.Ab8RN6IQE3yEL-bhBlLLnC6Nx5ySk_tUxFaYWosQGXu7MIljDA";
+        const apiKey = storageRes.geminiApiKey || "";
 
         if (capturedImage) {
+
           chrome.runtime.sendMessage({
             action: "ANALYZE_WITH_AI",
             imageBase64: capturedImage,

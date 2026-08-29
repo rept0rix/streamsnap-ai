@@ -1,17 +1,17 @@
 import { fetchLiveAmazonProduct, categorizeProduct, estimateCommission } from "../services/amazon_service.js";
 
-// Pre-configure Gemini API Key and settings
-const DEFAULT_GEMINI_KEY = "AQ.Ab8RN6IQE3yEL-bhBlLLnC6Nx5ySk_tUxFaYWosQGXu7MIljDA";
+// Default empty key - user enters their private key in Settings tab
+const DEFAULT_GEMINI_KEY = "";
 
 chrome.storage.local.get(["geminiApiKey", "discoveredCatalog", "analytics", "autoScanIntervalSec", "minConfidence"], (res) => {
   const updates = {};
-  if (!res || !res.geminiApiKey) updates.geminiApiKey = DEFAULT_GEMINI_KEY;
   if (!res || !res.discoveredCatalog) updates.discoveredCatalog = [];
   if (!res || !res.analytics) updates.analytics = { totalScans: 0, amazonClicks: 0, cartAdds: 0, estimatedEarnings: 0 };
   if (!res || res.autoScanIntervalSec === undefined) updates.autoScanIntervalSec = 0; // 0 = manual, 15, 30, 60
   if (!res || res.minConfidence === undefined) updates.minConfidence = 75; // 75% default
   if (Object.keys(updates).length > 0) chrome.storage.local.set(updates);
 });
+
 
 // Enable side panel to open on action click
 chrome.sidePanel
