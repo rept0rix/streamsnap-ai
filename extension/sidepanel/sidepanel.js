@@ -37,10 +37,15 @@ function initTabs() {
         renderCatalog();
       } else if (btn.dataset.tab === "analytics") {
         renderAnalytics();
+      } else if (btn.dataset.tab === "cart") {
+        chrome.storage.local.get(["cartItems"], (res) => {
+          renderCart(res.cartItems || []);
+        });
       }
     });
   });
 }
+
 
 function initSettings() {
   const keyInput = document.getElementById("gemini-api-key-input");
@@ -254,11 +259,20 @@ function initListeners() {
   const directBtn = document.getElementById("direct-scan-btn");
   const radarBtn = document.getElementById("radar-scan-trigger");
   const rescanBtn = document.getElementById("rescan-btn");
+  const clearCartBtn = document.getElementById("clear-cart-btn");
 
   if (directBtn) directBtn.addEventListener("click", triggerDirectScan);
   if (radarBtn) radarBtn.addEventListener("click", triggerDirectScan);
   if (rescanBtn) rescanBtn.addEventListener("click", triggerDirectScan);
+  if (clearCartBtn) {
+    clearCartBtn.addEventListener("click", () => {
+      chrome.storage.local.set({ cartItems: [] }, () => {
+        renderCart([]);
+      });
+    });
+  }
 }
+
 
 function showScanningState() {
   const emptyState = document.getElementById("scan-empty-state");

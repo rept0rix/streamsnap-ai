@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StreamSnap AI — Live Stream Commerce</title>
+  <title>StreamSnap AI — Live Stream Shopping</title>
   <link rel="stylesheet" href="sidepanel.css">
 </head>
 <body>
@@ -32,45 +32,28 @@
 
       <!-- Navigation Tabs -->
       <nav class="tab-nav">
-        <button class="tab-btn active" data-tab="scanned">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-          </svg>
-          <span>Live</span>
+        <button class="tab-btn active" data-tab="scanned" title="Live Video Scans">
+          <span class="tab-icon">⚡</span>
+          <span class="tab-lbl">Live</span>
           <span class="tab-count" id="scanned-count">0</span>
         </button>
-        <button class="tab-btn" data-tab="catalog">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path>
-            <path d="m3.3 7 8.7 5 8.7-5"></path>
-            <path d="M12 22V12"></path>
-          </svg>
-          <span>Catalog</span>
+        <button class="tab-btn" data-tab="catalog" title="History & Catalog">
+          <span class="tab-icon">📦</span>
+          <span class="tab-lbl">History</span>
           <span class="tab-count" id="catalog-count">0</span>
         </button>
-        <button class="tab-btn" data-tab="cart">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="8" cy="21" r="1"></circle>
-            <circle cx="19" cy="21" r="1"></circle>
-            <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
-          </svg>
-          <span>Cart</span>
+        <button class="tab-btn" data-tab="cart" title="Amazon Remote Cart">
+          <span class="tab-icon">🛒</span>
+          <span class="tab-lbl">Cart</span>
           <span class="tab-count" id="cart-count">0</span>
         </button>
-        <button class="tab-btn" data-tab="analytics">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="20" x2="18" y2="10"></line>
-            <line x1="12" y1="20" x2="12" y2="4"></line>
-            <line x1="6" y1="20" x2="6" y2="14"></line>
-          </svg>
-          <span>Stats</span>
+        <button class="tab-btn" data-tab="analytics" title="Performance & Revenue">
+          <span class="tab-icon">📊</span>
+          <span class="tab-lbl">Stats</span>
         </button>
-        <button class="tab-btn" data-tab="settings">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-          </svg>
-          <span>Config</span>
+        <button class="tab-btn" data-tab="settings" title="Settings & Amazon Setup">
+          <span class="tab-icon">⚙️</span>
+          <span class="tab-lbl">Setup</span>
         </button>
       </nav>
     </header>
@@ -85,7 +68,7 @@
             <span class="radar-icon">⚡</span>
           </div>
           <h3>Ready to Scan Live Stream</h3>
-          <p>Click below or snip on the video to identify items with Gemini AI Vision & Amazon.</p>
+          <p>Click below or snip directly on the video to identify items with AI Vision &amp; Amazon.</p>
           <button id="direct-scan-btn" class="direct-scan-btn">⚡ SCAN ACTIVE STREAM</button>
         </div>
 
@@ -95,24 +78,22 @@
             <span class="radar-icon">🤖</span>
           </div>
           <h3>AI Vision Scanning...</h3>
-          <p id="loading-status-text">Pinpointing exact products and retrieving Amazon catalog listings...</p>
+          <p id="loading-status-text">Pinpointing products and retrieving live Amazon prices...</p>
         </div>
 
         <div id="scan-results-container" class="results-view" style="display: none;">
           <div class="stream-info-bar">
             <span id="stream-name-tag" class="stream-tag">🔴 Live Stream</span>
-            <div style="display: flex; gap: 6px;">
-              <button id="rescan-btn" class="rescan-btn" title="Rescan current live frame">🔄 Rescan</button>
-            </div>
+            <button id="rescan-btn" class="rescan-btn" title="Rescan current live frame">🔄 Rescan</button>
           </div>
 
-          <!-- Crop Preview Box (Shown when user snips or clicks on video) -->
+          <!-- Crop Preview Box -->
           <div id="crop-preview-box" class="crop-preview-card" style="display: none;">
-            <div style="display:flex; align-items:center; gap:12px;">
-              <img id="crop-preview-img" src="" alt="Cropped Video Patch" />
-              <div style="flex:1;">
-                <div class="crop-badge">🎯 Video Source Patch</div>
-                <div class="crop-subtitle">Pinpoint visual search for this selected object</div>
+            <div class="crop-preview-inner">
+              <img id="crop-preview-img" src="" alt="Cropped Patch" />
+              <div class="crop-details">
+                <div class="crop-badge">🎯 Video Snip Patch</div>
+                <div class="crop-subtitle">Pinpoint visual search for selected item</div>
               </div>
             </div>
           </div>
@@ -138,67 +119,69 @@
           <div class="tier-section" id="tier2-section">
             <div class="tier-header">
               <span class="tier-indicator tier-2"></span>
-              <h4>Tier 2: Look-Alikes & Similar Items</h4>
-              <span class="tier-pill lookalike-pill">Visual AI Match</span>
+              <h4>Tier 2: Look-Alikes &amp; Similar Items</h4>
+              <span class="tier-pill lookalike-pill">Visual Match</span>
             </div>
             <div id="lookalikes-list" class="cards-list"></div>
           </div>
         </div>
       </section>
 
-      <!-- Tab 2: Discovered Catalog (All Products Ever Scanned - Deduplicated) -->
+      <!-- Tab 2: Discovered Catalog & Scan History -->
       <section id="tab-catalog" class="tab-pane">
         <div class="catalog-header-bar">
           <div class="search-input-box">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9BA3AF" stroke-width="2">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-            <input type="text" id="catalog-search-input" placeholder="Search catalog by product, brand, stream..." />
+            <span class="search-icon">🔍</span>
+            <input type="text" id="catalog-search-input" placeholder="Search history by item, brand, stream..." />
           </div>
           
           <!-- Category Filter Pills -->
           <div class="filter-pills-row" id="catalog-category-pills">
             <button class="filter-pill active" data-cat="all">All</button>
-            <button class="filter-pill" data-cat="Gym & Fitness">Gym & Fitness</button>
-            <button class="filter-pill" data-cat="Streetwear & Apparel">Streetwear</button>
-            <button class="filter-pill" data-cat="Audio & Mic">Audio</button>
-            <button class="filter-pill" data-cat="Studio Lighting">Lighting</button>
-            <button class="filter-pill" data-cat="Cosplay & Costume">Costume</button>
+            <button class="filter-pill" data-cat="fitness">Gym &amp; Fitness</button>
+            <button class="filter-pill" data-cat="fashion">Streetwear</button>
+            <button class="filter-pill" data-cat="audio">Audio &amp; Tech</button>
+            <button class="filter-pill" data-cat="lighting">Lighting</button>
+            <button class="filter-pill" data-cat="costume">Costume</button>
+          </div>
+
+          <div class="catalog-stats-strip">
+            <span id="catalog-summary-text">0 Unique Products</span>
+            <button id="clear-catalog-btn" class="text-btn-danger">Clear History</button>
           </div>
         </div>
 
-        <div class="catalog-stats-strip">
-          <span id="catalog-stats-text">0 Products in Persistent Catalog</span>
-          <button id="clear-catalog-btn" class="text-btn-danger" title="Clear all saved history">Clear All</button>
-        </div>
-
         <div id="catalog-empty-state" class="empty-state" style="display: none;">
-          <div class="empty-icon-box">📦</div>
-          <h3>Catalog is Empty</h3>
-          <p>Products scanned in live streams will be automatically saved here without duplicates.</p>
+          <span class="empty-icon">📦</span>
+          <h3>No Scans in History Yet</h3>
+          <p>Scan a live stream or snip any object to save products automatically.</p>
         </div>
 
         <div id="catalog-cards-list" class="cards-list"></div>
       </section>
 
-      <!-- Tab 3: Amazon Cart -->
+      <!-- Tab 3: 1-Click Amazon Cart -->
       <section id="tab-cart" class="tab-pane">
         <div id="cart-empty-state" class="empty-state">
-          <div class="empty-icon-box">🛒</div>
-          <h3>Your Amazon Cart is Empty</h3>
-          <p>Click "Add to Cart" on any detected product to queue it for 1-click checkout.</p>
+          <span class="empty-icon">🛒</span>
+          <h3>Your Stream Cart is Empty</h3>
+          <p>Click "+ Add" on any detected product to stage items for 1-Click Amazon Checkout.</p>
         </div>
 
-        <div id="cart-content-view" class="cart-view" style="display: none;">
+        <div id="cart-content-view" style="display: none;">
+          <div class="cart-header-strip">
+            <span>🛒 Staged Amazon Items</span>
+            <button id="clear-cart-btn" class="text-btn-danger">Clear Cart</button>
+          </div>
+
           <div id="cart-items-list" class="cart-list"></div>
-          
-          <div class="cart-summary-card">
+
+          <div class="cart-summary-box">
             <div class="summary-row">
-              <span>Items Total:</span>
-              <strong id="cart-subtotal">$0.00</strong>
+              <span>Estimated Subtotal:</span>
+              <span class="summary-price" id="cart-subtotal">$0.00</span>
             </div>
-            <div class="summary-subtext">Free Prime Two-Day Shipping & Secure Amazon Checkout</div>
+            <div class="summary-subtext">Free Prime Two-Day Shipping &amp; Secure Amazon Checkout</div>
             <a id="amazon-checkout-btn" href="#" target="_blank" class="checkout-btn">
               <span>🛒 Open Amazon 1-Click Cart</span>
             </a>
@@ -206,11 +189,11 @@
         </div>
       </section>
 
-      <!-- Tab 4: Affiliate & Analytics Dashboard -->
+      <!-- Tab 4: Performance & Analytics -->
       <section id="tab-analytics" class="tab-pane">
         <div class="analytics-header">
-          <h3>📊 Visual Commerce Performance</h3>
-          <p>Track your live stream visual shopping metrics and estimated affiliate commissions.</p>
+          <h3>📊 Visual Commerce Stats</h3>
+          <p>Live stream shopping performance and estimated affiliate commissions.</p>
         </div>
 
         <div class="analytics-grid">
@@ -233,31 +216,58 @@
         </div>
 
         <div class="analytics-card">
-          <div class="analytics-card-title">🔗 Amazon Associate Affiliate Program</div>
-          <p class="analytics-card-desc">Every product clicked or added to cart automatically earns 3% - 10% commission on Amazon.</p>
+          <div class="analytics-card-title">🔗 Active Affiliate Monetization</div>
+          <p class="analytics-card-desc">Earn 3% - 10% commission on every product purchased within 24h of stream click.</p>
           <div class="affiliate-tag-display">
-            <span>Active Associate Tag:</span>
+            <span>Tracking ID:</span>
             <code id="active-tag-label">streamsnap-20</code>
           </div>
         </div>
       </section>
 
-      <!-- Tab 5: Settings & Config -->
+      <!-- Tab 5: Settings & Amazon Setup Guide -->
       <section id="tab-settings" class="tab-pane">
         <div class="settings-pane-content">
-          <div class="settings-section">
-            <label class="settings-label">🤖 Google Gemini API Key</label>
-            <p class="settings-subtext">Powers real-time multi-modal computer vision directly on live stream frames.</p>
-            <div class="settings-input-row">
-              <input type="password" id="gemini-api-key-input" placeholder="Paste Gemini API Key (AIzaSy...)" />
-              <button id="save-api-key-btn" class="settings-action-btn">Save</button>
+          
+          <!-- Guide Box: How to get Amazon Tag -->
+          <div class="guide-card">
+            <div class="guide-header">
+              <span class="guide-icon">💡</span>
+              <h4>How to Get Your Amazon Affiliate Tag</h4>
             </div>
-            <div id="api-key-status" class="settings-status-pill">Active: Gemini 2.5 Flash ⚡</div>
+            <ol class="guide-steps">
+              <li>Go to <a href="https://affiliate-program.amazon.com/" target="_blank" class="guide-link">affiliate-program.amazon.com ↗</a> and click <strong>Sign Up</strong>.</li>
+              <li>Log in with your Amazon account and enter your channel link (YouTube / Twitch / TikTok).</li>
+              <li>Choose your Preferred Store ID (e.g. <code>yourname-20</code>).</li>
+              <li>Copy your Store ID and paste it in the box below to earn 100% of your affiliate commissions!</li>
+            </ol>
           </div>
 
+          <!-- Amazon Tag Input -->
+          <div class="settings-section">
+            <label class="settings-label">🏷️ Your Amazon Associate Tracking ID</label>
+            <p class="settings-subtext">All product links and cart additions will use this tag for commission attribution.</p>
+            <div class="settings-input-row">
+              <input type="text" id="affiliate-tag-input" placeholder="e.g. yourname-20" />
+              <button id="save-tag-btn" class="settings-action-btn">Save</button>
+            </div>
+          </div>
+
+          <!-- Gemini Key Input -->
+          <div class="settings-section">
+            <label class="settings-label">🤖 Google Gemini Vision API Key</label>
+            <p class="settings-subtext">Optional: Enter your free key from <a href="https://aistudio.google.com/app/apikey" target="_blank" class="guide-link">Google AI Studio ↗</a> (stored safely on your device only).</p>
+            <div class="settings-input-row">
+              <input type="password" id="gemini-api-key-input" placeholder="AIzaSy..." />
+              <button id="save-api-key-btn" class="settings-action-btn">Save</button>
+            </div>
+            <div id="api-key-status" class="settings-status-pill">Ready: Vision Engine Active ⚡</div>
+          </div>
+
+          <!-- Auto-Scan Interval -->
           <div class="settings-section">
             <label class="settings-label">⏱️ Live Stream Auto-Scan Interval</label>
-            <p class="settings-subtext">Automatically scan the video stream in the background without needing to click.</p>
+            <p class="settings-subtext">Automatically scan the video stream in the background without clicking.</p>
             <select id="auto-scan-select" class="settings-select">
               <option value="0">Manual Scan Only (Default)</option>
               <option value="15">Auto-Scan Every 15 Seconds ⚡</option>
@@ -266,23 +276,16 @@
             </select>
           </div>
 
+          <!-- Minimum Confidence -->
           <div class="settings-section">
-            <label class="settings-label">🎯 Minimum Match Confidence Filter</label>
-            <p class="settings-subtext">Filter out low confidence items. Only show products with match score $\ge$ threshold.</p>
+            <label class="settings-label">🎯 Minimum Match Confidence</label>
+            <p class="settings-subtext">Filter out lower confidence items from display.</p>
             <div class="confidence-slider-row">
               <input type="range" id="confidence-slider" min="60" max="95" step="5" value="75" />
               <span id="confidence-val" class="confidence-val-badge">75%</span>
             </div>
           </div>
 
-          <div class="settings-section">
-            <label class="settings-label">🏷️ Custom Amazon Associate Tag</label>
-            <p class="settings-subtext">Attach your personal Amazon affiliate tracking tag to all buy links.</p>
-            <div class="settings-input-row">
-              <input type="text" id="affiliate-tag-input" placeholder="streamsnap-20" />
-              <button id="save-tag-btn" class="settings-action-btn">Save</button>
-            </div>
-          </div>
         </div>
       </section>
     </main>
@@ -317,7 +320,7 @@
       <div class="footer-info">
         <span>StreamSnap AI v1.2</span>
         <span>•</span>
-        <span>Amazon Associate Active</span>
+        <span>Amazon Associates Active</span>
       </div>
     </footer>
   </div>
@@ -325,4 +328,3 @@
   <script src="sidepanel.js" type="module"></script>
 </body>
 </html>
-
