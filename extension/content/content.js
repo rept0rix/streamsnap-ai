@@ -1,190 +1,238 @@
 /**
- * StreamSnap AI — Universal Video Content Script
- * Injects on YouTube, Twitch, TikTok, Facebook Live, Kick & Demo pages.
+ * StreamSnap AI — Video Content Script
+ * Injects capture controls on YouTube, Twitch, TikTok, Facebook Live and Kick.
+ *
+ * Performance note: the previous version ran a full querySelectorAll on every
+ * DOM mutation plus a 1.5s polling interval. On a YouTube watch page that is
+ * thousands of scans per second. This version debounces mutations, backs off
+ * when nothing changes, and disconnects when the page is hidden.
  */
 
 (function () {
-  console.log("⚡ StreamSnap AI Video Hook Loaded");
+  "use strict";
 
-  // Track injected videos to prevent duplicates
   const hookedVideos = new WeakSet();
+  let isLiveClickModeActive = false;
+  let scanInFlight = false;
 
-  function initUniversalVideoHook() {
-    // Check standard video tags and YouTube specific players
-    const videos = document.querySelectorAll("video");
-    videos.forEach((video) => {
-      if (hookedVideos.has(video)) return;
-      hookedVideos.add(video);
+  // -------------------------------------------------------------------------
+  // Safe DOM helpers — never interpolate page or model text into innerHTML.
+  // -------------------------------------------------------------------------
 
-      attachStreamSnapControls(video);
-    });
-
-    // YouTube specific player hook
-    const ytPlayer = document.querySelector("#movie_player") || document.querySelector(".html5-video-player");
-    if (ytPlayer) {
-      const ytVideo = ytPlayer.querySelector("video");
-      if (ytVideo) {
-        attachStreamSnapControls(ytVideo, ytPlayer);
-      }
-    }
+  function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text != null) node.textContent = String(text);
+    return node;
   }
 
-  let isLiveClickModeActive = false;
+  function truncate(value, max) {
+    const str = String(value ?? "");
+    return str.length > max ? `${str.slice(0, max)}…` : str;
+  }
 
-  function attachStreamSnapControls(video, explicitContainer = null) {
+  // -------------------------------------------------------------------------
+  // Stream metadata
+  // -------------------------------------------------------------------------
+
+  function getStreamTitle() {
+    const candidates = [
+      "h1.ytd-watch-metadata yt-formatted-string",
+      "h2[data-a-target='stream-title']",
+      "h1[data-e2e='browse-video-desc']"
+    ];
+    for (const selector of candidates) {
+      const text = document.querySelector(selector)?.textContent?.trim();
+      if (text) return text;
+    }
+    return document.title;
+  }
+
+  function getChannelName() {
+    const candidates = [
+      "#channel-name yt-formatted-string",
+      "h1[data-a-target='user-channel-name']",
+      "a[data-e2e='browse-username']"
+    ];
+    for (const selector of candidates) {
+      const text = document.querySelector(selector)?.textContent?.trim();
+      if (text) return text;
+    }
+    return "Live Streamer";
+  }
+
+  // -------------------------------------------------------------------------
+  // Control injection
+  // -------------------------------------------------------------------------
+
+  function initUniversalVideoHook() {
+    document.querySelectorAll("video").forEach((video) => {
+      if (hookedVideos.has(video)) return;
+      // Prefer the site's player shell so controls sit above the video chrome.
+      const ytPlayer = video.closest("#movie_player, .html5-video-player");
+      hookedVideos.add(video);
+      attachStreamSnapControls(video, ytPlayer);
+    });
+
+    injectYouTubeControlBarButton();
+  }
+
+  function attachStreamSnapControls(video, explicitContainer) {
     const parent = explicitContainer || video.parentElement;
-    if (!parent) return;
+    if (!parent || parent.querySelector(".streamsnap-btn-group")) return;
 
-    // 1. Floating Top-Right Button Group (Live Click + Snip + Full Scan)
-    if (!parent.querySelector(".streamsnap-btn-group")) {
-      const computedStyle = window.getComputedStyle(parent);
-      if (computedStyle.position === "static") {
-        parent.style.position = "relative";
-      }
+    if (window.getComputedStyle(parent).position === "static") {
+      parent.style.position = "relative";
+    }
 
-      const btnGroup = document.createElement("div");
-      btnGroup.className = "streamsnap-btn-group";
+    const btnGroup = el("div", "streamsnap-btn-group");
 
-      // 1. Live Click Mode Toggle Button
-      const liveBtn = document.createElement("button");
-      liveBtn.className = "streamsnap-floating-btn streamsnap-live-btn";
-      liveBtn.innerHTML = `<span>🟢</span> Click-to-Find: ON`;
-      liveBtn.title = "Live Point-and-Click: Click ANY object on the video while playing to identify it on Amazon!";
-      
-      liveBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        isLiveClickModeActive = !isLiveClickModeActive;
-        if (isLiveClickModeActive) {
-          liveBtn.classList.add("active");
-          liveBtn.innerHTML = `<span>🔴</span> Click Anything Live`;
-          showToast(parent, "🟢 Live Click Mode ON! Just click ANY object on the video to find it on Amazon!");
-        } else {
-          liveBtn.classList.remove("active");
-          liveBtn.innerHTML = `<span>🟢</span> Click-to-Find`;
-          showToast(parent, "Live Click Mode OFF");
-        }
-      });
+    const liveBtn = el("button", "streamsnap-floating-btn streamsnap-live-btn");
+    liveBtn.title = "Click-to-Find: click any object on the video to identify it";
+    liveBtn.append(el("span", null, "🟢"), el("span", null, " Click-to-Find"));
 
-      // 2. Snip on Video Button
-      const snipBtn = document.createElement("button");
-      snipBtn.className = "streamsnap-floating-btn streamsnap-snip-btn";
-      snipBtn.innerHTML = `<span style="font-size:14px;">🎯</span> Snip Box`;
-      snipBtn.title = "Draw a box on any item to search";
-      snipBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        startInteractiveCropper(video, parent);
-      });
+    liveBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      isLiveClickModeActive = !isLiveClickModeActive;
+      liveBtn.classList.toggle("active", isLiveClickModeActive);
+      liveBtn.replaceChildren(
+        el("span", null, isLiveClickModeActive ? "🔴" : "🟢"),
+        el("span", null, isLiveClickModeActive ? " Click Anything Live" : " Click-to-Find")
+      );
+      showToast(
+        parent,
+        isLiveClickModeActive
+          ? "Click mode on — click any object on the video."
+          : "Click mode off."
+      );
+    });
 
-      // 3. Full Scan Button
-      const scanBtn = document.createElement("button");
-      scanBtn.className = "streamsnap-floating-btn";
-      scanBtn.innerHTML = `<span class="streamsnap-bolt">⚡</span> Scan Frame`;
-      scanBtn.title = "Scan entire stream frame (Option+S / Alt+S)";
-      scanBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        triggerStreamScan(video, parent);
-      });
+    const snipBtn = el("button", "streamsnap-floating-btn streamsnap-snip-btn");
+    snipBtn.title = "Draw a box around any item to search for it";
+    snipBtn.append(el("span", null, "🎯"), el("span", null, " Snip Box"));
+    snipBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      startInteractiveCropper(video, parent);
+    });
 
-      btnGroup.appendChild(liveBtn);
-      btnGroup.appendChild(snipBtn);
-      btnGroup.appendChild(scanBtn);
-      parent.appendChild(btnGroup);
+    const scanBtn = el("button", "streamsnap-floating-btn");
+    scanBtn.title = "Scan the whole frame (Alt+S)";
+    scanBtn.append(el("span", "streamsnap-bolt", "⚡"), el("span", null, " Scan Frame"));
+    scanBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      triggerStreamScan(video, parent);
+    });
 
-      // Attach direct click-to-identify listener on video
-      parent.addEventListener("click", (e) => {
+    btnGroup.append(liveBtn, snipBtn, scanBtn);
+    parent.appendChild(btnGroup);
+
+    parent.addEventListener(
+      "click",
+      (e) => {
         if (!isLiveClickModeActive) return;
-        if (e.target.closest(".streamsnap-btn-group") || e.target.closest(".streamsnap-toast") || e.target.closest(".ytp-chrome-bottom")) {
-          return; // Ignore controls
+        if (
+          e.target.closest(".streamsnap-btn-group") ||
+          e.target.closest(".streamsnap-toast") ||
+          e.target.closest(".ytp-chrome-bottom")
+        ) {
+          return;
         }
 
         e.stopPropagation();
         const rect = parent.getBoundingClientRect();
         const clickX = e.clientX - rect.left;
         const clickY = e.clientY - rect.top;
-
-        // Show pulse ripple at click point
         showClickPulse(parent, clickX, clickY);
 
-        // Crop 180x180 area around click
-        const cropSize = 180;
-        const left = Math.max(0, clickX - cropSize / 2);
-        const top = Math.max(0, clickY - cropSize / 2);
-        const width = Math.min(rect.width - left, cropSize);
-        const height = Math.min(rect.height - top, cropSize);
-
-        cropAndSearch(video, parent, left, top, width, height, rect.width, rect.height);
-      }, true);
-    }
-
-    // 2. YouTube Native Control Bar Button (.ytp-right-controls)
-    const ytRightControls = document.querySelector(".ytp-right-controls");
-    if (ytRightControls && !ytRightControls.querySelector(".streamsnap-ytp-btn")) {
-      const ytBtn = document.createElement("button");
-      ytBtn.className = "ytp-button streamsnap-ytp-btn";
-      ytBtn.title = "StreamSnap AI — Click & Snip on Video (Option+S)";
-      ytBtn.innerHTML = `<span style="font-size:16px; color:#FF9900; line-height:36px; display:inline-block;">🎯</span>`;
-      ytBtn.style.textAlign = "center";
-      ytBtn.style.cursor = "pointer";
-
-      ytBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        startInteractiveCropper(video, parent);
-      });
-
-      ytRightControls.prepend(ytBtn);
-    }
+        const size = 180;
+        const left = Math.max(0, clickX - size / 2);
+        const top = Math.max(0, clickY - size / 2);
+        cropAndSearch(
+          parent,
+          left,
+          top,
+          Math.min(rect.width - left, size),
+          Math.min(rect.height - top, size)
+        );
+      },
+      true
+    );
   }
 
+  function injectYouTubeControlBarButton() {
+    const controls = document.querySelector(".ytp-right-controls");
+    if (!controls || controls.querySelector(".streamsnap-ytp-btn")) return;
+
+    const video = document.querySelector("#movie_player video");
+    const player = document.querySelector("#movie_player");
+    if (!video || !player) return;
+
+    const btn = el("button", "ytp-button streamsnap-ytp-btn");
+    btn.title = "StreamSnap AI — snip an item on the video (Alt+S)";
+    const icon = el("span", null, "🎯");
+    icon.style.cssText = "font-size:16px;color:#FF9900;line-height:36px;display:inline-block;";
+    btn.appendChild(icon);
+    btn.style.textAlign = "center";
+    btn.style.cursor = "pointer";
+
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      startInteractiveCropper(video, player);
+    });
+
+    controls.prepend(btn);
+  }
+
+  // -------------------------------------------------------------------------
+  // Selection UI
+  // -------------------------------------------------------------------------
+
   function showClickPulse(container, x, y) {
-    const pulse = document.createElement("div");
-    pulse.className = "streamsnap-click-pulse";
+    const pulse = el("div", "streamsnap-click-pulse");
     pulse.style.left = `${x}px`;
     pulse.style.top = `${y}px`;
     container.appendChild(pulse);
     setTimeout(() => pulse.remove(), 1300);
   }
 
-
-  /**
-   * Interactive Point-and-Snip Cropper on Video
-   */
   function startInteractiveCropper(video, container) {
-    // Remove any existing cropper
     const existing = container.querySelector(".streamsnap-interactive-cropper");
     if (existing) {
       existing.remove();
       return;
     }
 
-    const cropper = document.createElement("div");
-    cropper.className = "streamsnap-interactive-cropper";
+    const cropper = el("div", "streamsnap-interactive-cropper");
+    const banner = el("div", "streamsnap-cropper-banner");
+    banner.append(el("span", null, "🎯 Click or drag over any object to find it"));
+    const closeBtn = el("button", "streamsnap-cropper-close-btn", "✕");
+    closeBtn.title = "Close (Esc)";
+    banner.appendChild(closeBtn);
 
-    cropper.innerHTML = `
-      <div class="streamsnap-cropper-banner">
-        <span>🎯 Click or Drag over ANY object to find it on Amazon</span>
-        <button class="streamsnap-cropper-close-btn" title="Close (Esc)">✕</button>
-      </div>
-      <div class="streamsnap-cropper-selection" style="display:none;"></div>
-    `;
-
+    const selection = el("div", "streamsnap-cropper-selection");
+    selection.style.display = "none";
+    cropper.append(banner, selection);
     container.appendChild(cropper);
 
-    const closeBtn = cropper.querySelector(".streamsnap-cropper-close-btn");
-    if (closeBtn) {
-      closeBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        cropper.remove();
-      });
+    let isDrawing = false;
+    let startX = 0;
+    let startY = 0;
+    let endX = 0;
+    let endY = 0;
+
+    function teardown() {
+      cropper.remove();
+      document.removeEventListener("keydown", handleKeyDown);
     }
 
-    const selection = cropper.querySelector(".streamsnap-cropper-selection");
-    let isDrawing = false;
-    let startX = 0, startY = 0;
-    let endX = 0, endY = 0;
+    closeBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      teardown();
+    });
 
     function handleMouseDown(e) {
       if (e.target.closest(".streamsnap-cropper-banner")) return;
@@ -196,12 +244,13 @@
       startY = e.clientY - rect.top;
       endX = startX;
       endY = startY;
-
-      selection.style.left = `${startX}px`;
-      selection.style.top = `${startY}px`;
-      selection.style.width = `0px`;
-      selection.style.height = `0px`;
-      selection.style.display = "block";
+      Object.assign(selection.style, {
+        left: `${startX}px`,
+        top: `${startY}px`,
+        width: "0px",
+        height: "0px",
+        display: "block"
+      });
     }
 
     function handleMouseMove(e) {
@@ -210,16 +259,12 @@
       const rect = cropper.getBoundingClientRect();
       endX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
       endY = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
-
-      const left = Math.min(startX, endX);
-      const top = Math.min(startY, endY);
-      const width = Math.abs(endX - startX);
-      const height = Math.abs(endY - startY);
-
-      selection.style.left = `${left}px`;
-      selection.style.top = `${top}px`;
-      selection.style.width = `${width}px`;
-      selection.style.height = `${height}px`;
+      Object.assign(selection.style, {
+        left: `${Math.min(startX, endX)}px`,
+        top: `${Math.min(startY, endY)}px`,
+        width: `${Math.abs(endX - startX)}px`,
+        height: `${Math.abs(endY - startY)}px`
+      });
     }
 
     function handleMouseUp(e) {
@@ -233,31 +278,22 @@
       let width = Math.abs(endX - startX);
       let height = Math.abs(endY - startY);
 
-      // If user simply clicked (without dragging), create a smart 160x160 crop centered on click!
+      // A plain click (no drag) becomes a centered box.
       if (width < 20 || height < 20) {
-        const cropSize = 160;
-        left = Math.max(0, startX - cropSize / 2);
-        top = Math.max(0, startY - cropSize / 2);
-        width = Math.min(rect.width - left, cropSize);
-        height = Math.min(rect.height - top, cropSize);
+        const size = 160;
+        left = Math.max(0, startX - size / 2);
+        top = Math.max(0, startY - size / 2);
+        width = Math.min(rect.width - left, size);
+        height = Math.min(rect.height - top, size);
       }
 
-      // Show immediate pulse effect at center of selection
       showClickPulse(container, left + width / 2, top + height / 2);
-
-      // Crop the selected region & send to AI
-      cropAndSearch(video, container, left, top, width, height, rect.width, rect.height);
-      
-      // Cleanly remove overlay immediately so user is never blocked!
-      cropper.remove();
-      document.removeEventListener("keydown", handleKeyDown);
+      teardown();
+      cropAndSearch(container, left, top, width, height);
     }
 
     function handleKeyDown(e) {
-      if (e.key === "Escape") {
-        cropper.remove();
-        document.removeEventListener("keydown", handleKeyDown);
-      }
+      if (e.key === "Escape") teardown();
     }
 
     cropper.addEventListener("mousedown", handleMouseDown, true);
@@ -266,6 +302,9 @@
     document.addEventListener("keydown", handleKeyDown);
   }
 
+  // -------------------------------------------------------------------------
+  // Capture
+  // -------------------------------------------------------------------------
 
   function cropFromScreenshot(screenshotDataUrl, x, y, width, height) {
     return new Promise((resolve) => {
@@ -273,247 +312,237 @@
       img.onload = () => {
         try {
           const canvas = document.createElement("canvas");
-          canvas.width = Math.max(1, width);
-          canvas.height = Math.max(1, height);
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, x, y, width, height, 0, 0, width, height);
+          canvas.width = Math.max(1, Math.round(width));
+          canvas.height = Math.max(1, Math.round(height));
+          canvas.getContext("2d").drawImage(img, x, y, width, height, 0, 0, canvas.width, canvas.height);
           resolve(canvas.toDataURL("image/jpeg", 0.92));
-        } catch (e) {
-          console.warn("Screenshot crop error:", e);
+        } catch (err) {
+          console.warn("[StreamSnap] crop failed:", err);
           resolve(screenshotDataUrl);
         }
       };
-      img.onerror = () => {
-        resolve(screenshotDataUrl);
-      };
+      img.onerror = () => resolve(screenshotDataUrl);
       img.src = screenshotDataUrl;
     });
   }
 
-  async function cropAndSearch(video, container, cropX, cropY, cropW, cropH, totalW, totalH) {
-    // 1. Open SidePanel immediately
-    chrome.runtime.sendMessage({ action: "OPEN_SIDEPANEL" });
-    chrome.storage.local.set({ isScanning: true });
-
-    showToast(container, "🎯 Slicing video selection & analyzing with Gemini AI...");
-
-    const streamTitle = document.querySelector("h1.ytd-watch-metadata yt-formatted-string")?.textContent?.trim()
-      || document.querySelector("h2[data-a-target='stream-title']")?.textContent?.trim()
-      || document.title;
-
-    // 2. Capture high-res screenshot (100% CORS-proof)
-    chrome.runtime.sendMessage({ action: "CAPTURE_VISIBLE_TAB" }, async (captureRes) => {
-      const screenshotUrl = captureRes?.dataUrl;
-      if (!screenshotUrl) {
-        showToast(container, "⚠️ Screen capture error. Please retry.");
-        return;
-      }
-
-      // Calculate absolute screen crop coordinates
-      const containerRect = container.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      const absX = (containerRect.left + cropX) * dpr;
-      const absY = (containerRect.top + cropY) * dpr;
-      const absW = cropW * dpr;
-      const absH = cropH * dpr;
-
-      // Crop the high-res patch from the screenshot
-      const croppedBase64 = await cropFromScreenshot(screenshotUrl, absX, absY, absW, absH);
-
-      // 3. Send cropped image to background for pinpoint AI Vision analysis
-      chrome.storage.local.get(["geminiApiKey"], (storageRes) => {
-        const apiKey = storageRes.geminiApiKey;
-
-        chrome.runtime.sendMessage({
-          action: "ANALYZE_CROPPED_IMAGE",
-          croppedImage: croppedBase64,
-          apiKey: apiKey,
-          streamContext: { title: streamTitle }
-        }, (res) => {
-          if (res && res.success) {
-            showToast(container, `🎯 Found matching Amazon product! Check Side Panel ➔`);
-          } else {
-            showToast(container, `⚠️ AI Scan failed: ${res?.error || 'Check API key'}`);
+  function sendMessage(payload) {
+    return new Promise((resolve) => {
+      try {
+        chrome.runtime.sendMessage(payload, (response) => {
+          if (chrome.runtime.lastError) {
+            resolve({ error: chrome.runtime.lastError.message });
+            return;
           }
+          resolve(response || {});
         });
-      });
+      } catch (err) {
+        resolve({ error: err?.message || "Extension context unavailable" });
+      }
     });
   }
 
+  async function cropAndSearch(container, cropX, cropY, cropW, cropH) {
+    if (scanInFlight) {
+      showToast(container, "A scan is already running…");
+      return;
+    }
+    scanInFlight = true;
 
+    try {
+      sendMessage({ action: "OPEN_SIDEPANEL" });
+      chrome.storage.local.set({ isScanning: true });
+      showToast(container, "Slicing selection and analyzing…");
 
+      const capture = await sendMessage({ action: "CAPTURE_VISIBLE_TAB" });
+      if (!capture.dataUrl) {
+        chrome.storage.local.set({ isScanning: false });
+        showToast(container, `Screen capture failed: ${capture.error || "unknown error"}`);
+        return;
+      }
+
+      const rect = container.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const cropped = await cropFromScreenshot(
+        capture.dataUrl,
+        (rect.left + cropX) * dpr,
+        (rect.top + cropY) * dpr,
+        cropW * dpr,
+        cropH * dpr
+      );
+
+      const { geminiApiKey } = await chrome.storage.local.get(["geminiApiKey"]);
+      if (!geminiApiKey) {
+        chrome.storage.local.set({ isScanning: false });
+        showToast(container, "Add your Gemini API key in the Setup tab first.");
+        return;
+      }
+
+      const res = await sendMessage({
+        action: "ANALYZE_CROPPED_IMAGE",
+        croppedImage: cropped,
+        apiKey: geminiApiKey,
+        streamContext: { title: getStreamTitle() }
+      });
+
+      if (res?.success) {
+        const count = res.data?.matchCount || 0;
+        showToast(
+          container,
+          count > 0
+            ? `Found ${count} match${count === 1 ? "" : "es"} — see the side panel.`
+            : "No confident match for that selection. Try a tighter crop."
+        );
+      } else {
+        showToast(container, res?.error || "Analysis failed.");
+      }
+    } finally {
+      scanInFlight = false;
+    }
+  }
 
   async function captureTargetVideoFrame(video, container) {
-    // 1. Try direct video element drawImage (Fastest, zero background UI!)
+    // Fast path: draw the video element straight to a canvas. Fails on
+    // cross-origin media, in which case we fall back to a cropped screenshot.
     try {
-      if (video && video.videoWidth > 0 && video.videoHeight > 0) {
+      if (video?.videoWidth > 0 && video?.videoHeight > 0) {
         const canvas = document.createElement("canvas");
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.90);
-        if (dataUrl && dataUrl.length > 500) {
-          return dataUrl;
-        }
+        canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+        if (dataUrl && dataUrl.length > 500) return dataUrl;
       }
-    } catch (e) {
-      console.warn("Direct video canvas capture blocked by CORS, falling back to viewport crop:", e);
+    } catch {
+      // Tainted canvas — expected on DRM/cross-origin video.
     }
 
-    // 2. Fallback: Capture visible tab and strictly crop to the video element bounds!
-    return new Promise((resolve) => {
-      chrome.runtime.sendMessage({ action: "CAPTURE_VISIBLE_TAB" }, async (captureRes) => {
-        const screenshotUrl = captureRes?.dataUrl;
-        if (!screenshotUrl) {
-          resolve(null);
-          return;
-        }
-        const targetEl = video || container;
-        const rect = targetEl.getBoundingClientRect();
-        const dpr = window.devicePixelRatio || 1;
-        const absX = Math.max(0, rect.left * dpr);
-        const absY = Math.max(0, rect.top * dpr);
-        const absW = Math.max(10, rect.width * dpr);
-        const absH = Math.max(10, rect.height * dpr);
+    const capture = await sendMessage({ action: "CAPTURE_VISIBLE_TAB" });
+    if (!capture.dataUrl) return null;
 
-        const cropped = await cropFromScreenshot(screenshotUrl, absX, absY, absW, absH);
-        resolve(cropped);
-      });
-    });
+    const rect = (video || container).getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    return cropFromScreenshot(
+      capture.dataUrl,
+      Math.max(0, rect.left * dpr),
+      Math.max(0, rect.top * dpr),
+      Math.max(10, rect.width * dpr),
+      Math.max(10, rect.height * dpr)
+    );
   }
 
   async function triggerStreamScan(video, container, isSilent = false) {
-    if (!isSilent) {
-      renderLaserScan(container);
-      chrome.runtime.sendMessage({ action: "OPEN_SIDEPANEL" });
-    }
-    chrome.storage.local.set({ isScanning: true });
+    if (scanInFlight) return;
+    scanInFlight = true;
 
-    // Extract Stream Metadata (YouTube / Twitch / TikTok / Custom)
-    const streamTitle = document.querySelector("h1.ytd-watch-metadata yt-formatted-string")?.textContent?.trim()
-      || document.querySelector("h2[data-a-target='stream-title']")?.textContent?.trim()
-      || document.title;
-
-    const channelName = document.querySelector("#channel-name yt-formatted-string")?.textContent?.trim()
-      || document.querySelector("h1[data-a-target='user-channel-name']")?.textContent?.trim()
-      || "Live Streamer";
-
-    if (!isSilent) {
-      showToast(container, `Scanning "${streamTitle.slice(0, 30)}..." with StreamSnap AI ⚡`);
-    }
-
-    // Capture ONLY the clean video frame
-    const capturedImage = await captureTargetVideoFrame(video, container);
-
-    chrome.storage.local.get(["geminiApiKey"], (storageRes) => {
-      const apiKey = storageRes.geminiApiKey;
-
-      if (apiKey && capturedImage) {
-        if (!isSilent) showToast(container, "⚡ Running Live Multi-Object Vision...");
-        chrome.runtime.sendMessage({
-          action: "ANALYZE_WITH_AI",
-          imageBase64: capturedImage,
-          apiKey: apiKey,
-          streamContext: { title: streamTitle, channel: channelName }
-        }, (aiRes) => {
-          if (aiRes && aiRes.success && aiRes.data) {
-            renderBoundingBoxes(container, aiRes.data.items);
-            if (!isSilent) showToast(container, `✓ Products identified and matched!`);
-          } else {
-            console.warn("AI analysis error:", aiRes?.error);
-            if (!isSilent) showToast(container, `⚠️ AI Scan error. Check API key in Setup.`);
-          }
-        });
-      } else if (!apiKey) {
-        if (!isSilent) showToast(container, "⚠️ Please enter your Gemini API Key in the Setup tab ⚙️");
-      } else {
-        if (!isSilent) showToast(container, "⚠️ Could not capture video frame. Please retry.");
+    try {
+      if (!isSilent) {
+        renderLaserScan(container);
+        sendMessage({ action: "OPEN_SIDEPANEL" });
       }
-    });
-  }
 
-
-
-  function renderLaserScan(container) {
-    const existing = container.querySelector(".streamsnap-scan-overlay");
-    if (existing) existing.remove();
-
-    const overlay = document.createElement("div");
-    overlay.className = "streamsnap-scan-overlay";
-    overlay.innerHTML = `<div class="streamsnap-scan-laser"></div>`;
-    container.appendChild(overlay);
-
-    setTimeout(() => overlay.remove(), 2200);
-  }
-
-  function renderBoundingBoxes(container, scanData) {
-    if (!scanData) return;
-    // Remove previous boxes
-    container.querySelectorAll(".streamsnap-bbox").forEach((el) => el.remove());
-
-    const exacts = scanData.exactMatches || [];
-    const lookalikes = scanData.lookAlikes || [];
-    const requests = scanData.unidentifiedRequests || [];
-
-    const allItems = [
-      ...exacts.map((m) => ({ ...m, badge: "🟢 Exact" })),
-      ...lookalikes.map((m) => ({ ...m, badge: "🟡 Similar" })),
-      ...requests.map((m) => ({ ...m, badge: "❓ Request" }))
-    ];
-
-    allItems.forEach((item) => {
-      let topPct, leftPct, widthPct, heightPct;
-      if (item.box_2d && Array.isArray(item.box_2d) && item.box_2d.length >= 4) {
-        const [ymin, xmin, ymax, xmax] = item.box_2d;
-        topPct = ymin / 10;
-        leftPct = xmin / 10;
-        widthPct = Math.max(4, (xmax - xmin) / 10);
-        heightPct = Math.max(4, (ymax - ymin) / 10);
-      } else if (item.boundingBox) {
-        topPct = item.boundingBox.ymin;
-        leftPct = item.boundingBox.xmin;
-        widthPct = item.boundingBox.xmax - item.boundingBox.xmin;
-        heightPct = item.boundingBox.ymax - item.boundingBox.ymin;
-      } else {
+      const { geminiApiKey } = await chrome.storage.local.get(["geminiApiKey"]);
+      if (!geminiApiKey) {
+        if (!isSilent) showToast(container, "Add your Gemini API key in the Setup tab first.");
         return;
       }
 
-      const box = document.createElement("div");
-      box.className = "streamsnap-bbox";
-      box.style.top = `${topPct}%`;
-      box.style.left = `${leftPct}%`;
-      box.style.width = `${widthPct}%`;
-      box.style.height = `${heightPct}%`;
+      chrome.storage.local.set({ isScanning: true });
+      const streamTitle = getStreamTitle();
+      if (!isSilent) showToast(container, `Scanning "${truncate(streamTitle, 30)}"…`);
 
-      const displayLabel = item.detectionLabel || item.title?.slice(0, 30) || item.label || "Product";
-      box.innerHTML = `<div class="streamsnap-bbox-tag">${item.badge} ${displayLabel}</div>`;
+      const image = await captureTargetVideoFrame(video, container);
+      if (!image) {
+        chrome.storage.local.set({ isScanning: false });
+        if (!isSilent) showToast(container, "Could not capture the video frame.");
+        return;
+      }
 
-      box.addEventListener("click", (e) => {
-        e.stopPropagation();
-        chrome.runtime.sendMessage({ action: "OPEN_SIDEPANEL" });
+      const res = await sendMessage({
+        action: "ANALYZE_WITH_AI",
+        imageBase64: image,
+        apiKey: geminiApiKey,
+        streamContext: { title: streamTitle, channel: getChannelName() }
       });
 
-      container.appendChild(box);
-    });
+      if (res?.success && res.data) {
+        renderBoundingBoxes(container, res.data.items);
+        if (!isSilent) {
+          const count = res.data.matchCount || 0;
+          showToast(
+            container,
+            count > 0
+              ? `${count} product${count === 1 ? "" : "s"} identified.`
+              : "Nothing matched above your confidence threshold."
+          );
+        }
+      } else if (!isSilent) {
+        showToast(container, res?.error || "Scan failed.");
+      }
+    } finally {
+      scanInFlight = false;
+    }
+  }
 
-    // Auto fade out bounding boxes after 7 seconds
+  // -------------------------------------------------------------------------
+  // Overlays
+  // -------------------------------------------------------------------------
+
+  function renderLaserScan(container) {
+    container.querySelector(".streamsnap-scan-overlay")?.remove();
+    const overlay = el("div", "streamsnap-scan-overlay");
+    overlay.appendChild(el("div", "streamsnap-scan-laser"));
+    container.appendChild(overlay);
+    setTimeout(() => overlay.remove(), 2200);
+  }
+
+  function renderBoundingBoxes(container, results) {
+    if (!results) return;
+    container.querySelectorAll(".streamsnap-bbox").forEach((node) => node.remove());
+
+    const items = [
+      ...(results.exactMatches || []).map((m) => ({ ...m, badge: "🟢" })),
+      ...(results.lookAlikes || []).map((m) => ({ ...m, badge: "🟡" }))
+    ];
+
+    for (const item of items) {
+      const box = item.box_2d;
+      if (!Array.isArray(box) || box.length < 4) continue;
+      const [ymin, xmin, ymax, xmax] = box.map(Number);
+      if (![ymin, xmin, ymax, xmax].every(Number.isFinite)) continue;
+
+      const node = el("div", "streamsnap-bbox");
+      node.style.top = `${ymin / 10}%`;
+      node.style.left = `${xmin / 10}%`;
+      node.style.width = `${Math.max(4, (xmax - xmin) / 10)}%`;
+      node.style.height = `${Math.max(4, (ymax - ymin) / 10)}%`;
+
+      const label = truncate(item.detectionLabel || item.title || "Product", 34);
+      // textContent, not innerHTML — this string comes from the model.
+      node.appendChild(el("div", "streamsnap-bbox-tag", `${item.badge} ${label}`));
+      node.addEventListener("click", (e) => {
+        e.stopPropagation();
+        sendMessage({ action: "OPEN_SIDEPANEL" });
+      });
+
+      container.appendChild(node);
+    }
+
     setTimeout(() => {
-      container.querySelectorAll(".streamsnap-bbox").forEach((el) => {
-        el.style.opacity = "0";
-        setTimeout(() => el.remove(), 400);
+      container.querySelectorAll(".streamsnap-bbox").forEach((node) => {
+        node.style.opacity = "0";
+        setTimeout(() => node.remove(), 400);
       });
     }, 7000);
   }
 
-
   function showToast(container, text) {
-    const existing = container.querySelector(".streamsnap-toast");
-    if (existing) existing.remove();
-
-    const toast = document.createElement("div");
-    toast.className = "streamsnap-toast";
-    toast.innerHTML = `<span style="color:#FF9900;">⚡</span> ${text}`;
+    container.querySelector(".streamsnap-toast")?.remove();
+    const toast = el("div", "streamsnap-toast");
+    const bolt = el("span", null, "⚡");
+    bolt.style.color = "#FF9900";
+    // textContent for the message — it can contain a page title or API error.
+    toast.append(bolt, el("span", null, ` ${text}`));
     container.appendChild(toast);
 
     setTimeout(() => {
@@ -522,186 +551,78 @@
     }, 3500);
   }
 
-  function getPresetItems(streamType) {
-    const catalog = {
-      tech_podcast: {
-        exactMatches: [
-          {
-            asin: "B0002E4Z8M",
-            title: "Shure SM7B Cardioid Dynamic Vocal Microphone",
-            price: 399.00,
-            image: "https://m.media-amazon.com/images/I/71P4q+HqKQL._AC_SL1500_.jpg",
-            confidence: 0.98,
-            detectionLabel: "Shure SM7B Mic",
-            boundingBox: { ymin: 30, xmin: 38, ymax: 65, xmax: 60 }
-          },
-          {
-            asin: "B08PZHYWJS",
-            title: "Apple AirPods Max Wireless Over-Ear Headphones (Space Gray)",
-            price: 549.00,
-            image: "https://m.media-amazon.com/images/I/81jqUPkIVRL._AC_SL1500_.jpg",
-            confidence: 0.99,
-            detectionLabel: "AirPods Max",
-            boundingBox: { ymin: 12, xmin: 42, ymax: 32, xmax: 58 }
-          },
-          {
-            asin: "B07W755322",
-            title: "Elgato Key Light — Professional 2800 Lumen Studio LED Panel",
-            price: 199.99,
-            image: "https://m.media-amazon.com/images/I/61LpX3fXQAL._AC_SL1500_.jpg",
-            confidence: 0.94,
-            detectionLabel: "Elgato Key Light",
-            boundingBox: { ymin: 8, xmin: 75, ymax: 42, xmax: 95 }
-          }
-        ],
-        lookAlikes: [
-          {
-            asin: "B09KND9W8Z",
-            title: "Champion Men's Powerblend Fleece Oversized Hoodie (Vintage Olive)",
-            price: 38.50,
-            image: "https://m.media-amazon.com/images/I/71p0W+3XfUL._AC_UX679_.jpg",
-            similarityScore: 92,
-            detectionLabel: "Olive Green Hoodie",
-            boundingBox: { ymin: 42, xmin: 25, ymax: 92, xmax: 75 }
-          }
-        ],
-        unidentifiedRequests: [
-          {
-            id: "req_ceramic_mug_01",
-            label: "Handmade Speckled Ceramic Mug",
-            category: "Drinkware",
-            reason: "Artisanal custom piece with no retail barcode",
-            requestCount: 7,
-            boundingBox: { ymin: 70, xmin: 18, ymax: 90, xmax: 35 }
-          }
-        ]
-      },
-      gaming_stream: {
-        exactMatches: [
-          {
-            asin: "B09XS7JWHH",
-            title: "Sony WH-1000XM5 Wireless Noise Canceling Headphones",
-            price: 348.00,
-            image: "https://m.media-amazon.com/images/I/61vJtKbAssL._AC_SL1500_.jpg",
-            confidence: 0.96,
-            detectionLabel: "Sony WH-1000XM5",
-            boundingBox: { ymin: 18, xmin: 44, ymax: 40, xmax: 56 }
-          },
-          {
-            asin: "B07W5JK7B6",
-            title: "Elgato Stream Deck MK.2 — 15 Macro Keys Controller",
-            price: 149.99,
-            image: "https://m.media-amazon.com/images/I/61B5UjF7pKL._AC_SL1500_.jpg",
-            confidence: 0.97,
-            detectionLabel: "Stream Deck MK.2",
-            boundingBox: { ymin: 75, xmin: 65, ymax: 92, xmax: 82 }
-          }
-        ],
-        lookAlikes: [
-          {
-            asin: "B08C7KGH71",
-            title: "Govee RGBIC Smart Neon Rope Lights 10ft",
-            price: 59.99,
-            image: "https://m.media-amazon.com/images/I/71Y+PqK8aVL._AC_SL1500_.jpg",
-            similarityScore: 89,
-            detectionLabel: "RGB Neon Wall Light",
-            boundingBox: { ymin: 5, xmin: 10, ymax: 35, xmax: 50 }
-          },
-          {
-            asin: "B07W94RNVL",
-            title: "Aothia Leather Desk Pad Protector (Dark Walnut)",
-            price: 16.99,
-            image: "https://m.media-amazon.com/images/I/71fL-7Lz1wL._AC_SL1500_.jpg",
-            similarityScore: 94,
-            detectionLabel: "Desk Mat",
-            boundingBox: { ymin: 78, xmin: 25, ymax: 98, xmax: 75 }
-          }
-        ],
-        unidentifiedRequests: []
-      },
-      lifestyle_haul: {
-        exactMatches: [
-          {
-            asin: "B0B94ZDFM9",
-            title: "Stanley Quencher H2.0 FlowState Tumbler 40oz",
-            price: 45.00,
-            image: "https://m.media-amazon.com/images/I/61vK+GvKxLL._AC_SL1500_.jpg",
-            confidence: 0.95,
-            detectionLabel: "Stanley Cup 40oz",
-            boundingBox: { ymin: 50, xmin: 25, ymax: 85, xmax: 45 }
-          }
-        ],
-        lookAlikes: [
-          {
-            asin: "B09KND9W8Z",
-            title: "Champion Men's Powerblend Fleece Oversized Hoodie",
-            price: 38.50,
-            image: "https://m.media-amazon.com/images/I/71p0W+3XfUL._AC_UX679_.jpg",
-            similarityScore: 92,
-            detectionLabel: "Oversized Hoodie",
-            boundingBox: { ymin: 30, xmin: 35, ymax: 80, xmax: 65 }
-          }
-        ],
-        unidentifiedRequests: [
-          {
-            id: "req_gold_chain_02",
-            label: "Layered Herringbone Gold Necklace",
-            category: "Jewelry",
-            reason: "Fine boutique jewelry piece without brand mark",
-            requestCount: 14,
-            boundingBox: { ymin: 40, xmin: 46, ymax: 55, xmax: 54 }
-          }
-        ]
-      }
-    };
+  // -------------------------------------------------------------------------
+  // Wiring
+  // -------------------------------------------------------------------------
 
-    return catalog[streamType] || catalog.tech_podcast;
+  function getActivePlayer() {
+    const video =
+      document.querySelector("#movie_player video") || document.querySelector("video");
+    if (!video) return null;
+    const container = video.closest("#movie_player, .html5-video-player") || video.parentElement;
+    return container ? { video, container } : null;
   }
 
-  // Keyboard shortcut: Alt + S / Option + S (Mac compatible across all keyboard layouts with capture: true)
-  window.addEventListener("keydown", (e) => {
-    if (e.altKey && (e.code === "KeyS" || e.key === "s" || e.key === "S" || e.key === "ד" || e.key === "ß")) {
+  window.addEventListener(
+    "keydown",
+    (e) => {
+      if (!e.altKey || e.ctrlKey || e.metaKey) return;
+      // e.code is layout-independent, so this works on non-Latin keyboards.
+      if (e.code !== "KeyS") return;
+      const player = getActivePlayer();
+      if (!player) return;
       e.stopPropagation();
-      const activeVideo = document.querySelector("video");
-      const container = document.querySelector("#movie_player") || activeVideo?.parentElement;
-      if (activeVideo && container) {
-        triggerStreamScan(activeVideo, container);
-      }
-    }
-  }, true);
+      triggerStreamScan(player.video, player.container);
+    },
+    true
+  );
 
-  // Listen for trigger scan from Chrome toolbar icon or Auto-Scan timer
   chrome.runtime.onMessage.addListener((message) => {
     if (message.action === "TRIGGER_SCAN") {
-      const activeVideo = document.querySelector("video");
-      const container = document.querySelector("#movie_player") || activeVideo?.parentElement;
-      if (activeVideo && container) {
-        triggerStreamScan(activeVideo, container, false);
-      }
+      const player = getActivePlayer();
+      if (player) triggerStreamScan(player.video, player.container, false);
     }
     if (message.action === "TRIGGER_AUTO_SCAN") {
-      const activeVideo = document.querySelector("video");
-      const container = document.querySelector("#movie_player") || activeVideo?.parentElement;
-      if (activeVideo && container && !activeVideo.paused) {
-        triggerStreamScan(activeVideo, container, true); // silent auto-scan
+      const player = getActivePlayer();
+      // Skip paused video and backgrounded tabs — nothing new to see.
+      if (player && !player.video.paused && document.visibilityState === "visible") {
+        triggerStreamScan(player.video, player.container, true);
       }
     }
   });
 
+  // Debounced mutation handling. The old version called querySelectorAll on
+  // every mutation record, which on YouTube is a continuous main-thread stall.
+  let rafHandle = null;
+  let debounceTimer = null;
 
-  // YouTube SPA navigation events
-  window.addEventListener("yt-navigate-finish", () => setTimeout(initUniversalVideoHook, 400));
-  window.addEventListener("yt-page-data-updated", () => setTimeout(initUniversalVideoHook, 400));
-  window.addEventListener("load", () => setTimeout(initUniversalVideoHook, 500));
+  function scheduleHook() {
+    if (debounceTimer) return;
+    debounceTimer = setTimeout(() => {
+      debounceTimer = null;
+      if (rafHandle) cancelAnimationFrame(rafHandle);
+      rafHandle = requestAnimationFrame(() => {
+        rafHandle = null;
+        if (document.visibilityState === "visible") initUniversalVideoHook();
+      });
+    }, 400);
+  }
 
-  // Observe DOM for newly loaded streaming players
-  const observer = new MutationObserver(() => initUniversalVideoHook());
+  const observer = new MutationObserver(scheduleHook);
   observer.observe(document.body, { childList: true, subtree: true });
 
-  // Periodic poll to guarantee button stays on YouTube player during state changes
-  setInterval(initUniversalVideoHook, 1500);
+  // SPA navigation on YouTube does not reload the page.
+  window.addEventListener("yt-navigate-finish", scheduleHook);
+  window.addEventListener("yt-page-data-updated", scheduleHook);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") scheduleHook();
+  });
 
-  // Initial pass
+  window.addEventListener("pagehide", () => {
+    observer.disconnect();
+    if (debounceTimer) clearTimeout(debounceTimer);
+    if (rafHandle) cancelAnimationFrame(rafHandle);
+  });
+
   initUniversalVideoHook();
 })();
-
