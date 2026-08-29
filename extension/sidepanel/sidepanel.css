@@ -1080,6 +1080,22 @@ body {
   color: var(--exact-green);
 }
 
+.modal-detection-banner {
+  background: rgba(255, 153, 0, 0.1);
+  border: 1px solid rgba(255, 153, 0, 0.35);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--text-primary);
+  margin-top: 12px;
+  line-height: 1.4;
+}
+
+.modal-detection-banner strong {
+  color: var(--primary-gold);
+}
+
+
 /* Footer */
 .panel-footer {
   background: var(--bg-surface);

@@ -207,11 +207,12 @@ function openSourceFrameModal(prod) {
   const streamTag = document.getElementById("modal-stream-name");
   const prodTitle = document.getElementById("modal-product-title");
   const prodPrice = document.getElementById("modal-product-price");
+  const detectionLabel = document.getElementById("modal-detection-label");
 
   const fallbackSource = getProductThumbnail({ ...prod, title: "Video Stream Frame" });
   const fallbackProduct = getProductThumbnail(prod);
 
-  const sourceSrc = prod.sourceCrop || (currentScanData && (currentScanData.frameSnapshot || currentScanData.croppedThumbnail)) || fallbackSource;
+  const sourceSrc = prod.sourceCrop || (currentScanData && (currentScanData.croppedThumbnail || currentScanData.frameSnapshot)) || fallbackSource;
   const prodSrc = prod.image || fallbackProduct;
 
   sourceImg.src = sourceSrc;
@@ -224,8 +225,13 @@ function openSourceFrameModal(prod) {
   prodTitle.textContent = prod.title || "Amazon Product";
   prodPrice.textContent = `$${Number(prod.price || 29.99).toFixed(2)}`;
 
+  if (detectionLabel) {
+    detectionLabel.textContent = prod.detectionLabel || prod.matchReason || `${prod.title} (detected in live video frame)`;
+  }
+
   modal.style.display = "flex";
 }
+
 
 
 function initListeners() {
