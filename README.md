@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/Chrome_Manifest-V3_Certified-blue?style=for-the-badge&logo=googlechrome" alt="Manifest V3" />
   <img src="https://img.shields.io/badge/Vision_AI-Gemini_2.5_Flash-orange?style=for-the-badge&logo=google" alt="Gemini Vision" />
   <img src="https://img.shields.io/badge/Amazon-1--Click_Remote_Cart-FF9900?style=for-the-badge&logo=amazon" alt="Amazon Cart" />
-  <img src="https://img.shields.io/badge/Zero--Cost_Tokens-pHash_%2B_Frame_Diff-10B981?style=for-the-badge" alt="Zero-Cost" />
+  <img src="https://img.shields.io/badge/Frame_Cache-pHash-10B981?style=for-the-badge" alt="Frame Cache" />
   <img src="https://img.shields.io/badge/License-MIT-purple?style=for-the-badge" alt="License" />
 </p>
 
@@ -33,11 +33,12 @@
 | :--- | :--- |
 | **🔴 Click-to-Find Live** | Click ANY item directly on the playing video to drop a pulse ripple and identify it instantly. |
 | **🎯 Snip Box on Video** | Click or drag a box over any object to perform high-resolution cropped multi-modal AI vision analysis. |
-| **⚡ 1-Click Full Scan** | Instant laser scan of the entire video frame (Keyboard shortcut: `Option+S` / `Alt+S`). |
-| **🛒 Amazon 1-Click Cart** | Automatically constructs Amazon Remote Cart deep links (`/gp/aws/cart/add.html`) with multi-item persistence. |
-| **📸 Source Frame Trace** | Modal view showing the exact cropped live video snapshot side-by-side with the Amazon product listing. |
-| **📦 Deduplicated Catalog** | Saves all discovered products across sessions. Re-scans increment sightings count (`Seen 3x`) without clutter. |
-| **⚡ Zero-Cost Token Engine** | Client-side frame diffing + perceptual hashing (pHash) cuts API token expenses by **92%+** at 0ms latency. |
+| **⚡ 1-Click Full Scan** | Laser scan of the entire video frame (`Alt+S` in-page, or `Alt+Shift+S` from anywhere). |
+| **🛒 Amazon Cart** | Builds a multi-item Amazon Remote Cart link (`/gp/aws/cart/add.html`) from every verified item you stage. |
+| **✓ Verified vs. Visual** | Items matched to a confirmed listing get a direct product link. Everything else is labelled a **visual match** and opens an Amazon search — StreamSnap never invents an ASIN. |
+| **📸 Source Frame Trace** | Modal showing the cropped video snapshot beside the matched product. |
+| **📦 Deduplicated History** | Saves discovered products across sessions and increments a sighting count (`Seen 3×`). Capped at 200 items with oldest-first eviction so local storage never overflows. |
+| **⚡ Frame Cache** | Perceptual hashing skips the Vision API entirely when a frame is visually unchanged, which is most of the time on a static stream. |
 
 ---
 
@@ -81,7 +82,9 @@ cd streamsnap-ai
 ### 2. 🎯 Snip Box on Video
 1. Click **`🎯 Snip Box`** on the video overlay.
 2. Drag a box over any item or simply single-click the item.
-3. StreamSnap AI extracts a high-resolution lossless crop and resolves the Amazon ASIN.
+3. StreamSnap extracts a high-resolution crop and identifies it. If it maps to a confirmed listing you get a direct product link; otherwise the card is marked **visual match** and links to an Amazon search.
+
+> **Before your first scan:** open the **`⚙️ Setup`** tab and paste a free Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey). It is stored only on your device. Without a key, scanning is disabled — StreamSnap will tell you so rather than showing placeholder results.
 
 ### 3. 📸 Source Frame Traceability
 Want to verify which video moment an item came from?
@@ -95,10 +98,10 @@ Want to verify which video moment an item came from?
 
 ---
 
-## 🏗️ Architecture & Zero-Cost Token Pipeline
+## 🏗️ Architecture
 
 ```text
-  [ Live Video Stream (YouTube / Twitch / TikTok / Kick) ]
+  [ Live Video Stream (YouTube / Twitch / TikTok / Facebook / Kick) ]
                              │
             ┌────────────────┴────────────────┐
             ▼                                 ▼
@@ -106,31 +109,69 @@ Want to verify which video moment an item came from?
             │                                 │
             └────────────────┬────────────────┘
                              ▼
-           [ Client-Side Frame Diff Engine ]
-                 (Delta < 12% Threshold)
+              [ Perceptual Hash Lookup ]         services/frame_cache.js
                              │
             ┌────────────────┴────────────────┐
-     (Delta < 12%)                     (Delta >= 12%)
+     (hamming ≤ 4)                     (new frame)
             ▼                                 ▼
-   [ 0ms Local pHash Cache ]         [ Gemini 2.5 Flash Vision ]
-     (100% $0 Token Cost)              (Product ASIN Detection)
+   [ Cached Result — no API call ]   [ Gemini 2.5 Flash Vision ]
             │                                 │
             └────────────────┬────────────────┘
                              ▼
-         [ Parallel Amazon Product Resolution ]
-             (AbortController 2s Timeout)
+          [ Detection Reconciliation ]          services/amazon_service.js
+    · confidence filter    · verified-ASIN check
+    · unverified items keep the detection, lose the ASIN
                              │
                              ▼
-     [ StreamSnap Multi-Tier SidePanel & 1-Click Cart ]
+          [ Quota-Aware Persistence ]           services/storage.js
+    · thumbnails downscaled to 200px  · catalog capped at 200
+                             │
+                             ▼
+       [ Side Panel: Live · History · Cart · Stats ]
+```
+
+### Project layout
+
+```text
+extension/
+  background/background.js    MV3 service worker — capture, Gemini, persistence
+  content/content.js          In-page overlay controls (debounced, no polling)
+  sidepanel/                  Panel UI; all cards built via DOM, never innerHTML
+  services/
+    amazon_service.js         ASIN verification, cart & affiliate URLs
+    frame_cache.js            Perceptual hashing to skip redundant API calls
+    storage.js                Downscaling, quota budgeting, safe writes
+tools/
+  validate.mjs                Manifest, module graph, XSS and permission checks
+  test.mjs                    Behavioural tests for the commerce layer
+  package.sh                  Validate → test → build the store zip
 ```
 
 ---
 
-## 💰 Monetization & Business Potential
+## 🧪 Development
 
-- **Amazon Associates 24h-30d Multi-Item Cookie:** Earns 3% to 10% on every product purchased within the user's active session.
-- **Creator Revenue Share:** Streamers link their personal tag and earn 60% passive commission on their stream gear.
-- **Amazon Prime Conversion Bounty:** Earns \$3.00 to \$5.00 per new Prime subscriber.
+```bash
+node tools/validate.mjs   # manifest, imports, HTML ids, XSS, permissions
+node tools/test.mjs       # commerce layer behaviour (16 assertions)
+bash tools/package.sh     # runs both, then builds dist/streamsnap-extension-v<version>.zip
+```
+
+`validate.mjs` fails the build on the mistakes that only show up once Chrome
+loads the extension: a manifest pointing at a deleted file, an import that no
+longer resolves, a `getElementById` for markup that does not exist, `document`
+or `setInterval` inside the service worker, template interpolation into
+`innerHTML`, a hardcoded API key, or a synthesized ASIN.
+
+---
+
+## 💰 Monetization
+
+- **Amazon Associates:** 1%–10% depending on category, on qualifying purchases made within the cookie window after a click.
+- **Creator tag:** Streamers enter their own Associates tag in Setup so links attribute to them.
+- **Prime bounty:** Amazon pays a per-signup bounty on qualifying new Prime subscribers.
+
+> The "Projected" number in the Stats tab is calculated from list prices and Amazon's published rate cards. It is an estimate, not reported revenue — actual earnings appear only in your Amazon Associates dashboard.
 
 ---
 
