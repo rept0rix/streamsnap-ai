@@ -23,9 +23,19 @@ id = "REPLACE_WITH_KV_NAMESPACE_ID"
 binding = "IMAGES"
 bucket_name = "streamsnap-crops"
 
+# Users, usage, catalog and audit log.
+[[d1_databases]]
+binding = "DB"
+database_name = "streamsnap"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+migrations_dir = "migrations"
+
 # Secrets are set with `wrangler secret put`, never in this file:
 #   BRIGHTDATA_API_KEY
 #   BRIGHTDATA_ZONE
+#   GOOGLE_CLIENT_ID
+#   GOOGLE_CLIENT_SECRET
+#   ADMIN_EMAILS      comma-separated; these accounts become admin on first login
 
 [observability]
 enabled = true
