@@ -3,167 +3,161 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StreamSnap AI — Shazam for Live Stream Shopping (Amazon 1-Click)</title>
-  <meta name="description" content="Turn any live stream on YouTube, Twitch, TikTok, or Kick into an instant 1-Click Amazon shopping experience using multi-modal AI Vision.">
+  <title>StreamSnap AI — Find anything you see in a live stream</title>
+  <meta name="description" content="See something in a stream and want it? StreamSnap identifies any product on YouTube, Twitch, TikTok, Facebook and Kick, and links you to the real listing. Free Chrome extension.">
   <link rel="stylesheet" href="styles.css">
   <link rel="icon" type="image/svg+xml" href="assets/logo_full.svg">
 </head>
 <body>
 
-  <!-- Top Announcement Bar -->
   <div class="announcement-bar">
-    <span>⚡ <strong>StreamSnap AI v1.3 is LIVE!</strong> Multi-Modal Gemini Vision + 1-Click Amazon Remote Cart</span>
-    <a href="#simulator" class="announcement-link">Try Live Simulator ➔</a>
+    <span>⚡ <strong>StreamSnap is in review for the Chrome Web Store.</strong> Join the list and get it the day it goes live.</span>
+    <a href="#get" class="announcement-link">Get early access ➔</a>
   </div>
 
-  <!-- Glassmorphic Header -->
   <header class="navbar">
     <div class="nav-container">
       <a href="index.html" class="brand">
-        <img src="assets/logo_full.svg" alt="StreamSnap AI Logo" class="brand-logo" />
+        <img src="assets/logo_full.svg" alt="StreamSnap AI" class="brand-logo" />
       </a>
       <nav class="nav-menu">
-        <a href="#features">Features</a>
         <a href="#simulator">Live Demo</a>
-        <a href="#how-it-works">How It Works</a>
-        <a href="#calculator">Creator Revenue</a>
+        <a href="#how">How It Works</a>
+        <a href="#included">What You Get</a>
+        <a href="#streamers">For Streamers</a>
         <a href="#faq">FAQ</a>
       </nav>
       <div class="nav-cta">
-        <button id="nav-connect-btn" class="btn-secondary">🔗 Connect Tag</button>
+        <button id="nav-connect-btn" class="btn-secondary">For Streamers</button>
         <button class="btn-primary btn-install-trigger">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 4px;">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15v-4H7l5-7v4h4l-5 7z"/>
-          </svg>
-          <span>Add to Chrome (Free)</span>
+          <span>Get StreamSnap</span>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- Hero Section -->
+  <!-- ===================== 1. HERO ===================== -->
   <section class="hero-section">
     <div class="hero-glow"></div>
     <div class="container hero-content">
-      
-      <!-- Trust Rating Pill -->
+
       <div class="hero-badge">
         <span class="badge-dot"></span>
-        <span>UNIVERSAL LIVE STREAM COMMERCE</span>
-        <span class="badge-sep">•</span>
-        <span class="star-rating">★★★★★ 4.9</span>
-        <span class="rating-count">on Chrome Web Store</span>
+        <span>YOUTUBE · TWITCH · TIKTOK · FACEBOOK · KICK</span>
       </div>
 
       <h1 class="hero-title">
-        Turn Any Live Stream Into <br />
-        <span class="gradient-text">1-Click Amazon Shopping</span>
+        That thing you just saw in the stream?<br />
+        <span class="gradient-text">Find it in one click.</span>
       </h1>
 
       <p class="hero-subtitle">
-        Ever watched a stream on YouTube, Twitch, or TikTok and wondered where they got that hoodie, mic, or gear?
-        <strong>StreamSnap AI</strong> detects any object on screen in real time with AI Vision and stages it straight to your Amazon cart in 1 click.
+        StreamSnap identifies any product on a live stream — the mic, the hoodie, the cup, the light — and takes you
+        straight to the real listing. No pausing. No guessing. No searching <em>"black hoodie"</em> and scrolling for
+        twenty minutes.
       </p>
 
       <div class="hero-actions">
-        <button class="btn-primary btn-large btn-install-trigger">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-          </svg>
+        <a href="#simulator" class="btn-primary btn-large">
           <div class="btn-text-group">
-            <span class="btn-main-text">Add to Chrome — It's Free</span>
-            <span class="btn-sub-text">Chrome Web Store Certified • Manifest V3</span>
+            <span class="btn-main-text">Try it on the demo below</span>
+            <span class="btn-sub-text">No install, no signup — it runs right here</span>
           </div>
-        </button>
-
-        <a href="#simulator" class="btn-secondary btn-large">
-          <span>▶️ Test Live Simulator</span>
         </a>
+
+        <button class="btn-secondary btn-large btn-install-trigger">
+          <span>Get it for Chrome</span>
+        </button>
       </div>
 
-      <!-- Compatible Browsers -->
-      <div class="browser-compat-row">
-        <span class="compat-label">Compatible with all Chromium browsers:</span>
-        <div class="browser-badges">
-          <span class="browser-pill">🌐 Google Chrome</span>
-          <span class="browser-pill">🦁 Brave</span>
-          <span class="browser-pill">🌊 Microsoft Edge</span>
-          <span class="browser-pill">⭕ Opera</span>
-        </div>
-      </div>
-
-      <!-- Streaming Platforms Strip -->
-      <div class="platform-strip">
-        <span>WORKS UNIVERSALLY ON:</span>
-        <div class="platform-logos">
-          <span class="plat-tag yt">🔴 YouTube Live</span>
-          <span class="plat-tag twitch">🟣 Twitch</span>
-          <span class="plat-tag tt">⚫ TikTok Live</span>
-          <span class="plat-tag kick">🟢 Kick</span>
-          <span class="plat-tag fb">🔵 Facebook Live</span>
-        </div>
-      </div>
+      <p class="hero-trustline">
+        Free · No account needed to try · Nothing leaves your browser except the crop you choose
+      </p>
 
     </div>
   </section>
 
-  <!-- Interactive Live Simulator Section -->
+  <!-- ===================== 2. PROBLEM ===================== -->
+  <section class="problem-section">
+    <div class="container narrow">
+      <h2 class="section-title-lg">You've done this before.</h2>
+
+      <p class="lede">
+        You're watching a stream and something catches your eye. The microphone. The hoodie. The cup on the desk.
+      </p>
+
+      <p class="lede">So you do what everyone does.</p>
+
+      <div class="pain-list">
+        <div class="pain-item">You pause. You screenshot.</div>
+        <div class="pain-item">You type "black over-ear headphones" into Amazon and get 40,000 results, none of them the right one.</div>
+        <div class="pain-item">You scroll the pinned comments — nothing.</div>
+        <div class="pain-item">You ask in chat and it scrolls past in four seconds.</div>
+        <div class="pain-item">You search Reddit for "what mic does he use" and find a thread from 2023 about a different setup.</div>
+      </div>
+
+      <p class="lede">
+        Ten minutes later you've found nothing, the stream moved on, and you've forgotten what you wanted.
+      </p>
+
+      <p class="punchline">
+        The thing you wanted to buy was on screen the whole time.<br />
+        There was just no way to point at it.
+      </p>
+    </div>
+  </section>
+
+  <!-- ===================== 3. DEMO (proof by demonstration) ===================== -->
   <section id="simulator" class="simulator-section">
     <div class="container">
       <div class="section-header">
-        <span class="section-badge">INTERACTIVE DEMO</span>
-        <h2>Try StreamSnap AI Directly on Video</h2>
-        <p>Click on any hotspot below (Microphone, Headphones, Weights, Hoodie, Studio Light) to simulate instant AI detection and 1-Click Remote Cart!</p>
+        <span class="section-badge">LIVE DEMO — NOT A VIDEO</span>
+        <h2>Point at something. Watch what happens.</h2>
+        <p>Click any glowing item on the player below. This is the real detection flow, running in your browser right now.</p>
       </div>
 
       <div class="simulator-wrapper">
-        <!-- Interactive Video Player Mockup -->
         <div class="sim-player-box" id="sim-player">
-          <div class="sim-stream-tag">🔴 LIVE: Creator Studio Haul (Kai Cenat Setup)</div>
-          
-          <!-- Mock Video Background Scene -->
+          <div class="sim-stream-tag">🔴 LIVE: Creator Studio Setup</div>
+
           <div class="sim-video-scene">
-            <!-- Clickable Interactive Hotspots -->
             <div class="sim-hotspot" style="top: 50%; left: 34%;" data-item="mic">
               <span class="hotspot-ping"></span>
-              <span class="hotspot-lbl">🎙️ Shure SM7B Mic</span>
+              <span class="hotspot-lbl">🎙️ Microphone</span>
             </div>
 
             <div class="sim-hotspot" style="top: 28%; left: 46%;" data-item="headphones">
               <span class="hotspot-ping"></span>
-              <span class="hotspot-lbl">🎧 Sony WH-1000XM5</span>
+              <span class="hotspot-lbl">🎧 Headphones</span>
             </div>
 
             <div class="sim-hotspot" style="top: 60%; left: 54%;" data-item="hoodie">
               <span class="hotspot-ping"></span>
-              <span class="hotspot-lbl">👕 Champion Hoodie</span>
+              <span class="hotspot-lbl">👕 Hoodie</span>
             </div>
 
             <div class="sim-hotspot" style="top: 62%; left: 16%;" data-item="weights">
               <span class="hotspot-ping"></span>
-              <span class="hotspot-lbl">🏋️‍♂️ Bumper Plates</span>
+              <span class="hotspot-lbl">🏋️ Weight plates</span>
             </div>
 
             <div class="sim-hotspot" style="top: 18%; left: 78%;" data-item="lighting">
               <span class="hotspot-ping"></span>
-              <span class="hotspot-lbl">💡 Elgato Key Light</span>
+              <span class="hotspot-lbl">💡 Studio light</span>
             </div>
           </div>
 
-          <!-- Video Controls Overlay -->
           <div class="sim-controls-bar">
-            <span>⚡ StreamSnap Snip &amp; Click-to-Find Active — Click ANY glowing item above!</span>
+            <span>⚡ Click any glowing item above</span>
           </div>
         </div>
 
-        <!-- Mock SidePanel Results Container -->
         <div class="sim-sidepanel">
           <div class="panel-header-mini">
             <div style="display:flex; align-items:center; gap:8px;">
               <span class="bolt-badge">⚡</span>
-              <strong>StreamSnap AI Panel</strong>
+              <strong>StreamSnap Panel</strong>
             </div>
-            <span class="prime-pill">prime</span>
           </div>
 
           <div class="sim-panel-body" id="sim-results">
@@ -180,25 +174,25 @@
                 <h4 id="sim-title">Shure SM7B Vocal Microphone</h4>
                 <div class="sim-meta">
                   <span class="sim-price" id="sim-price">$399.00</span>
-                  <span class="sim-match">100% Match</span>
+                  <span class="sim-match" id="sim-match">✓ Verified listing</span>
                 </div>
                 <div class="sim-actions">
-                  <button id="sim-add-cart-btn" class="sim-btn-cart">🛒 Add to Amazon Cart</button>
-                  <a id="sim-buy-link" href="https://www.amazon.com/s?k=Shure+SM7B&tag=streamsnap03-20" target="_blank" class="sim-btn-view">↗ View</a>
+                  <button id="sim-add-cart-btn" class="sim-btn-cart">🛒 Add to cart</button>
+                  <a id="sim-buy-link" href="https://www.amazon.com/dp/B0002E4Z8M?tag=streamsnap03-20" target="_blank" rel="noopener noreferrer" class="sim-btn-view">↗ View</a>
                 </div>
               </div>
             </div>
 
             <div class="sim-cart-status" id="sim-cart-status" style="display: none;">
-              <span>✓ Added to 1-Click Amazon Remote Cart!</span>
+              <span>✓ Staged for Amazon cart</span>
             </div>
 
             <div class="sim-history-preview">
-              <span class="history-tag">Seen in this stream:</span>
+              <span class="history-tag">Found in this stream:</span>
               <div class="history-chips">
-                <span class="chip">🎙️ Shure SM7B (Seen 3×)</span>
-                <span class="chip">🎧 Sony XM5 (Seen 2×)</span>
-                <span class="chip">👕 Champion Hoodie</span>
+                <span class="chip">🎙️ Microphone (Seen 3×)</span>
+                <span class="chip">🎧 Headphones (Seen 2×)</span>
+                <span class="chip">👕 Hoodie</span>
               </div>
             </div>
           </div>
@@ -207,348 +201,521 @@
     </div>
   </section>
 
-  <!-- How It Works Section -->
-  <section id="how-it-works" class="steps-section">
+  <!-- ===================== 4. OUTCOME ===================== -->
+  <section class="outcome-section">
+    <div class="container narrow">
+      <h2 class="section-title-lg">You see it. You click it. It's in your cart.</h2>
+      <p class="lede">
+        No pausing the stream. No describing a shape in a search box. No hunting through comments written by someone
+        else six months ago.
+      </p>
+      <p class="lede">
+        You point at the object on the video, and the exact product page opens — with the real title, the real price,
+        and a link that actually goes somewhere.
+      </p>
+      <p class="punchline">The whole thing takes about four seconds.</p>
+    </div>
+  </section>
+
+  <!-- ===================== 5. SOLUTION ===================== -->
+  <section id="how" class="steps-section">
     <div class="container">
       <div class="section-header">
-        <span class="section-badge">SIMPLE 3-STEP WORKFLOW</span>
-        <h2>How StreamSnap AI Works</h2>
-        <p>From live stream screen to Amazon checkout in under 2 seconds.</p>
+        <span class="section-badge">HOW IT WORKS</span>
+        <h2>Three buttons appear on the video player</h2>
+        <p>Install it, open a stream, and pick whichever way you like to point at things.</p>
       </div>
 
       <div class="steps-grid">
         <div class="step-card">
           <div class="step-num">01</div>
-          <div class="step-icon">🔴</div>
-          <h3>Open Any Live Stream</h3>
-          <p>Watch your favorite streamers on YouTube, Twitch, TikTok, or Kick. StreamSnap AI embeds non-intrusive floating controls automatically.</p>
+          <div class="step-icon">⚡</div>
+          <h3>Scan Frame</h3>
+          <p>Reads the entire frame at once and boxes every product it finds. Best when you want to know what everything in the shot is.</p>
         </div>
 
         <div class="step-card">
           <div class="step-num">02</div>
           <div class="step-icon">🎯</div>
-          <h3>Point &amp; Snip Any Item</h3>
-          <p>Click "Click-to-Find" or drag a box over any hoodie, microphone, sneaker, or gym equipment. Multi-modal AI Vision identifies the item instantly.</p>
+          <h3>Snip Box</h3>
+          <p>Drag a box around one specific item. Best when the thing you want is small, or there's a lot going on in frame.</p>
         </div>
 
         <div class="step-card">
           <div class="step-num">03</div>
-          <div class="step-icon">🛒</div>
-          <h3>1-Click Amazon Cart</h3>
-          <p>Verified ASIN listings are staged into Amazon's official Remote Cart. Click checkout when you're done watching without missing a second of stream.</p>
+          <div class="step-icon">👆</div>
+          <h3>Click-to-Find</h3>
+          <p>Turn it on and just click the object while the video keeps playing. Fastest way to grab something before the shot changes.</p>
         </div>
+      </div>
+
+      <p class="section-footnote">
+        Results appear in a side panel next to the video. Add to cart, or save it for later.
+        Works on YouTube, Twitch, TikTok, Facebook and Kick.
+      </p>
+    </div>
+  </section>
+
+  <!-- ===================== 6. MECHANISM ===================== -->
+  <section class="mechanism-section">
+    <div class="container narrow">
+      <div class="section-header">
+        <span class="section-badge">WHY IT FINDS THINGS A SEARCH BOX CAN'T</span>
+        <h2>It doesn't describe the object. It searches with the image.</h2>
+      </div>
+
+      <div class="mechanism-compare">
+        <div class="mech-col mech-bad">
+          <div class="mech-label">Most "AI shopping" tools</div>
+          <p>Look at an image, write a description, search that description.</p>
+          <div class="mech-flow">
+            <span>olive drop-shoulder fleece</span>
+            <span class="mech-arrow">→</span>
+            <span>"green hoodie"</span>
+            <span class="mech-arrow">→</span>
+            <span class="mech-fail">40,000 results</span>
+          </div>
+          <p class="mech-note">The same dead end you'd reach by hand — just reached faster.</p>
+        </div>
+
+        <div class="mech-col mech-good">
+          <div class="mech-label">StreamSnap</div>
+          <p>Sends the crop itself to a reverse image search across the retail web.</p>
+          <div class="mech-flow">
+            <span>the actual crop</span>
+            <span class="mech-arrow">→</span>
+            <span>visual match</span>
+            <span class="mech-arrow">→</span>
+            <span class="mech-win">the thing you pointed at</span>
+          </div>
+          <p class="mech-note">Matches on shape, cut, and logo placement — not on adjectives.</p>
+        </div>
+      </div>
+
+      <div class="mechanism-promise">
+        <h3>And the part that matters most: we only link to listings we can confirm are real.</h3>
+        <p>
+          If StreamSnap resolves your crop to a specific verified product, you get a direct link to that product page.
+          If it can't confirm the exact listing, it says so — the card is marked
+          <span class="inline-badge unverified">Visual match</span>, and it takes you to a filtered search instead of a
+          product page.
+        </p>
+        <p class="emphasis">
+          We would rather tell you "this is our best visual guess" than send you to a dead product page and let you find
+          out yourself.
+        </p>
       </div>
     </div>
   </section>
 
-  <!-- Key Features Grid -->
-  <section id="features" class="features-section">
+  <!-- ===================== 7. VALUE STACK ===================== -->
+  <section id="included" class="features-section">
     <div class="container">
       <div class="section-header">
-        <span class="section-badge">NEXT-GEN AI COMMERCE</span>
-        <h2>Engineered for Seamless Stream Shopping</h2>
-        <p>Everything you need for zero-friction product discovery on live video.</p>
+        <span class="section-badge">WHAT YOU GET</span>
+        <h2>Everything below is included</h2>
       </div>
 
       <div class="features-grid">
         <div class="feature-card">
           <div class="f-icon">🎯</div>
-          <h3>Click-to-Find Live</h3>
-          <p>Click directly on the stream video player to drop an animated pulse ripple and instantly isolate that exact product.</p>
+          <h3>Point-and-find on video</h3>
+          <p>Click, snip, or scan any frame on five streaming platforms.</p>
+          <div class="f-worth">Worth: the 10–20 minutes you lose per item — or the purchase you abandon</div>
         </div>
 
         <div class="feature-card">
-          <div class="f-icon">🛒</div>
-          <h3>1-Click Remote Cart</h3>
-          <p>Generates multi-item Amazon Remote Cart links. Stage 5 items across a 2-hour stream and checkout all at once.</p>
+          <div class="f-icon">✓</div>
+          <h3>Verified-only linking</h3>
+          <p>Direct links to confirmed listings, and honest labelling when we can't confirm one.</p>
+          <div class="f-worth">Worth: never landing on a dead product page</div>
         </div>
 
         <div class="feature-card">
           <div class="f-icon">⚡</div>
-          <h3>Smart Frame Delta Cache</h3>
-          <p>Perceptual hashing (pHash) skips unnecessary API calls when frames haven't changed, delivering instant responses and saving bandwidth.</p>
+          <h3>Multi-item detection</h3>
+          <p>One scan boxes everything in frame, not just a single object.</p>
+          <div class="f-worth">Worth: find the mic, the light and the cup in one pass</div>
         </div>
 
         <div class="feature-card">
           <div class="f-icon">📦</div>
-          <h3>Deduplicated Catalog</h3>
-          <p>Tracks items seen across streams with sighting counts ("Seen 4×"). Capped safely at 200 items in local browser storage.</p>
+          <h3>Saved history</h3>
+          <p>Every product you find is kept, deduplicated with a sighting count, and searchable.</p>
+          <div class="f-worth">Worth: buy it next week instead of forgetting it in four seconds</div>
         </div>
 
         <div class="feature-card">
           <div class="f-icon">📸</div>
-          <h3>Source Frame Traceability</h3>
-          <p>Inspect exactly which frame and video moment identified an item with side-by-side video crop vs Amazon product photo.</p>
+          <h3>Source frame</h3>
+          <p>See the exact video moment a product came from, side by side with the listing.</p>
+          <div class="f-worth">Worth: confirm the match yourself before you spend money</div>
         </div>
 
         <div class="feature-card">
-          <div class="f-icon">🔒</div>
-          <h3>100% Privacy &amp; Local Storage</h3>
-          <p>No telemetry, no background recording, no data selling. Your API key and scan history stay exclusively on your machine.</p>
+          <div class="f-icon">🛒</div>
+          <h3>Multi-item cart</h3>
+          <p>Stage several finds across a stream and send them to Amazon together.</p>
+          <div class="f-worth">Plus: confidence control and auto-scan for long streams</div>
         </div>
+      </div>
+
+      <div class="price-reveal">
+        <div class="price-label">Price</div>
+        <div class="price-value">Free</div>
+        <p class="price-note">
+          Free to install, free to use, and free to try before you make an account. Paid tiers may come later for very
+          heavy use — everything on this page stays free.
+        </p>
       </div>
     </div>
   </section>
 
-  <!-- Creator Monetization Calculator -->
-  <section id="calculator" class="calculator-section">
-    <div class="container">
+  <!-- ===================== 8. PROOF ===================== -->
+  <section class="proof-section">
+    <div class="container narrow">
       <div class="section-header">
-        <span class="section-badge">MONETIZATION &amp; ROI</span>
-        <h2>Streamer Passive Income Calculator</h2>
-        <p>See how much passive commission you can earn each month with StreamSnap AI Amazon integration.</p>
+        <span class="section-badge">PROOF</span>
+        <h2>There are no testimonials on this page.</h2>
       </div>
 
-      <div class="calc-card">
-        <div class="calc-inputs">
-          <div class="calc-group">
-            <label>Avg. Concurrent Viewers: <span id="val-viewers" class="slider-badge">5,000</span></label>
-            <input type="range" id="input-viewers" min="500" max="50000" step="500" value="5000" />
-          </div>
+      <p class="lede">
+        StreamSnap hasn't launched yet, so there are no users, and no results to quote. Anyone showing you five-star
+        reviews at this stage made them up.
+      </p>
 
-          <div class="calc-group">
-            <label>Stream Hours / Month: <span id="val-hours" class="slider-badge">40 hrs</span></label>
-            <input type="range" id="input-hours" min="10" max="150" step="5" value="40" />
-          </div>
+      <p class="lede">What we can show you is the thing working.</p>
 
-          <div class="calc-group">
-            <label>Avg. Gear &amp; Fashion Price: <span id="val-price" class="slider-badge">$65.00</span></label>
-            <input type="range" id="input-price" min="20" max="250" step="5" value="65" />
-          </div>
+      <div class="proof-grid">
+        <div class="proof-card">
+          <div class="proof-icon">▶</div>
+          <h3>The demo above is live</h3>
+          <p>Click a hotspot and watch the detection and product card appear. That's the real flow, not a recording of it.</p>
         </div>
 
-        <div class="calc-output">
-          <div class="calc-result-box">
-            <span class="calc-sub">ESTIMATED MONTHLY COMMISSION</span>
-            <div class="calc-amount" id="calc-earnings">$3,120.00</div>
-            <span class="calc-annual">≈ <strong id="calc-annual-val">$37,440.00</strong> / year passive revenue</span>
-          </div>
-          <p class="calc-explainer">Based on a 1.2% visual click-through rate with Amazon 24-hr multi-item cart conversion cookie.</p>
-          <button id="claim-tag-btn" class="btn-primary" style="width: 100%;">🚀 Connect Your Affiliate Tag</button>
+        <div class="proof-card">
+          <div class="proof-icon">✓</div>
+          <h3>The badge is the proof</h3>
+          <p>Watch what the panel does when a product can be confirmed, and when it can't. It tells you the difference instead of hiding it. That one badge is the whole philosophy.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Amazon M&A / Investment Thesis Section -->
-  <section id="acquisition" class="acquisition-section">
-    <div class="container">
+  <!-- ===================== 9. OBJECTIONS ===================== -->
+  <section class="objections-section">
+    <div class="container narrow">
       <div class="section-header">
-        <span class="section-badge">STRATEGIC THESIS</span>
-        <h2>Why Amazon &amp; VCs Need StreamSnap AI</h2>
-        <p>The definitive bridge between 500M+ live streaming viewers and Amazon's global fulfillment infrastructure.</p>
+        <span class="section-badge">STRAIGHT ANSWERS</span>
+        <h2>The things you're probably wondering</h2>
       </div>
 
-      <div class="thesis-grid">
-        <div class="thesis-card">
-          <div class="thesis-icon">🛡️</div>
-          <h3>Defensive Moat vs TikTok Shop</h3>
-          <p>TikTok Shop is capturing billions in youth live commerce. StreamSnap AI turns YouTube, Twitch, and TikTok into Amazon shopping pipelines without platform friction.</p>
+      <div class="obj-list">
+        <div class="obj-item">
+          <h3>"Does it actually work, or is it AI that guesses?"</h3>
+          <p>It searches by image, not by description, and it tells you when it isn't sure. A card marked <em>Visual match</em> means a visual similarity, not a confirmed listing. You'll always know which one you're looking at.</p>
         </div>
 
-        <div class="thesis-card">
-          <div class="thesis-icon">🛒</div>
-          <h3>Prime Remote Cart Ingestion</h3>
-          <p>Direct 1-Click Remote Cart deep linking increases Amazon Prime member cart sizes by 35% during high-engagement live broadcasts.</p>
+        <div class="obj-item">
+          <h3>"Is it watching everything I browse?"</h3>
+          <p>No. It runs on five streaming domains and nowhere else — not your bank, not your email. Nothing is analysed unless you press a button. The crop you select is the only thing that leaves your browser, and it's deleted the moment the search comes back.</p>
         </div>
 
-        <div class="thesis-card">
-          <div class="thesis-icon">⚡</div>
-          <h3>Zero-Cost Visual AI Engine</h3>
-          <p>Proprietary client-side frame delta hashing (pHash) cuts API token expenses by 90%+, ensuring infinite positive gross margins from day one.</p>
+        <div class="obj-item">
+          <h3>"Do I need to sign up?"</h3>
+          <p>Not to try it. You get scans immediately on install. An account only matters when you want history synced across devices, or you're using it heavily.</p>
         </div>
-      </div>
 
-      <div class="m-a-download-box">
-        <div>
-          <h3>Read the Official Amazon M&amp;A Pitch &amp; Financial Model</h3>
-          <p>Review the comprehensive 3-year P&amp;L model, unit economics, and strategic acquisition rationale.</p>
+        <div class="obj-item">
+          <h3>"Do I need an API key or technical setup?"</h3>
+          <p>No. Install and use it.</p>
         </div>
-        <a href="https://github.com/rept0rix/streamsnap-ai/blob/master/docs/AMAZON_MA_PITCH_DECK.md" target="_blank" class="btn-primary">📄 View Amazon Pitch Deck</a>
+
+        <div class="obj-item">
+          <h3>"What's the catch if it's free?"</h3>
+          <p>When you buy through a link, we may earn an affiliate commission from the retailer. You pay the same price either way. That's the entire business model, and now you know it.</p>
+        </div>
+
+        <div class="obj-item">
+          <h3>"What if it doesn't find what I'm looking for?"</h3>
+          <p>Sometimes it won't — an unbranded or custom item may have no listing anywhere. You'll get a search for the closest match rather than a fake result.</p>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- FAQ Section -->
-  <section id="faq" class="faq-section">
-    <div class="container">
-      <div class="section-header">
-        <span class="section-badge">FREQUENTLY ASKED QUESTIONS</span>
-        <h2>Got Questions? We've Got Answers</h2>
-      </div>
+  <!-- ===================== 10. GUARANTEE ===================== -->
+  <section class="guarantee-section">
+    <div class="container narrow">
+      <div class="guarantee-box">
+        <div class="guarantee-icon">🛡️</div>
+        <h2>Nothing to lose, because there's nothing to commit</h2>
 
-      <div class="faq-grid">
-        <div class="faq-item">
-          <div class="faq-question">
-            <span>Is StreamSnap AI really free to use?</span>
-            <span class="faq-toggle">+</span>
+        <div class="guarantee-points">
+          <div class="g-point">
+            <strong>No payment, no account to try, no card on file.</strong>
+            No contract and no trial period that quietly ends.
           </div>
-          <div class="faq-answer">
-            <p>Yes! StreamSnap AI is 100% free and open-source. You can install it on Chrome, Brave, Edge, or Opera. You can connect your free Google Gemini API key to run unlimited visual searches.</p>
+          <div class="g-point">
+            <strong>Uninstall removes everything.</strong>
+            Your history lives in your own browser. Remove the extension and it's gone — there's no copy on a server to ask us for.
           </div>
-        </div>
-
-        <div class="faq-item">
-          <div class="faq-question">
-            <span>How does the 1-Click Amazon Cart work?</span>
-            <span class="faq-toggle">+</span>
-          </div>
-          <div class="faq-answer">
-            <p>When verified products are detected, StreamSnap AI adds them to your local session cart. When you click "Checkout Cart", it uses Amazon's official Remote Cart gateway to stage all items into your personal Amazon basket in a single click.</p>
-          </div>
-        </div>
-
-        <div class="faq-item">
-          <div class="faq-question">
-            <span>Is my browsing history or video stream private?</span>
-            <span class="faq-toggle">+</span>
-          </div>
-          <div class="faq-answer">
-            <p>Absolutely. StreamSnap AI only captures a video crop when you explicitly click Scan or Snip. It contains zero trackers, no telemetry, and never sells or transmits personal data. Review our <a href="privacy.html" class="text-gold">Privacy Policy</a>.</p>
-          </div>
-        </div>
-
-        <div class="faq-item">
-          <div class="faq-question">
-            <span>Can creators earn commissions from their viewers?</span>
-            <span class="faq-toggle">+</span>
-          </div>
-          <div class="faq-answer">
-            <p>Yes! Streamers can enter their Amazon Associate tracking tag in the Setup tab. Any viewer shopping their stream gear routes through their affiliate ID, earning them up to 10% commission on qualifying sales.</p>
+          <div class="g-point">
+            <strong>We never invent a product.</strong>
+            If we can't confirm a listing is real, we don't link to it as though it is. That's a promise about how the software behaves — and it's enforced by tests that fail the build if a fabricated identifier can reach a link.
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Bottom CTA Banner -->
-  <section class="bottom-cta-section">
+  <!-- ===================== 11. CTA ===================== -->
+  <section id="get" class="bottom-cta-section">
     <div class="container">
       <div class="cta-box">
-        <h2>Start Shopping Live Streams in 1-Click</h2>
-        <p>Join thousands of viewers and creators discovering stream gear instantly with AI.</p>
+        <h2>Stop losing the things you find.</h2>
+        <p>
+          Every stream you watch has products in it. Right now, finding one costs you ten minutes — or you give up.
+          It should cost you one click.
+        </p>
+
         <button class="btn-primary btn-large btn-install-trigger">
-          <span>⚡ Add StreamSnap AI to Chrome (Free)</span>
+          <div class="btn-text-group">
+            <span class="btn-main-text">Get StreamSnap for Chrome</span>
+            <span class="btn-sub-text">Free · YouTube, Twitch, TikTok, Facebook, Kick</span>
+          </div>
+        </button>
+
+        <div class="browser-compat-row">
+          <span class="compat-label">Works on Chromium browsers:</span>
+          <div class="browser-badges">
+            <span class="browser-pill">Chrome</span>
+            <span class="browser-pill">Brave</span>
+            <span class="browser-pill">Edge</span>
+            <span class="browser-pill">Opera</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 12. STREAMERS ===================== -->
+  <section id="streamers" class="streamer-section">
+    <div class="container narrow">
+      <div class="section-header">
+        <span class="section-badge">FOR STREAMERS</span>
+        <h2>Your viewers keep asking what mic that is. Answer once.</h2>
+      </div>
+
+      <p class="lede">
+        Every stream, the same questions. What's the hoodie. What's the light. Where'd you get the cup. You answer in
+        chat, it scrolls away, and someone asks again an hour later.
+      </p>
+
+      <p class="lede">
+        Meanwhile your pinned gear list is eight months stale and links to two products you don't own anymore.
+      </p>
+
+      <p class="punchline">
+        Connect your Amazon Associates tag and StreamSnap answers for you.
+      </p>
+
+      <p class="lede">
+        When a viewer points at something in your stream, the link they get carries your tag. You earn on gear you
+        already own and already show — without maintaining a list or repeating yourself.
+      </p>
+
+      <div class="streamer-points">
+        <div class="s-point">✓ Takes about a minute to set up</div>
+        <div class="s-point">✓ You keep 100% of your commission — we don't take a cut of your tag</div>
+        <div class="s-point">✓ Don't have a tag? Amazon Associates is free to join, and we'll walk you through it</div>
+      </div>
+
+      <div class="streamer-cta">
+        <button id="claim-tag-btn" class="btn-primary btn-large">
+          <span>Connect your Associates tag</span>
         </button>
       </div>
     </div>
   </section>
 
-  <!-- Smart Installation Modal -->
-  <div id="install-modal" class="modal-overlay" style="display: none;">
-    <div class="modal-window modal-install-window">
-      <div class="modal-top">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <img src="assets/logo_full.svg" alt="StreamSnap" height="28" />
-          <span class="store-certified-badge">✓ Certified Extension</span>
-        </div>
-        <button id="close-install-modal" class="modal-x">✕</button>
+  <!-- ===================== 13. CALCULATOR ===================== -->
+  <section id="calculator" class="calculator-section">
+    <div class="container narrow">
+      <div class="section-header">
+        <span class="section-badge">ESTIMATE</span>
+        <h2>What a stream audience could be worth</h2>
+        <p>
+          This is an arithmetic estimate from Amazon's published commission rates and the numbers you enter below.
+          It is not a forecast, and it isn't based on StreamSnap data — there isn't any yet.
+        </p>
       </div>
 
-      <div class="modal-content-area">
-        <h3 class="modal-headline">Choose Your Installation Method</h3>
-        <p class="modal-sub">StreamSnap AI is built for Manifest V3 and runs securely in all Chromium browsers.</p>
-
-        <!-- Method 1: Chrome Web Store (Recommended) -->
-        <div class="install-option-card recommended">
-          <div class="option-badge">RECOMMENDED</div>
-          <div class="option-header">
-            <div class="option-icon">🌐</div>
-            <div class="option-info">
-              <h4>Install from Chrome Web Store</h4>
-              <p>Official 1-click install with automatic background updates &amp; Google verification.</p>
-            </div>
-          </div>
-          <a id="store-install-btn" href="https://chrome.google.com/webstore" target="_blank" class="btn-primary" style="width: 100%; text-align: center; margin-top: 12px;">
-            ⚡ Add to Chrome (Official Store)
-          </a>
+      <div class="calc-card">
+        <div class="calc-group">
+          <label for="input-viewers">Average concurrent viewers: <span id="val-viewers">500</span></label>
+          <input type="range" id="input-viewers" min="50" max="10000" step="50" value="500" />
         </div>
 
-        <!-- Method 2: Manual Developer Mode (.ZIP) -->
-        <div class="install-option-card secondary-option">
-          <div class="option-header">
-            <div class="option-icon">📦</div>
-            <div class="option-info">
-              <h4>Download Extension ZIP (Developer Mode)</h4>
-              <p>Load unpacked directly from local source package in 3 quick steps.</p>
-            </div>
-          </div>
-          
-          <a id="download-zip-btn" href="assets/streamsnap-extension-v1.3.0.zip" download="streamsnap-extension-v1.3.0.zip" class="btn-secondary" style="width: 100%; text-align: center; margin-top: 10px;">
-            📥 Download Extension Package (.ZIP)
-          </a>
+        <div class="calc-group">
+          <label for="input-hours">Streaming hours per week: <span id="val-hours">20</span></label>
+          <input type="range" id="input-hours" min="1" max="60" step="1" value="20" />
+        </div>
 
-          <!-- Step-by-step accordion -->
-          <div class="manual-steps-box">
-            <span class="steps-title">3-Step Quick Manual Setup:</span>
-            <ol class="manual-steps-list">
-              <li>Unzip the downloaded <code>streamsnap-extension-v1.3.0.zip</code> folder.</li>
-              <li>Open <code>chrome://extensions/</code> in Chrome and toggle <strong>Developer mode</strong> (top-right).</li>
-              <li>Click <strong>Load unpacked</strong> and select the unzipped <code>extension</code> folder.</li>
-            </ol>
-          </div>
+        <div class="calc-group">
+          <label for="input-price">Average product price: $<span id="val-price">75</span></label>
+          <input type="range" id="input-price" min="10" max="500" step="5" value="75" />
+        </div>
+
+        <div class="calc-output">
+          <div class="calc-sub">Estimated monthly commission</div>
+          <div class="calc-amount" id="calc-earnings">$0.00</div>
+          <div class="calc-annual" id="calc-annual-val">$0.00 / year</div>
+        </div>
+
+        <p class="calc-explainer">
+          Assumes a small share of viewers click through and a typical commission rate for the category. Real results
+          depend on your audience, your category and Amazon's current rates. Treat this as a rough order of magnitude.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 14. FAQ ===================== -->
+  <section id="faq" class="faq-section">
+    <div class="container narrow">
+      <div class="section-header">
+        <span class="section-badge">FAQ</span>
+        <h2>Anything else?</h2>
+      </div>
+
+      <div class="faq-grid">
+        <div class="faq-item">
+          <div class="faq-question"><span>Which sites does it work on?</span><span class="faq-toggle">+</span></div>
+          <div class="faq-answer"><p>YouTube, Twitch, TikTok, Facebook and Kick. It doesn't load on any other site.</p></div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question"><span>Which browsers?</span><span class="faq-toggle">+</span></div>
+          <div class="faq-answer"><p>Chrome, and Chromium-based browsers like Edge, Brave and Opera.</p></div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question"><span>Does it slow down the stream?</span><span class="faq-toggle">+</span></div>
+          <div class="faq-answer"><p>No. It only works when you ask it to, and a repeated scan of an unchanged scene reuses the previous result instead of running again.</p></div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question"><span>What happens to the images?</span><span class="faq-toggle">+</span></div>
+          <div class="faq-answer"><p>The crop you select is sent to be matched, then deleted in the same request. It isn't stored and it isn't used for training. Product results are cached; images never are.</p></div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question"><span>Can I use it for things that aren't on Amazon?</span><span class="faq-toggle">+</span></div>
+          <div class="faq-answer"><p>Yes. When something isn't available on Amazon, other retailers can be shown instead.</p></div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question"><span>Is my browsing history collected?</span><span class="faq-toggle">+</span></div>
+          <div class="faq-answer"><p>No. The extension only runs on the five streaming domains, and it never sends page URLs or browsing history anywhere.</p></div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question"><span>Is it available now?</span><span class="faq-toggle">+</span></div>
+          <div class="faq-answer"><p>It's in review for the Chrome Web Store. Join the list and you'll get a link the day it's live — or install it manually today if you'd rather not wait.</p></div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question"><span>How do you make money?</span><span class="faq-toggle">+</span></div>
+          <div class="faq-answer"><p>Affiliate commission from retailers when you buy through a link. You pay the same price either way.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== INSTALL MODAL ===================== -->
+  <div id="install-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-window modal-install-window">
+      <div class="modal-top">
+        <h3>Get StreamSnap</h3>
+        <button id="close-install-modal" class="modal-x">✕</button>
+      </div>
+      <div class="modal-content-area">
+        <div class="install-option-card primary-option">
+          <h4>Get notified at launch</h4>
+          <p>StreamSnap is in review for the Chrome Web Store. Leave your email and you'll get the link the day it's approved.</p>
+          <form class="waitlist-form" id="waitlist-form">
+            <input type="email" id="waitlist-email" placeholder="you@example.com" required />
+            <button type="submit" class="btn-primary">Notify me</button>
+          </form>
+          <p class="field-hint">One email at launch. Nothing else.</p>
+        </div>
+
+        <div class="install-option-card">
+          <h4>Install it now, manually</h4>
+          <p>Don't want to wait? Download the extension and load it in developer mode. Takes about two minutes.</p>
+          <a id="store-install-btn" href="https://github.com/rept0rix/streamsnap-ai" target="_blank" rel="noopener noreferrer" class="btn-secondary" style="width:100%; text-align:center; display:block;">
+            Download &amp; instructions ↗
+          </a>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Amazon Connect Modal -->
-  <div id="connect-modal" class="modal-overlay" style="display: none;">
-    <div class="modal-window">
+  <!-- ===================== CONNECT TAG MODAL ===================== -->
+  <div id="connect-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-window modal-install-window">
       <div class="modal-top">
-        <h3>🔗 Connect Amazon Account / Associate Tag</h3>
+        <h3>Connect your Associates tag</h3>
         <button id="close-connect-modal" class="modal-x">✕</button>
       </div>
       <div class="modal-content-area">
-        <p>Link your personal Amazon Associate Tag or 1-Click Shopping account to monetize or purchase in 1 click.</p>
+        <p>Links generated from your streams will carry this tag, so the commission is attributed to you.</p>
         <div class="form-group">
-          <label>Amazon Associate Tracking ID (Optional)</label>
-          <input type="text" id="modal-tag-input" placeholder="e.g. yourtag-20" />
-          <span class="field-hint">Leave blank to use default (streamsnap03-20)</span>
+          <label for="modal-tag-input">Amazon Associates tracking ID</label>
+          <input type="text" id="modal-tag-input" placeholder="yourname-20" />
+          <p class="field-hint">
+            Find it in Associates Central, or
+            <a href="https://affiliate-program.amazon.com/" target="_blank" rel="noopener noreferrer">join free ↗</a>.
+          </p>
         </div>
-        <div class="form-group">
-          <label>Preferred Amazon Storefront Region</label>
-          <select id="modal-region-select" class="form-select">
-            <option value="US">Amazon.com (United States - Global)</option>
-            <option value="UK">Amazon.co.uk (United Kingdom)</option>
-            <option value="DE">Amazon.de (Germany &amp; EU)</option>
-            <option value="CA">Amazon.ca (Canada)</option>
-          </select>
-        </div>
-        <button id="modal-save-btn" class="btn-primary" style="width: 100%; margin-top: 10px;">Save &amp; Activate ⚡</button>
+        <button id="modal-save-btn" class="btn-primary" style="width:100%;">Save tag</button>
       </div>
     </div>
   </div>
 
-  <!-- Footer -->
+  <!-- ===================== FOOTER ===================== -->
   <footer class="site-footer">
     <div class="container footer-content">
       <div class="footer-left">
-        <img src="assets/logo_full.svg" alt="StreamSnap" height="32" />
-        <p>Universal Real-Time Visual Commerce for Live Streaming.</p>
-        <div class="footer-trust-badge">
-          <span>✓ Manifest V3 Certified</span>
-          <span>• 100% Client-Side Privacy</span>
-        </div>
+        <img src="assets/logo_full.svg" alt="StreamSnap AI" class="brand-logo" />
+        <p>Find anything you see in a live stream.</p>
+        <p class="footer-trust-badge">Runs on five streaming sites. Nowhere else.</p>
       </div>
+
       <div class="footer-links">
         <div class="footer-col">
           <h4>Product</h4>
-          <a href="#features">Features</a>
-          <a href="#simulator">Live Demo</a>
-          <a href="#calculator">Creator Revenue</a>
-          <a href="#" class="btn-install-trigger">Chrome Web Store</a>
+          <a href="#simulator">Live demo</a>
+          <a href="#how">How it works</a>
+          <a href="#included">What you get</a>
+          <a href="#streamers">For streamers</a>
         </div>
+
         <div class="footer-col">
           <h4>Legal &amp; Trust</h4>
-          <a href="privacy.html">Privacy Policy</a>
-          <a href="terms.html">Terms of Service</a>
-          <a href="https://github.com/rept0rix/streamsnap-ai" target="_blank">GitHub Repository</a>
+          <a href="../docs/PRIVACY_POLICY.md">Privacy policy</a>
+          <a href="#faq">FAQ</a>
+          <a href="https://github.com/rept0rix/streamsnap-ai" target="_blank" rel="noopener noreferrer">Source ↗</a>
         </div>
       </div>
     </div>
+
     <div class="container footer-bottom">
-      <p>© 2026 StreamSnap AI. All rights reserved. Amazon and Prime are trademarks of Amazon.com, Inc.</p>
+      <span>© 2026 StreamSnap AI</span>
+      <span class="footer-disclosure">
+        As an Amazon Associate we may earn from qualifying purchases. You pay the same price.
+      </span>
     </div>
   </footer>
 

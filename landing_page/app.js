@@ -17,7 +17,8 @@ const SIM_PRODUCTS = {
   mic: {
     title: "Shure SM7B Cardioid Dynamic Vocal Microphone",
     price: "$399.00",
-    match: "100% Exact Match",
+    match: "✓ Verified listing",
+    verified: true,
     icon: "🎙️",
     image: "https://m.media-amazon.com/images/I/71P4q+HqKQL._AC_SL1500_.jpg",
     asin: "B0002E4Z8M",
@@ -26,7 +27,8 @@ const SIM_PRODUCTS = {
   headphones: {
     title: "Sony WH-1000XM5 Noise Canceling Headphones",
     price: "$348.00",
-    match: "98% Visual Match",
+    match: "✓ Verified listing",
+    verified: true,
     icon: "🎧",
     image: "https://m.media-amazon.com/images/I/61vJtKbAssL._AC_SL1500_.jpg",
     asin: "B09XS7JWHH",
@@ -35,25 +37,28 @@ const SIM_PRODUCTS = {
   hoodie: {
     title: "Champion Men's Powerblend Fleece Oversized Streetwear Hoodie",
     price: "$38.50",
-    match: "94% Visual Match",
+    match: "Visual match",
+    verified: false,
     icon: "👕",
     image: "https://m.media-amazon.com/images/I/71j1n-1Pq-L._AC_SL1500_.jpg",
-    asin: "B09KND9W8Z",
+    asin: null,
     link: "https://www.amazon.com/s?k=Champion+Hoodie&tag=streamsnap03-20"
   },
   weights: {
     title: "Fringe Sport Black Bumper Plates (Pair of 45lb)",
     price: "$179.00",
-    match: "96% Exact Match",
+    match: "Visual match",
+    verified: false,
     icon: "🏋️‍♂️",
     image: "https://m.media-amazon.com/images/I/61k2YfR1L-L._AC_SL1500_.jpg",
-    asin: "B07H8K9110",
+    asin: null,
     link: "https://www.amazon.com/s?k=Fringe+Sport+Bumper+Plates&tag=streamsnap03-20"
   },
   lighting: {
     title: "Elgato Key Light — 2800 Lumen Studio LED Panel",
     price: "$199.99",
-    match: "100% Exact Match",
+    match: "✓ Verified listing",
+    verified: true,
     icon: "💡",
     image: "https://m.media-amazon.com/images/I/61LpX3fXQAL._AC_SL1500_.jpg",
     asin: "B07W755322",
@@ -88,8 +93,21 @@ function initSimulator() {
         }
       }
       if (title) title.textContent = item.title;
-      if (price) price.textContent = item.price;
-      if (buyLink) buyLink.href = item.link;
+      if (price) price.textContent = item.verified ? item.price : "Price on Amazon";
+      if (buyLink) {
+        buyLink.href = item.link;
+        // A verified item opens its listing; an unverified one opens a search.
+        buyLink.textContent = item.verified ? "\u2197 View listing" : "\u2197 Search";
+      }
+
+      const matchEl = document.getElementById("sim-match");
+      if (matchEl) {
+        matchEl.textContent = item.match;
+        matchEl.style.color = item.verified ? "#10B981" : "#9CA3AF";
+        matchEl.title = item.verified
+          ? "Confirmed against a real listing - links straight to the product page."
+          : "A visual similarity, not a confirmed listing - links to a search instead.";
+      }
 
       // Animate card highlight
       const card = document.getElementById("sim-product-card");
