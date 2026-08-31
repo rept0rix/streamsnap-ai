@@ -307,6 +307,11 @@ function initListeners() {
       case "ANALYTICS_UPDATED":
         renderAnalytics(message.analytics);
         break;
+      case "SCAN_CLEARED":
+      case "SETTINGS_RESET":
+      case "ALL_DATA_DELETED":
+        refreshStorageReport();
+        break;
     }
   });
 
@@ -317,6 +322,131 @@ function initListeners() {
 
   byId("clear-cart-btn")?.addEventListener("click", () => {
     chrome.runtime.sendMessage({ action: "CLEAR_CART" });
+  });
+
+  initDeletion();
+}
+
+// ---------------------------------------------------------------------------
+// Deletion
+//
+// Anything stored must be removable by the person it belongs to. Each action
+// confirms first, then refreshes the report so the effect is visible rather
+// than assumed.
+// ---------------------------------------------------------------------------
+
+function formatBytes(bytes) {
+  if (!bytes) return "0 KB";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function refreshStorageReport() {
+  const box = byId("storage-report");
+  if (!box) return;
+
+  chrome.runtime.sendMessage({ action: "GET_STORAGE_REPORT" }, (r) => {
+    if (!r) {
+      box.textContent = "Could not read storage.";
+      return;
+    }
+
+    box.replaceChildren();
+    const rows = [
+      ["Total stored", formatBytes(r.totalBytes)],
+      ["Gemini API key", r.hasApiKey ? "saved on this device" : "none"],
+      ["Affiliate tag", r.hasAffiliateTag ? "saved" : "none"],
+      ["Product history", `${r.catalogCount} items · ${formatBytes(r.historyBytes)}`],
+      ["Cart", `${r.cartCount} items`],
+      ["Last scanned frame", r.hasLastScan ? formatBytes(r.lastScanBytes) : "none"]
+    ];
+
+    for (const [label, value] of rows) {
+      const row = el("div", "storage-row");
+      row.append(el("span", "storage-key", label), el("span", "storage-val", value));
+      box.appendChild(row);
+    }
+  });
+}
+
+function wireDelete(id, { confirmText, action, extra }) {
+  byId(id)?.addEventListener("click", () => {
+    if (!confirm(confirmText)) return;
+    chrome.runtime.sendMessage({ action }, () => {
+      if (extra) extra();
+      refreshStorageReport();
+    });
+  });
+}
+
+function initDeletion() {
+  refreshStorageReport();
+
+  wireDelete("delete-key-btn", {
+    confirmText: "Remove your Gemini API key from this device? Scanning will stop working until you add one again.",
+    action: "DELETE_API_KEY",
+    extra: () => {
+      const input = byId("gemini-api-key-input");
+      if (input) input.value = "";
+      const status = byId("api-key-status");
+      if (status) {
+        status.textContent = "No API key. Scanning is disabled until you add one.";
+        status.style.color = "#F59E0B";
+      }
+    }
+  });
+
+  wireDelete("delete-tag-btn", {
+    confirmText: "Remove your affiliate tag? Links will fall back to the default tag.",
+    action: "DELETE_AFFILIATE_TAG",
+    extra: () => {
+      const input = byId("affiliate-tag-input");
+      if (input) input.value = "";
+      state.affiliateTag = "streamsnap03-20";
+    }
+  });
+
+  wireDelete("delete-lastscan-btn", {
+    confirmText: "Delete the last scanned frame? This is the image from your most recent scan.",
+    action: "DELETE_LAST_SCAN",
+    extra: () => {
+      state.scan = null;
+      show("scan-results-container", false);
+      show("scan-error-state", false);
+      show("scan-empty-state", true);
+    }
+  });
+
+  wireDelete("delete-history-btn", {
+    confirmText: "Delete your saved product history? This cannot be undone.",
+    action: "CLEAR_CATALOG"
+  });
+
+  wireDelete("delete-cart-btn", {
+    confirmText: "Empty your cart?",
+    action: "CLEAR_CART"
+  });
+
+  wireDelete("reset-stats-btn", {
+    confirmText: "Reset your scan and click statistics to zero?",
+    action: "RESET_ANALYTICS"
+  });
+
+  byId("delete-all-btn")?.addEventListener("click", () => {
+    const warning =
+      "Delete EVERYTHING StreamSnap has stored?\n\n" +
+      "This removes your API key, affiliate tag, product history, cart, statistics, " +
+      "the last scanned frame, and all settings.\n\n" +
+      "This cannot be undone.";
+    if (!confirm(warning)) return;
+    // Typed confirmation, because this is unrecoverable.
+    const typed = prompt('Type DELETE to confirm.');
+    if (typed !== "DELETE") return;
+
+    chrome.runtime.sendMessage({ action: "DELETE_ALL_DATA" }, () => {
+      window.location.reload();
+    });
   });
 }
 

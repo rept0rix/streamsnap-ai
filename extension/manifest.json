@@ -1,9 +1,8 @@
 {
   "manifest_version": 3,
   "name": "StreamSnap AI — Live Stream Visual Shopping",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "description": "Visual product discovery for live streams. Point at anything on YouTube, Twitch, TikTok or Kick and find it on Amazon.",
-
   "icons": {
     "16": "assets/icons/icon16.png",
     "48": "assets/icons/icon48.png",
@@ -21,7 +20,6 @@
     "service_worker": "background/background.js",
     "type": "module"
   },
-
   "side_panel": {
     "default_path": "sidepanel/sidepanel.html"
   },
@@ -63,8 +61,12 @@
         "*://*.facebook.com/*",
         "*://*.kick.com/*"
       ],
-      "js": ["content/content.js"],
-      "css": ["content/content.css"],
+      "js": [
+        "content/content.js"
+      ],
+      "css": [
+        "content/content.css"
+      ],
       "run_at": "document_idle",
       "all_frames": false
     }

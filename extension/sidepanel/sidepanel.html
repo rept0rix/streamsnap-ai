@@ -302,6 +302,31 @@
             </p>
           </div>
 
+          <!-- Data & Privacy — everything stored must be removable -->
+          <div class="settings-section danger-section">
+            <label class="settings-label">🗑️ Your Data</label>
+            <p class="settings-subtext">
+              Everything StreamSnap stores lives on this device. You can remove any of it, at any
+              time, and nothing is kept elsewhere.
+            </p>
+
+            <div id="storage-report" class="storage-report">Checking…</div>
+
+            <div class="delete-actions">
+              <button id="delete-key-btn" class="delete-action-btn">Remove API key</button>
+              <button id="delete-tag-btn" class="delete-action-btn">Remove affiliate tag</button>
+              <button id="delete-lastscan-btn" class="delete-action-btn">Delete last scanned frame</button>
+              <button id="delete-history-btn" class="delete-action-btn">Delete product history</button>
+              <button id="delete-cart-btn" class="delete-action-btn">Empty cart</button>
+              <button id="reset-stats-btn" class="delete-action-btn">Reset statistics</button>
+            </div>
+
+            <button id="delete-all-btn" class="delete-all-btn">Delete everything</button>
+            <p class="settings-subtext" style="margin-top:8px;">
+              Uninstalling the extension also removes all of it. There is no copy on a server.
+            </p>
+          </div>
+
         </div>
       </section>
     </main>
@@ -338,7 +363,7 @@
     <!-- Footer Status -->
     <footer class="panel-footer">
       <div class="footer-info">
-        <span>StreamSnap AI v1.3</span>
+        <span>StreamSnap AI v1.3.2</span>
         <span>•</span>
         <span id="footer-storage-note">Data stored locally</span>
       </div>

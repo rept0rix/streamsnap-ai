@@ -584,6 +584,77 @@ const handlers = {
   async GET_LATEST_SCAN() {
     const { latestScanResults = null } = await chrome.storage.local.get(["latestScanResults"]);
     return { data: latestScanResults };
+  },
+
+  // -------------------------------------------------------------------------
+  // Deletion
+  //
+  // Every category of stored data must be removable by the person it belongs
+  // to. Until now the only way out was clearing history and the cart, which
+  // left the API key, the affiliate tag, the analytics counters and — worst —
+  // latestScanResults, a full frame from whatever the user last scanned,
+  // sitting in storage with no way to remove them.
+  // -------------------------------------------------------------------------
+
+  async GET_STORAGE_REPORT() {
+    const stored = await chrome.storage.local.get(null);
+    const sizeOf = (value) =>
+      value === undefined ? 0 : new Blob([JSON.stringify(value)]).size;
+
+    let totalBytes = 0;
+    try {
+      totalBytes = await chrome.storage.local.getBytesInUse(null);
+    } catch {
+      totalBytes = Object.values(stored).reduce((sum, v) => sum + sizeOf(v), 0);
+    }
+
+    return {
+      totalBytes,
+      hasApiKey: Boolean(stored.geminiApiKey),
+      hasAffiliateTag: Boolean(stored.affiliateTag),
+      catalogCount: (stored.discoveredCatalog || []).length,
+      cartCount: (stored.cartItems || []).length,
+      hasLastScan: Boolean(stored.latestScanResults),
+      historyBytes: sizeOf(stored.discoveredCatalog),
+      lastScanBytes: sizeOf(stored.latestScanResults)
+    };
+  },
+
+  async DELETE_API_KEY() {
+    await chrome.storage.local.remove(["geminiApiKey"]);
+    broadcast({ action: "SETTINGS_RESET", field: "geminiApiKey" });
+    return { status: "deleted" };
+  },
+
+  async DELETE_AFFILIATE_TAG() {
+    await chrome.storage.local.remove(["affiliateTag"]);
+    broadcast({ action: "SETTINGS_RESET", field: "affiliateTag" });
+    return { status: "deleted" };
+  },
+
+  async DELETE_LAST_SCAN() {
+    await chrome.storage.local.remove(["latestScanResults", "lastScanError"]);
+    broadcast({ action: "SCAN_CLEARED" });
+    return { status: "deleted" };
+  },
+
+  async RESET_ANALYTICS() {
+    await safeSet({ analytics: { ...DEFAULTS.analytics } });
+    broadcast({ action: "ANALYTICS_UPDATED", analytics: { ...DEFAULTS.analytics } });
+    return { status: "reset" };
+  },
+
+  /**
+   * Remove everything this extension has ever stored, then re-seed defaults so
+   * the extension is usable rather than left in a half-initialised state.
+   */
+  async DELETE_ALL_DATA() {
+    await chrome.alarms.clear(AUTO_SCAN_ALARM);
+    await chrome.storage.local.clear();
+    await safeSet({ ...DEFAULTS });
+
+    broadcast({ action: "ALL_DATA_DELETED" });
+    return { status: "deleted" };
   }
 };
 
