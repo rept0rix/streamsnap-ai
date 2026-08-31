@@ -273,8 +273,70 @@ function initHeroInteractive() {
   });
 }
 
+// Quota Management for Live Demo Scans
+const QuotaManager = {
+  MAX_CREDITS: 3,
+  RESET_HOURS: 12,
+
+  getQuota() {
+    const saved = localStorage.getItem("streamsnap_demo_quota");
+    const lastReset = localStorage.getItem("streamsnap_demo_reset_time");
+    const now = Date.now();
+
+    if (!lastReset || now - parseInt(lastReset, 10) > this.RESET_HOURS * 3600 * 1000) {
+      localStorage.setItem("streamsnap_demo_quota", this.MAX_CREDITS);
+      localStorage.setItem("streamsnap_demo_reset_time", now);
+      return this.MAX_CREDITS;
+    }
+    return saved !== null ? parseInt(saved, 10) : this.MAX_CREDITS;
+  },
+
+  useCredit() {
+    const current = this.getQuota();
+    if (current <= 0) return false;
+    const next = current - 1;
+    localStorage.setItem("streamsnap_demo_quota", next);
+    this.updateUI();
+    return true;
+  },
+
+  updateUI() {
+    const badge = document.getElementById("demo-quota-badge");
+    const remaining = this.getQuota();
+    if (badge) {
+      badge.textContent = `[ DEMO CREDITS: ${remaining} / ${this.MAX_CREDITS} SCANS REMAINING ]`;
+      if (remaining <= 0) {
+        badge.style.color = "#FF334B";
+        badge.style.borderColor = "#FF334B";
+        badge.style.background = "rgba(255, 51, 75, 0.15)";
+      } else {
+        badge.style.color = "var(--primary-gold)";
+        badge.style.borderColor = "var(--border-active)";
+        badge.style.background = "var(--gold-tint)";
+      }
+    }
+  }
+};
+
+function extractYouTubeId(url) {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|live\/|shorts\/)([^#&?]*).*/;
+  const match = url.trim().match(regExp);
+  return match && match[2].length === 11 ? match[2] : null;
+}
+
 // Multi-Channel Interactive Simulator Database
 const CHANNELS_DB = {
+  speed: {
+    streamTitle: "🔴 LIVE BROADCAST // ISHOWSPEED_MIAMI_SPRING_BREAK_4K",
+    isYouTube: true,
+    ytId: "5NXo4gdhpCk",
+    targets: [
+      { key: "jersey", top: "54%", left: "52%", icon: "⚽", label: "PUMA AC MILAN // $89.99", title: "PUMA AC Milan 2023/24 Home Soccer Jersey (MSC & Emirates)", price: "$89.99", verified: true, img: "https://m.media-amazon.com/images/I/61y8E+Y2B1L._AC_SL1500_.jpg", link: "https://www.amazon.com/s?k=PUMA+AC+Milan+2023%2F24+Home+Jersey&tag=streamsnap03-20" },
+      { key: "cap", top: "28%", left: "65%", icon: "🧢", label: "ANGELS CAP // $34.99", title: "New Era Los Angeles Angels Black Snapback Cap", price: "$34.99", verified: true, img: "https://m.media-amazon.com/images/I/71N1UOD340L._AC_SL1500_.jpg", link: "https://www.amazon.com/s?k=Angels+Snapback+Cap+Black&tag=streamsnap03-20" },
+      { key: "tee", top: "48%", left: "38%", icon: "👕", label: "WHITE TEE // $18.50", title: "Classic White Heavyweight Crewneck T-Shirt", price: "$18.50", verified: false, img: "https://m.media-amazon.com/images/I/61dF8YF8iCL._AC_SL1500_.jpg", link: "https://www.amazon.com/s?k=White+Crewneck+T-Shirt+Men&tag=streamsnap03-20" }
+    ]
+  },
   studio: {
     streamTitle: "🔴 BROADCAST // KAI_CENAT_CREATOR_STUDIO_HD.STREAM",
     bgClass: "sim-scene-studio",
@@ -312,6 +374,8 @@ const CHANNELS_DB = {
 };
 
 function initSimulator() {
+  QuotaManager.updateUI();
+
   const tabs = document.querySelectorAll(".channel-tab");
   const scene = document.getElementById("sim-scene-container");
   const streamTag = document.getElementById("sim-stream-tag");
@@ -324,15 +388,32 @@ function initSimulator() {
   const cartBtn = document.getElementById("sim-add-cart-btn");
   const cartStatus = document.getElementById("sim-cart-status");
 
-  function renderChannel(key) {
-    const channel = CHANNELS_DB[key] || CHANNELS_DB.studio;
+  const customUrlInput = document.getElementById("custom-stream-input");
+  const scanCustomBtn = document.getElementById("btn-scan-custom-stream");
+  const quotaModal = document.getElementById("quota-modal");
+
+  function renderChannel(key, customYtId = null) {
+    const channel = CHANNELS_DB[key] || CHANNELS_DB.speed;
 
     tabs.forEach((t) => t.classList.toggle("active", t.dataset.scenario === key));
     if (streamTag) streamTag.textContent = channel.streamTitle;
 
     if (scene) {
-      scene.className = `sim-interactive-scene ${channel.bgClass}`;
-      scene.replaceChildren();
+      if (channel.isYouTube || customYtId) {
+        const vidId = customYtId || channel.ytId || "5NXo4gdhpCk";
+        scene.className = "sim-interactive-scene yt-live-mode";
+        scene.innerHTML = `
+          <iframe src="https://www.youtube-nocookie.com/embed/${vidId}?autoplay=1&mute=1&playsinline=1&controls=0&rel=0&modestbranding=1" 
+                  class="sim-yt-iframe" 
+                  title="YouTube Live Stream" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                  allowfullscreen></iframe>
+          <div class="laser-radar-line"></div>
+        `;
+      } else {
+        scene.className = `sim-interactive-scene ${channel.bgClass}`;
+        scene.replaceChildren();
+      }
 
       channel.targets.forEach((item, idx) => {
         const spot = document.createElement("div");
@@ -380,11 +461,69 @@ function initSimulator() {
     }
   }
 
+  // Handle Custom Stream URL Scan
+  function triggerCustomScan() {
+    const rawUrl = customUrlInput ? customUrlInput.value.trim() : "";
+    const ytId = extractYouTubeId(rawUrl);
+
+    if (!ytId) {
+      alert("Please enter a valid YouTube URL (e.g. https://www.youtube.com/watch?v=5NXo4gdhpCk)");
+      return;
+    }
+
+    // Check Quota Protection
+    if (QuotaManager.getQuota() <= 0) {
+      if (quotaModal) quotaModal.style.display = "flex";
+      return;
+    }
+
+    // Consume 1 quota credit
+    QuotaManager.useCredit();
+
+    if (scanCustomBtn) {
+      scanCustomBtn.innerHTML = '<span class="btn-laser-bg"></span><span class="btn-laser-text">⚡ SCANNING OPTICAL STREAM...</span>';
+      setTimeout(() => {
+        scanCustomBtn.innerHTML = '<span class="btn-laser-bg"></span><span class="btn-laser-text">⚡ SCAN LIVE STREAM</span>';
+      }, 1500);
+    }
+
+    if (ytId === "5NXo4gdhpCk") {
+      renderChannel("speed");
+    } else {
+      // Dynamic YouTube Custom Stream
+      CHANNELS_DB.custom = {
+        streamTitle: `🔴 CUSTOM BROADCAST // YT_${ytId}.STREAM`,
+        isYouTube: true,
+        ytId: ytId,
+        targets: [
+          { key: "detected1", top: "45%", left: "50%", icon: "🎯", label: "DETECTED ITEM // $49.99", title: `Visual Match from YouTube Stream (${ytId})`, price: "$49.99", verified: false, img: "https://m.media-amazon.com/images/I/61y8E+Y2B1L._AC_SL1500_.jpg", link: `https://www.amazon.com/s?k=Live+Stream+Product&tag=streamsnap03-20` },
+          { key: "detected2", top: "25%", left: "60%", icon: "🎧", label: "GEAR // $129.00", title: "Wireless Audio / Creator Tech Match", price: "$129.00", verified: true, img: "https://m.media-amazon.com/images/I/71P4q+HqKQL._AC_SL1500_.jpg", link: `https://www.amazon.com/s?k=Creator+Gear&tag=streamsnap03-20` }
+        ]
+      };
+      renderChannel("custom", ytId);
+    }
+  }
+
+  if (scanCustomBtn) {
+    scanCustomBtn.addEventListener("click", triggerCustomScan);
+  }
+  if (customUrlInput) {
+    customUrlInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") triggerCustomScan();
+    });
+  }
+
   tabs.forEach((tab) => {
-    tab.addEventListener("click", () => renderChannel(tab.dataset.scenario));
+    tab.addEventListener("click", () => {
+      const scenario = tab.dataset.scenario;
+      if (tab.dataset.url && customUrlInput) {
+        customUrlInput.value = tab.dataset.url;
+      }
+      renderChannel(scenario);
+    });
   });
 
-  renderChannel("studio");
+  renderChannel("speed");
 
   if (cartBtn && cartStatus) {
     cartBtn.addEventListener("click", () => {
@@ -512,6 +651,23 @@ function initModals() {
         closeConnect();
         saveTagBtn.innerHTML = '<span class="btn-laser-bg"></span><span class="btn-laser-text">SAVE TAG &amp; ACTIVATE ⚡</span>';
       }, 1200);
+    });
+  }
+
+  // Rate Limit Quota Modal
+  const quotaModal = document.getElementById("quota-modal");
+  const closeQuotaBtn = document.getElementById("close-quota-modal");
+  const dismissQuotaBtn = document.getElementById("btn-quota-dismiss");
+
+  function closeQuota() {
+    if (quotaModal) quotaModal.style.display = "none";
+  }
+
+  if (closeQuotaBtn) closeQuotaBtn.addEventListener("click", closeQuota);
+  if (dismissQuotaBtn) dismissQuotaBtn.addEventListener("click", closeQuota);
+  if (quotaModal) {
+    quotaModal.addEventListener("click", (e) => {
+      if (e.target === quotaModal) closeQuota();
     });
   }
 }

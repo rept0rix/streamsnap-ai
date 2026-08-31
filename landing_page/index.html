@@ -415,29 +415,57 @@
       
       <div class="section-head-mono">
         <span class="mono-section-number">[ 02 // INTERACTIVE_SIMULATOR ]</span>
-        <h2 class="editorial-section-title">Test the Detection Engine Live.</h2>
+        <h2 class="editorial-section-title">Test Any YouTube Stream Live.</h2>
         <p class="section-editorial-desc">
-          Switch between four real-world streaming environments below. Click any glowing coordinate target on the video player to inspect real Amazon product resolutions.
+          Paste any YouTube broadcast URL or pick a channel preset below to see StreamSnap's optical recognition HUD lock onto products in real-time.
         </p>
       </div>
 
-      <!-- Channel Switcher Buttons -->
+      <!-- Live Custom YouTube Stream Radar Bar -->
+      <div class="custom-stream-radar-bar">
+        <div class="radar-bar-label">
+          <span class="radar-ping-dot"></span>
+          <span class="radar-mono-tag">LIVE STREAM RADAR // PASTE ANY YOUTUBE URL</span>
+        </div>
+        <div class="radar-input-group">
+          <div class="input-url-wrapper">
+            <svg class="url-yt-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+            </svg>
+            <input type="text" id="custom-stream-input" placeholder="Paste YouTube link (e.g. https://www.youtube.com/watch?v=5NXo4gdhpCk)..." class="stream-url-input" value="https://www.youtube.com/watch?v=5NXo4gdhpCk" />
+          </div>
+          <button id="btn-scan-custom-stream" class="btn-laser">
+            <span class="btn-laser-bg"></span>
+            <span class="btn-laser-text">⚡ SCAN LIVE STREAM</span>
+          </button>
+        </div>
+        <div class="radar-quota-meta">
+          <span id="demo-quota-badge" class="quota-pill">[ DEMO CREDITS: 3 / 3 SCANS REMAINING ]</span>
+          <span class="quota-sub">Rate-limited to prevent API abuse · Chrome Extension has Unlimited Scans</span>
+        </div>
+      </div>
+
+      <!-- Quick Preset Chips -->
       <div class="channel-selector-bar" id="scenarios">
-        <button class="channel-tab active" data-scenario="studio">
+        <button class="channel-tab active" data-scenario="speed" data-url="https://www.youtube.com/watch?v=5NXo4gdhpCk">
+          <span class="ch-num">LIVE</span>
+          <span class="ch-label">⚽ iShowSpeed Miami (Live Video)</span>
+        </button>
+        <button class="channel-tab" data-scenario="studio">
           <span class="ch-num">CH 01</span>
-          <span class="ch-label">🎙️ CREATOR &amp; PODCAST STUDIO</span>
+          <span class="ch-label">🎙️ Creator Studio</span>
         </button>
         <button class="channel-tab" data-scenario="fashion">
           <span class="ch-num">CH 02</span>
-          <span class="ch-label">👗 STREETWEAR &amp; TRY-ON HAUL</span>
+          <span class="ch-label">👗 Streetwear Haul</span>
         </button>
         <button class="channel-tab" data-scenario="fitness">
           <span class="ch-num">CH 03</span>
-          <span class="ch-label">🏋️ GYM WORKOUT &amp; FITNESS</span>
+          <span class="ch-label">🏋️ Gym Workout</span>
         </button>
         <button class="channel-tab" data-scenario="gaming">
           <span class="ch-num">CH 04</span>
-          <span class="ch-label">🎮 TWITCH ESPORTS BATTLESTATION</span>
+          <span class="ch-label">🎮 Twitch Esports</span>
         </button>
       </div>
 
@@ -767,6 +795,36 @@
           <button id="modal-skip-tag-btn" class="btn-ghost-mono btn-full">
             <span>DON'T HAVE A TAG? CONTINUE WITH GOOGLE SIGN-IN →</span>
           </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== RATE LIMIT SHIELD MODAL ===================== -->
+  <div id="quota-modal" class="modal-overlay-studio" style="display:none;">
+    <div class="modal-card-studio">
+      <div class="modal-header-studio">
+        <div class="modal-title-mono text-gold">[ ⚡ DEMO LIMIT REACHED // 3 OF 3 SCANS USED ]</div>
+        <button id="close-quota-modal" class="modal-close-btn">✕</button>
+      </div>
+
+      <div class="modal-body-studio">
+        <div class="store-hero-banner">
+          <div class="store-tag" style="color: var(--live-red);">API RATE-LIMIT PROTECTION ACTIVE</div>
+          <h4>Free Web Demo Quota Exhausted</h4>
+          <p>To prevent server overload and API abuse, live YouTube stream scanning in the web demo is capped at 3 scans per session.</p>
+          <p style="margin-bottom: 20px; font-weight: 600; color: var(--text-white);">
+            Want unlimited, real-time product scanning on YouTube, Twitch, TikTok and Kick?
+          </p>
+          <a href="https://chromewebstore.google.com/detail/streamsnap-ai-%E2%80%94-live-stre/efbfecbochblmakpdllbnpdgkmmfmmel" target="_blank" rel="noopener noreferrer" class="btn-laser btn-full">
+            <span class="btn-laser-bg"></span>
+            <span class="btn-laser-text">🛒 INSTALL CHROME EXTENSION (UNLIMITED) ↗</span>
+          </a>
+        </div>
+
+        <div class="github-source-link">
+          <span>Demo credits reset automatically in 12 hours.</span>
+          <button id="btn-quota-dismiss" class="source-link-text" style="background:none;border:none;cursor:pointer;">Dismiss</button>
         </div>
       </div>
     </div>
