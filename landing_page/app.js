@@ -205,35 +205,35 @@ function initHeroInteractive() {
   const heroBuy = document.getElementById("hero-card-buy");
 
   const heroData = {
-    mic: {
-      title: "Shure SM7B Cardioid Dynamic Vocal Microphone",
-      price: "$399.00",
-      asin: "B0002E4Z8M",
-      box: { top: "36%", left: "28%", width: "150px", height: "170px" },
-      label: "SHURE_SM7B",
+    jersey: {
+      title: "PUMA Men's AC Milan 2023/24 Home Replica Soccer Jersey (MSC & Emirates)",
+      price: "$89.99",
+      asin: "B0CBVR3M9T",
+      box: { top: "44%", left: "48%", width: "140px", height: "180px" },
+      label: "AC_MILAN_PUMA_JERSEY",
       conf: "99.4%",
-      img: "https://m.media-amazon.com/images/I/71P4q+HqKQL._AC_SL1500_.jpg",
-      link: "https://www.amazon.com/dp/B0002E4Z8M?tag=streamsnap03-20"
+      img: "https://m.media-amazon.com/images/I/61y8E+Y2B1L._AC_SL1500_.jpg",
+      link: "https://www.amazon.com/s?k=PUMA+AC+Milan+2023%2F24+Home+Jersey&tag=streamsnap03-20"
     },
-    light: {
-      title: "Elgato Key Light — 2800 Lumen Professional Studio LED",
-      price: "$159.99",
-      asin: "B07W755322",
-      box: { top: "14%", left: "70%", width: "160px", height: "130px" },
-      label: "ELGATO_KEYLIGHT",
+    cap: {
+      title: "New Era Los Angeles Angels Black On Black 9FIFTY Snapback Cap",
+      price: "$34.99",
+      asin: "B079M7G65L",
+      box: { top: "24%", left: "62%", width: "100px", height: "90px" },
+      label: "LA_ANGELS_SNAPBACK",
       conf: "98.7%",
-      img: "https://m.media-amazon.com/images/I/61LpX3fXQAL._AC_SL1500_.jpg",
-      link: "https://www.amazon.com/dp/B07W755322?tag=streamsnap03-20"
+      img: "https://m.media-amazon.com/images/I/71N1UOD340L._AC_SL1500_.jpg",
+      link: "https://www.amazon.com/s?k=Angels+Snapback+Cap+Black&tag=streamsnap03-20"
     },
-    hoodie: {
-      title: "Champion Men's Powerblend Fleece Oversized Streetwear Hoodie",
-      price: "$38.50",
-      asin: "B01H492K6S",
-      box: { top: "54%", left: "44%", width: "170px", height: "180px" },
-      label: "CHAMPION_HOODIE",
+    tee: {
+      title: "Gildan Ultra Cotton Adult T-Shirt (Classic White Heavyweight)",
+      price: "$18.50",
+      asin: "B0762M89L4",
+      box: { top: "42%", left: "36%", width: "110px", height: "140px" },
+      label: "CREWNECK_WHITE_TEE",
       conf: "97.1%",
-      img: "https://m.media-amazon.com/images/I/71j1n-1Pq-L._AC_SL1500_.jpg",
-      link: "https://www.amazon.com/s?k=Champion+Hoodie&tag=streamsnap03-20"
+      img: "https://m.media-amazon.com/images/I/61dF8YF8iCL._AC_SL1500_.jpg",
+      link: "https://www.amazon.com/s?k=White+Crewneck+T-Shirt+Men&tag=streamsnap03-20"
     }
   };
 
