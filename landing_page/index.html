@@ -3,531 +3,619 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StreamSnap AI — Instant Live Stream Visual Shopping</title>
-  <meta name="description" content="Point at any product in a live video on YouTube, Twitch, TikTok, or Kick. StreamSnap finds the real item on Amazon and adds it to your cart in one click. Free Chrome extension.">
+  <title>StreamSnap AI — Live Stream Visual Shopping HUD</title>
+  <meta name="description" content="Point at any product in a live video on YouTube, Twitch, TikTok, or Kick. StreamSnap identifies the real item on Amazon and adds it to your cart in seconds. Free Chrome extension.">
+  
+  <!-- Premium Studio Typography (Syne + JetBrains Mono + Plus Jakarta Sans) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Syne:wght@700;800;900&display=swap" rel="stylesheet">
+  
   <link rel="stylesheet" href="styles.css">
   <link rel="icon" type="image/svg+xml" href="assets/logo_full.svg">
 </head>
-<body>
+<body class="studio-dark">
 
-  <!-- ===================== TOP ANNOUNCEMENT ===================== -->
-  <div class="announcement-bar">
-    <span>
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:4px;">
-        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-      </svg>
-      <strong>StreamSnap is officially available on the Chrome Web Store!</strong> Version 1.5.0 is live.
-    </span>
-    <a href="https://chromewebstore.google.com/detail/streamsnap-ai-%E2%80%94-live-stre/efbfecbochblmakpdllbnpdgkmmfmmel" target="_blank" rel="noopener noreferrer" class="announcement-link">
-      Install Free
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-left:2px;">
-        <path d="M5 12h14"></path>
-        <path d="m12 5 7 7-7 7"></path>
-      </svg>
-    </a>
+  <!-- Micro-Noise Film Grain Overlay -->
+  <div class="grain-overlay" aria-hidden="true"></div>
+
+  <!-- Custom Magnetic Cursor Follower -->
+  <div class="custom-cursor" id="custom-cursor" aria-hidden="true"></div>
+  <div class="custom-cursor-dot" id="custom-cursor-dot" aria-hidden="true"></div>
+
+  <!-- ===================== TECHNICAL TICKER HEADER ===================== -->
+  <div class="telemetry-bar">
+    <div class="telemetry-inner">
+      <div class="telemetry-item">
+        <span class="telemetry-dot pulse-red"></span>
+        <span class="mono-tag">SYS_STATUS: ONLINE</span>
+      </div>
+      <div class="telemetry-item hide-mobile">
+        <span class="mono-tag">LATENCY: &lt;1.8s</span>
+      </div>
+      <div class="telemetry-item">
+        <span class="mono-tag text-gold">CHROME WEB STORE: v1.5.0 LIVE</span>
+      </div>
+      <div class="telemetry-item hide-mobile">
+        <span class="mono-tag">ENGINES: YT · TWITCH · TIKTOK · KICK</span>
+      </div>
+    </div>
   </div>
 
-  <!-- ===================== NAVBAR ===================== -->
-  <header class="navbar">
-    <div class="nav-container">
-      <a href="index.html" class="brand">
-        <img src="assets/logo_full.svg" alt="StreamSnap AI" class="brand-logo" />
+  <!-- ===================== STUDIO NAVBAR ===================== -->
+  <header class="navbar-studio">
+    <div class="container nav-inner">
+      <a href="index.html" class="brand-link">
+        <img src="assets/logo_full.svg" alt="StreamSnap AI" class="brand-vector-logo" />
       </a>
-      <nav class="nav-menu">
-        <a href="#simulator">Live Demo</a>
-        <a href="#how">How It Works</a>
-        <a href="#scenarios">Use Cases</a>
-        <a href="#streamers">For Creators</a>
-        <a href="#faq">FAQ</a>
+
+      <nav class="nav-links-mono">
+        <a href="#hero-stage" class="nav-mono-link"><span>01</span> // STAGE</a>
+        <a href="#simulator" class="nav-mono-link"><span>02</span> // SIMULATOR</a>
+        <a href="#architecture" class="nav-mono-link"><span>03</span> // SPECS</a>
+        <a href="#creators" class="nav-mono-link"><span>04</span> // CREATORS</a>
+        <a href="#faq" class="nav-mono-link"><span>05</span> // FAQ</a>
       </nav>
-      <div class="nav-cta">
-        <button id="nav-connect-btn" class="btn-secondary">Creator Portal</button>
-        <button class="btn-primary btn-install-trigger">
-          <span>Get StreamSnap</span>
+
+      <div class="nav-actions">
+        <button id="nav-connect-btn" class="btn-ghost-mono">
+          <span>CREATOR TAG</span>
+        </button>
+        <button class="btn-laser btn-install-trigger">
+          <span class="btn-laser-bg"></span>
+          <span class="btn-laser-text">INSTALL EXTENSION</span>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- ===================== 1. SPLIT HERO WITH LIVE STREAM STAGE ===================== -->
-  <section class="hero-section">
-    <div class="hero-glow"></div>
-    <div class="container">
-      <div class="hero-split-grid">
-        
-        <!-- Left: Punchy, Human Copy & Action -->
-        <div class="hero-text-col">
-          <div class="hero-badge">
-            <span class="badge-dot"></span>
-            <span>LIVE COMMERCE · YOUTUBE · TWITCH · TIKTOK · KICK</span>
-          </div>
+  <!-- ===================== MONUMENTAL HERO ===================== -->
+  <section class="hero-monumental" id="hero-stage">
+    <div class="ambient-glow-amber"></div>
+    <div class="ambient-glow-cyan"></div>
 
-          <h1 class="hero-title">
-            Point at anything on stream.<br />
-            <span class="gradient-text">Buy it in one click.</span>
-          </h1>
-
-          <p class="hero-subtitle">
-            You see a mic, a hoodie, a tumbler, or a studio light in a live stream. Click it directly on the video — StreamSnap identifies the real product and adds it to your Amazon cart in seconds.
-          </p>
-
-          <div class="hero-actions-row">
-            <button class="btn-primary btn-large btn-install-trigger">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <circle cx="12" cy="12" r="4"></circle>
-                <line x1="21.17" y1="8" x2="12" y2="8"></line>
-                <line x1="3.95" y1="6.06" x2="8.54" y2="14"></line>
-                <line x1="10.88" y1="21.94" x2="15.46" y2="14"></line>
-              </svg>
-              <div class="btn-text-group">
-                <span class="btn-main-text">Add to Chrome — Free</span>
-                <span class="btn-sub-text">One-click install · Manifest V3</span>
-              </div>
-            </button>
-
-            <a href="#simulator" class="btn-secondary btn-large">
-              <span>Try Live Simulator ↓</span>
-            </a>
-          </div>
-
-          <div class="hero-trust-chips">
-            <span class="trust-chip">⚡ &lt;2s AI Detection</span>
-            <span class="trust-chip">🛒 1-Click Amazon Cart</span>
-            <span class="trust-chip">🔒 100% Free &amp; Private</span>
-          </div>
+    <div class="container hero-layout">
+      
+      <!-- Top Telemetry Header -->
+      <div class="hero-top-telemetry">
+        <div class="sys-badge">
+          <span class="sys-bracket">[</span>
+          <span class="sys-text">OPTICAL COMMERCE ENGINE // RELEASE 1.5.0</span>
+          <span class="sys-bracket">]</span>
         </div>
+        <div class="sys-coordinates hide-mobile">
+          <span>POS: 37.7749°N, 122.4194°W</span>
+          <span class="coord-sep">·</span>
+          <span>FPS: 60.0</span>
+        </div>
+      </div>
 
-        <!-- Right: Animated Live Stream Stage Preview -->
-        <div class="hero-stage-col">
-          <div class="hero-stream-window">
-            <div class="hero-stream-topbar">
-              <div class="stream-live-pill">
-                <span class="live-dot-pulse"></span>
-                <span>LIVE STREAM</span>
+      <!-- Monumental Headline -->
+      <h1 class="hero-giant-title">
+        SEE IT ON STREAM.<br />
+        <span class="title-shimmer">BUY IT ON AMAZON.</span>
+      </h1>
+
+      <p class="hero-editorial-lead">
+        The instant visual shopping layer for live streams. Click any microphone, hoodie, tumbler, or desk setup during YouTube, Twitch, TikTok, or Kick broadcasts — StreamSnap identifies the real product and routes directly to the confirmed Amazon listing in seconds.
+      </p>
+
+      <!-- Action Buttons Row -->
+      <div class="hero-cta-cluster">
+        <button class="btn-monumental btn-install-trigger">
+          <div class="btn-mono-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <circle cx="12" cy="12" r="4"></circle>
+              <line x1="21.17" y1="8" x2="12" y2="8"></line>
+              <line x1="3.95" y1="6.06" x2="8.54" y2="14"></line>
+              <line x1="10.88" y1="21.94" x2="15.46" y2="14"></line>
+            </svg>
+          </div>
+          <div class="btn-copy-group">
+            <span class="btn-main-copy">ADD TO CHROME — FREE</span>
+            <span class="btn-sub-copy">Official Chrome Web Store · Manifest V3</span>
+          </div>
+        </button>
+
+        <a href="#simulator" class="btn-telemetry-explore">
+          <span class="telemetry-bracket">[</span>
+          <span>ENTER LIVE SIMULATOR ↓</span>
+          <span class="telemetry-bracket">]</span>
+        </a>
+      </div>
+
+      <!-- Trust Meta Strip -->
+      <div class="hero-meta-strip">
+        <div class="meta-item"><span class="meta-bullet">⚡</span> &lt;2.0s VISION INFERENCE</div>
+        <div class="meta-item"><span class="meta-bullet">🎯</span> VERIFIED ASIN RESOLUTION</div>
+        <div class="meta-item"><span class="meta-bullet">🛒</span> 1-CLICK AMAZON STAGING</div>
+        <div class="meta-item"><span class="meta-bullet">🔒</span> ZERO BROWSING LOGS</div>
+      </div>
+
+      <!-- ===================== WIDESCREEN CINEMATIC LIVE STREAM TERMINAL ===================== -->
+      <div class="stage-terminal-wrapper">
+        <div class="terminal-frame">
+          
+          <!-- Terminal Header Bar -->
+          <div class="terminal-topbar">
+            <div class="terminal-status-group">
+              <span class="terminal-dot red-live"></span>
+              <span class="terminal-stream-title">🔴 BROADCAST // KAI_CENAT_CREATOR_STUDIO_HD.STREAM</span>
+            </div>
+            <div class="terminal-telemetry-readout">
+              <span class="mono-stat">RES: 1920x1080</span>
+              <span class="stat-div">|</span>
+              <span class="mono-stat text-gold">ACTIVE TARGETS: 04</span>
+              <span class="stat-div">|</span>
+              <span class="mono-stat">HUD: ENGAGED</span>
+            </div>
+          </div>
+
+          <!-- Video Viewport & Interactive Optical HUD -->
+          <div class="terminal-viewport">
+            <div class="viewport-scanline"></div>
+            <div class="laser-radar-line"></div>
+
+            <!-- Optical Focus Bounding Box (Animated) -->
+            <div class="optical-bounding-box" id="hero-bounding-box" style="top: 38%; left: 30%; width: 140px; height: 160px;">
+              <span class="corner-tick top-left"></span>
+              <span class="corner-tick top-right"></span>
+              <span class="corner-tick bottom-left"></span>
+              <span class="corner-tick bottom-right"></span>
+              <div class="box-target-label">
+                <span class="target-name">SHURE_SM7B</span>
+                <span class="target-conf">99.2%</span>
               </div>
-              <div class="stream-viewers-count">👁️ 37.4K watching</div>
             </div>
 
-            <!-- Video Stage Area -->
-            <div class="hero-video-viewport">
-              <div class="hero-radar-sweep"></div>
+            <!-- Clickable Interactive Hotspots -->
+            <div class="interactive-stage-spot active" style="top: 48%; left: 34%;" data-item="mic">
+              <div class="spot-optic-ring"></div>
+              <div class="spot-badge-mono">🎙️ SHURE SM7B // $399.00</div>
+            </div>
 
-              <!-- Stream Hotspots -->
-              <div class="hero-stream-hotspot active" style="top: 45%; left: 32%;" data-item="mic">
-                <span class="hotspot-pulse-ring"></span>
-                <span class="hero-spot-label">🎙️ Mic · $399</span>
+            <div class="interactive-stage-spot" style="top: 24%; left: 78%;" data-item="light">
+              <div class="spot-optic-ring"></div>
+              <div class="spot-badge-mono">💡 ELGATO KEY LIGHT // $159.99</div>
+            </div>
+
+            <div class="interactive-stage-spot" style="top: 66%; left: 52%;" data-item="hoodie">
+              <div class="spot-optic-ring"></div>
+              <div class="spot-badge-mono">👕 CHAMPION HOODIE // $38.50</div>
+            </div>
+
+            <!-- Bottom Floating HUD Controls -->
+            <div class="terminal-hud-toolbar">
+              <button class="hud-pill-btn active"><span>🎯</span> CLICK-TO-FIND</button>
+              <button class="hud-pill-btn"><span>✂️</span> SNIP BOX</button>
+              <button class="hud-pill-btn"><span>⚡</span> SCAN FULL FRAME</button>
+            </div>
+          </div>
+
+          <!-- Terminal Product Drawer (Reveals On Hotspot Click) -->
+          <div class="terminal-resolved-drawer" id="hero-detection-card">
+            <div class="drawer-thumb-col">
+              <img id="hero-card-img" src="https://m.media-amazon.com/images/I/71P4q+HqKQL._AC_SL1500_.jpg" alt="Shure SM7B" class="drawer-product-img" />
+              <span class="drawer-verified-stamp">✓ VERIFIED ASIN</span>
+            </div>
+
+            <div class="drawer-details-col">
+              <div class="drawer-meta-header">
+                <span class="drawer-asin-tag">ASIN: B0002E4Z8M</span>
+                <span class="drawer-match-rate">CONFIDENCE: 99.4%</span>
               </div>
-
-              <div class="hero-stream-hotspot" style="top: 24%; left: 78%;" data-item="light">
-                <span class="hotspot-pulse-ring"></span>
-                <span class="hero-spot-label">💡 Key Light · $159</span>
-              </div>
-
-              <div class="hero-stream-hotspot" style="top: 65%; left: 50%;" data-item="hoodie">
-                <span class="hotspot-pulse-ring"></span>
-                <span class="hero-spot-label">👕 Hoodie · $38</span>
-              </div>
-
-              <!-- Live HUD Buttons Overlay -->
-              <div class="hero-stream-hud">
-                <span class="hud-tool active">🎯 Click-to-Find</span>
-                <span class="hud-tool">✂️ Snip Box</span>
-                <span class="hud-tool">⚡ Scan Frame</span>
+              <h3 id="hero-card-title" class="drawer-title">Shure SM7B Cardioid Dynamic Vocal Microphone</h3>
+              <div class="drawer-pricing">
+                <span id="hero-card-price" class="drawer-price-main">$399.00</span>
+                <span class="drawer-prime-tag">prime</span>
+                <span class="drawer-in-stock">IN STOCK · FREE DELIVERY</span>
               </div>
             </div>
 
-            <!-- Instant Detection Card Overlay -->
-            <div id="hero-detection-card" class="hero-product-popup animate-pop">
-              <img id="hero-card-img" src="https://m.media-amazon.com/images/I/71P4q+HqKQL._AC_SL1500_.jpg" alt="Shure SM7B" class="popup-thumb" />
-              <div class="popup-info">
-                <div class="popup-verified-tag">✓ Verified Amazon Match</div>
-                <h4 id="hero-card-title">Shure SM7B Vocal Dynamic Microphone</h4>
-                <div class="popup-price-row">
-                  <span id="hero-card-price" class="popup-price">$399.00</span>
-                  <span class="popup-prime">prime</span>
-                </div>
-              </div>
-              <a id="hero-card-buy" href="https://www.amazon.com/dp/B0002E4Z8M?tag=streamsnap03-20" target="_blank" rel="noopener noreferrer" class="popup-buy-btn">
-                🛒 Add
+            <div class="drawer-actions-col">
+              <a id="hero-card-buy" href="https://www.amazon.com/dp/B0002E4Z8M?tag=streamsnap03-20" target="_blank" rel="noopener noreferrer" class="btn-drawer-buy">
+                <span>🛒 1-CLICK AMAZON CART</span>
               </a>
+              <div class="drawer-hint">Direct link to authentic product page</div>
             </div>
-
           </div>
+
         </div>
+      </div>
 
+    </div>
+  </section>
+
+  <!-- ===================== KINETIC INFINITE MARQUEE ===================== -->
+  <section class="marquee-strip-section" aria-hidden="true">
+    <div class="marquee-track">
+      <div class="marquee-content">
+        <span>YOUTUBE LIVE SHOPPING</span><span class="marquee-star">✦</span>
+        <span>TWITCH ESPORTS GEAR</span><span class="marquee-star">✦</span>
+        <span>TIKTOK LIVE COMMERCE</span><span class="marquee-star">✦</span>
+        <span>KICK BROADCASTS</span><span class="marquee-star">✦</span>
+        <span>1-CLICK AMAZON STAGING</span><span class="marquee-star">✦</span>
+        <span>&lt;2.0S MULTI-OBJECT VISION</span><span class="marquee-star">✦</span>
+        <span>VERIFIED ASIN ENGINE</span><span class="marquee-star">✦</span>
+        <span>YOUTUBE LIVE SHOPPING</span><span class="marquee-star">✦</span>
+        <span>TWITCH ESPORTS GEAR</span><span class="marquee-star">✦</span>
+        <span>TIKTOK LIVE COMMERCE</span><span class="marquee-star">✦</span>
+      </div>
+      <div class="marquee-content" aria-hidden="true">
+        <span>YOUTUBE LIVE SHOPPING</span><span class="marquee-star">✦</span>
+        <span>TWITCH ESPORTS GEAR</span><span class="marquee-star">✦</span>
+        <span>TIKTOK LIVE COMMERCE</span><span class="marquee-star">✦</span>
+        <span>KICK BROADCASTS</span><span class="marquee-star">✦</span>
+        <span>1-CLICK AMAZON STAGING</span><span class="marquee-star">✦</span>
+        <span>&lt;2.0S MULTI-OBJECT VISION</span><span class="marquee-star">✦</span>
+        <span>VERIFIED ASIN ENGINE</span><span class="marquee-star">✦</span>
+        <span>YOUTUBE LIVE SHOPPING</span><span class="marquee-star">✦</span>
+        <span>TWITCH ESPORTS GEAR</span><span class="marquee-star">✦</span>
+        <span>TIKTOK LIVE COMMERCE</span><span class="marquee-star">✦</span>
       </div>
     </div>
   </section>
 
-  <!-- ===================== 2. THE PROBLEM ===================== -->
-  <section class="problem-section">
-    <div class="container narrow">
-      <h2 class="section-title-lg">You've done this before.</h2>
-      <p class="lede">
-        You're watching a stream. The creator is wearing a clean jacket, or using an unbelievable microphone, or holding a tumbler you've never seen before.
-      </p>
-      <p class="lede">So you try to find it:</p>
-
-      <div class="pain-list">
-        <div class="pain-item">You pause the stream, screenshot, and crop.</div>
-        <div class="pain-item">You type "black over-ear headphones" into Amazon and get 40,000 random results.</div>
-        <div class="pain-item">You scroll through pinned comments and video descriptions — nothing.</div>
-        <div class="pain-item">You ask in live chat and your message disappears in two seconds.</div>
-      </div>
-
-      <p class="punchline">
-        The item you wanted was right on your screen.<br />
-        There was just no way to point at it and buy it.
-      </p>
-    </div>
-  </section>
-
-  <!-- ===================== 3. INTERACTIVE SIMULATOR (MULTI-SCENARIO) ===================== -->
-  <section id="simulator" class="simulator-section">
+  <!-- ===================== THE PROBLEM: BRUTALIST COMPARISON ===================== -->
+  <section class="section-contrast">
     <div class="container">
-      <div class="section-header">
-        <span class="section-badge">INTERACTIVE SIMULATOR</span>
-        <h2>Point at something. Watch what happens.</h2>
-        <p>Switch between live stream channels below and click any glowing item on the video. This is the real detection engine running in your browser.</p>
+      <div class="section-head-mono">
+        <span class="mono-section-number">[ 01 // FRICTION_ANALYSIS ]</span>
+        <h2 class="editorial-section-title">The Search Box is Broken for Video.</h2>
       </div>
 
-      <!-- Scenario Selector Tabs -->
-      <div class="sim-scenario-tabs-bar" id="scenarios">
-        <button class="sim-scenario-tab active" data-scenario="studio">
-          <span>🎙️ Creator &amp; Podcast Studio</span>
+      <div class="contrast-grid">
+        <!-- The Broken Old Way -->
+        <div class="contrast-card card-old">
+          <div class="card-corner-tag">OLD WORKFLOW // MANUAL GUESSWORK</div>
+          <h3 class="contrast-card-title">Typing what you saw</h3>
+          <ul class="contrast-steps">
+            <li><span class="step-cross">✕</span> Pause the live stream and take a screenshot.</li>
+            <li><span class="step-cross">✕</span> Type "black oversize hoodie with drawstring" into Amazon.</li>
+            <li><span class="step-cross">✕</span> Scroll through 40,000 paid sponsored search results.</li>
+            <li><span class="step-cross">✕</span> Ask in stream chat — comment vanishes in 3 seconds.</li>
+            <li><span class="step-cross">✕</span> Give up after 15 minutes of wasted time.</li>
+          </ul>
+          <div class="card-result-bad">RESULT: 0 ITEMS FOUND · STREAM MISSED</div>
+        </div>
+
+        <!-- The StreamSnap Optical Flow -->
+        <div class="contrast-card card-streamsnap">
+          <div class="card-corner-tag text-gold">STREAMSNAP // OPTICAL DIRECT MATCH</div>
+          <h3 class="contrast-card-title">Point directly at the pixels</h3>
+          <ul class="contrast-steps">
+            <li><span class="step-check">✓</span> Click the item right on the stream video without pausing.</li>
+            <li><span class="step-check">✓</span> Gemini Vision resolves visual features against real retail catalog.</li>
+            <li><span class="step-check">✓</span> Exact title, price, and Prime status appear in under 2 seconds.</li>
+            <li><span class="step-check">✓</span> Send directly to your 1-Click Amazon Cart.</li>
+          </ul>
+          <div class="card-result-good">RESULT: CONFIRMED ASIN · 1 CLICK CHECKOUT</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== MULTI-CHANNEL INTERACTIVE SIMULATOR ===================== -->
+  <section id="simulator" class="section-simulator">
+    <div class="container">
+      
+      <div class="section-head-mono">
+        <span class="mono-section-number">[ 02 // INTERACTIVE_SIMULATOR ]</span>
+        <h2 class="editorial-section-title">Test the Detection Engine Live.</h2>
+        <p class="section-editorial-desc">
+          Switch between four real-world streaming environments below. Click any glowing coordinate target on the video player to inspect real Amazon product resolutions.
+        </p>
+      </div>
+
+      <!-- Channel Switcher Buttons -->
+      <div class="channel-selector-bar" id="scenarios">
+        <button class="channel-tab active" data-scenario="studio">
+          <span class="ch-num">CH 01</span>
+          <span class="ch-label">🎙️ CREATOR &amp; PODCAST STUDIO</span>
         </button>
-        <button class="sim-scenario-tab" data-scenario="fashion">
-          <span>👗 Streetwear &amp; Try-On Haul</span>
+        <button class="channel-tab" data-scenario="fashion">
+          <span class="ch-num">CH 02</span>
+          <span class="ch-label">👗 STREETWEAR &amp; TRY-ON HAUL</span>
         </button>
-        <button class="sim-scenario-tab" data-scenario="fitness">
-          <span>🏋️ Gym Workout &amp; Training</span>
+        <button class="channel-tab" data-scenario="fitness">
+          <span class="ch-num">CH 03</span>
+          <span class="ch-label">🏋️ GYM WORKOUT &amp; FITNESS</span>
         </button>
-        <button class="sim-scenario-tab" data-scenario="gaming">
-          <span>🎮 Twitch Esports Battlestation</span>
+        <button class="channel-tab" data-scenario="gaming">
+          <span class="ch-num">CH 04</span>
+          <span class="ch-label">🎮 TWITCH ESPORTS BATTLESTATION</span>
         </button>
       </div>
 
-      <div class="simulator-wrapper">
-        <div class="sim-player-box" id="sim-player">
-          <div class="sim-stream-tag" id="sim-stream-tag">🔴 LIVE: Creator Studio &amp; Podcast Setup</div>
-
-          <div class="sim-video-scene sim-scene-studio" id="sim-scene-container">
-            <!-- Injected dynamically by app.js based on scenario -->
+      <!-- Simulator Arena Container -->
+      <div class="simulator-console-grid">
+        
+        <!-- Video Stream Player -->
+        <div class="sim-screen-box">
+          <div class="sim-top-hud">
+            <span class="sim-live-flag">🔴 LIVE BROADCAST</span>
+            <span id="sim-stream-tag" class="sim-stream-title-text">CREATOR_STUDIO_HD.STREAM</span>
           </div>
 
-          <div class="sim-controls-bar">
-            <span>⚡ Click any glowing item above to scan and resolve</span>
+          <div class="sim-interactive-scene sim-scene-studio" id="sim-scene-container">
+            <!-- Injected dynamically by app.js -->
+          </div>
+
+          <div class="sim-bottom-hud">
+            <span class="mono-info">⚡ CLICK ANY TARGET TO RESOLVE CATALOG ASIN</span>
           </div>
         </div>
 
-        <div class="sim-sidepanel">
-          <div class="panel-header-mini">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span class="bolt-badge">⚡</span>
-              <strong>StreamSnap Panel</strong>
+        <!-- Simulated StreamSnap Side Panel -->
+        <div class="sim-sidepanel-console">
+          <div class="panel-console-head">
+            <div class="console-brand">
+              <span class="bolt-icon">⚡</span>
+              <span>STREAMSNAP HUD</span>
             </div>
-            <span class="prime-pill">prime</span>
+            <span class="console-ver">V1.5.0</span>
           </div>
 
-          <div class="sim-panel-body" id="sim-results">
-            <div class="sim-active-crop" id="sim-crop-box">
-              <div class="crop-inner">
-                <span class="crop-dot">🎯</span>
-                <span id="sim-crop-label">Click an item on the video</span>
-              </div>
+          <div class="panel-console-body">
+            
+            <div class="sim-crop-readout" id="sim-crop-box">
+              <span class="crop-crosshair">🎯</span>
+              <span id="sim-crop-label" class="crop-text">CLICK AN OBJECT IN THE FRAME</span>
             </div>
 
-            <div id="sim-product-card" class="sim-card">
-              <div class="sim-card-thumb" id="sim-thumb">🎙️</div>
-              <div class="sim-card-details">
-                <h4 id="sim-title">Shure SM7B Vocal Dynamic Microphone</h4>
-                <div class="sim-meta">
-                  <span class="sim-price" id="sim-price">$399.00</span>
-                  <span class="sim-match verified" id="sim-match">✓ Verified Amazon listing</span>
+            <div id="sim-product-card" class="sim-resolved-card">
+              <div class="sim-thumb-frame" id="sim-thumb">
+                <img src="https://m.media-amazon.com/images/I/71P4q+HqKQL._AC_SL1500_.jpg" alt="Shure SM7B" />
+              </div>
+              <div class="sim-info-group">
+                <span id="sim-match" class="sim-verified-badge">✓ VERIFIED AMAZON LISTING</span>
+                <h4 id="sim-title" class="sim-card-title">Shure SM7B Vocal Dynamic Microphone</h4>
+                <div class="sim-pricing-row">
+                  <span id="sim-price" class="sim-price-val">$399.00</span>
+                  <span class="sim-prime-pill">prime</span>
                 </div>
-                <div class="sim-actions">
-                  <button id="sim-add-cart-btn" class="sim-btn-cart">🛒 Add to Amazon Cart</button>
-                  <a id="sim-buy-link" href="https://www.amazon.com/dp/B0002E4Z8M?tag=streamsnap03-20" target="_blank" rel="noopener noreferrer" class="sim-btn-view">↗ View on Amazon</a>
+                <div class="sim-button-row">
+                  <button id="sim-add-cart-btn" class="btn-sim-cart">🛒 ADD TO CART</button>
+                  <a id="sim-buy-link" href="https://www.amazon.com/dp/B0002E4Z8M?tag=streamsnap03-20" target="_blank" rel="noopener noreferrer" class="btn-sim-view">↗ VIEW</a>
                 </div>
               </div>
             </div>
 
-            <div class="sim-cart-status" id="sim-cart-status" style="display: none;">
-              <span>✓ Added to your 1-Click Amazon Cart</span>
+            <div class="sim-cart-alert" id="sim-cart-status" style="display: none;">
+              <span>✓ STAGED FOR AMAZON CART</span>
             </div>
 
-            <div class="sim-history-preview">
-              <span class="history-tag">Detected in this stream:</span>
-              <div class="history-chips">
-                <span class="chip">🎙️ Shure SM7B (Seen 3×)</span>
-                <span class="chip">🎧 Sony WH-1000XM5</span>
-                <span class="chip">💡 Elgato Key Light</span>
+            <div class="sim-session-history">
+              <div class="history-label-mono">SESSION SIGHTINGS:</div>
+              <div class="history-tag-cloud">
+                <span class="hist-tag">🎙️ Shure SM7B (3x)</span>
+                <span class="hist-tag">🎧 Sony WH-1000XM5</span>
+                <span class="hist-tag">💡 Elgato Key Light</span>
               </div>
             </div>
+
           </div>
         </div>
+
       </div>
     </div>
   </section>
 
-  <!-- ===================== 4. HOW IT WORKS ===================== -->
-  <section id="how" class="steps-section">
+  <!-- ===================== TECHNICAL BENTO SPECIFICATIONS ===================== -->
+  <section class="section-specs" id="architecture">
     <div class="container">
-      <div class="section-header">
-        <span class="section-badge">HOW IT WORKS</span>
-        <h2>Three ways to point at what you want</h2>
-        <p>StreamSnap injects a clean toolbar directly onto your video player. Pick how you want to search.</p>
+      <div class="section-head-mono">
+        <span class="mono-section-number">[ 03 // ARCHITECTURE_SPECS ]</span>
+        <h2 class="editorial-section-title">Engineered for Zero Latency Commerce.</h2>
       </div>
 
-      <div class="steps-grid">
-        <div class="step-card">
-          <div class="step-num">01</div>
-          <div class="step-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-            </svg>
+      <div class="bento-specs-grid">
+        
+        <div class="bento-box bento-large">
+          <div class="bento-corner">[ 01 ]</div>
+          <h3 class="bento-title">5 Major Live Stream Engines</h3>
+          <p class="bento-desc">Injected seamlessly into YouTube, Twitch, TikTok, Kick, and Facebook Live without affecting playback framerate or stream latency.</p>
+          <div class="bento-platforms-row">
+            <span class="plat-badge">YOUTUBE</span>
+            <span class="plat-badge">TWITCH</span>
+            <span class="plat-badge">TIKTOK</span>
+            <span class="plat-badge">KICK</span>
+            <span class="plat-badge">FACEBOOK</span>
           </div>
-          <h3>Scan Frame</h3>
-          <p>Scans the entire video shot in one pass and highlights every product found — desk setup, clothes, gear, lighting.</p>
         </div>
 
-        <div class="step-card">
-          <div class="step-num">02</div>
-          <div class="step-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M6 2v14a2 2 0 0 0 2 2h14"></path>
-              <path d="M18 22V8a2 2 0 0 0-2-2H2"></path>
-            </svg>
-          </div>
-          <h3>Snip Box</h3>
-          <p>Drag a box over any specific item in the frame. Ideal when the product is small or the shot is moving fast.</p>
+        <div class="bento-box">
+          <div class="bento-corner">[ 02 ]</div>
+          <h3 class="bento-title">Verified ASIN Engine</h3>
+          <p class="bento-desc">We never deep-link to unconfirmed or hallucinated ASINs. Visual matches are clearly labeled so you never land on a 404 product page.</p>
+          <div class="bento-metric-val">100% ASIN ACCURACY</div>
         </div>
 
-        <div class="step-card">
-          <div class="step-num">03</div>
-          <div class="step-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <circle cx="12" cy="12" r="3"></circle>
-            </svg>
-          </div>
-          <h3>Click-to-Find</h3>
-          <p>Click directly on the object while the video keeps playing. The fastest way to grab an item before the streamer cuts away.</p>
+        <div class="bento-box">
+          <div class="bento-corner">[ 03 ]</div>
+          <h3 class="bento-title">1-Click Multi-Item Cart</h3>
+          <p class="bento-desc">Collect multiple products throughout a 4-hour broadcast and transfer them into your official Amazon cart all at once.</p>
+          <div class="bento-metric-val">&lt; 1 CLICK CHECKOUT</div>
         </div>
+
+        <div class="bento-box bento-wide">
+          <div class="bento-corner">[ 04 ]</div>
+          <div class="bento-split-content">
+            <div>
+              <h3 class="bento-title">Frame-Locked Source Provenance</h3>
+              <p class="bento-desc">See the exact timestamped video crop side-by-side with the official studio catalog image before you purchase.</p>
+            </div>
+            <div class="bento-action-badge">INSPECT IN HIGH-RES ↗</div>
+          </div>
+        </div>
+
       </div>
     </div>
   </section>
 
-  <!-- ===================== 5. VALUE STACK ===================== -->
-  <section id="included" class="features-section">
+  <!-- ===================== CREATOR MONETIZATION TERMINAL ===================== -->
+  <section class="section-creators" id="creators">
     <div class="container">
-      <div class="section-header">
-        <span class="section-badge">WHAT YOU GET</span>
-        <h2>Built for live stream viewers and shoppers</h2>
+      <div class="section-head-mono">
+        <span class="mono-section-number">[ 04 // CREATOR_PORTAL ]</span>
+        <h2 class="editorial-section-title">Monetize What You Wear and Use.</h2>
       </div>
 
-      <div class="features-grid">
-        <div class="feature-card">
-          <div class="f-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <circle cx="12" cy="12" r="3"></circle>
-            </svg>
+      <div class="creator-terminal-grid">
+        <div class="creator-info-card">
+          <p class="creator-lead">
+            Creators answer "what mic is that?" or "where is that hoodie from?" twenty times every stream.
+          </p>
+          <p class="creator-body">
+            StreamSnap turns your stream setup into an interactive live storefront. Viewers click your gear directly on video, and purchases credit your Amazon Associates tracking tag (1%–20% commission) — without you maintaining link trees or repeating yourself in chat.
+          </p>
+          <div class="creator-feature-list">
+            <div class="feat-item"><span class="feat-bullet">✓</span> 1-Minute setup with your Amazon Associates tracking ID</div>
+            <div class="feat-item"><span class="feat-bullet">✓</span> You keep 100% of your affiliate earnings</div>
+            <div class="feat-item"><span class="feat-bullet">✓</span> No tag yet? Use StreamSnap for free right away and add it anytime</div>
           </div>
-          <h3>5 Streaming Platforms</h3>
-          <p>Runs seamlessly on YouTube, Twitch, TikTok, Kick, and Facebook Live.</p>
-          <div class="f-worth">Zero friction: activate with 1 click</div>
+          <button id="claim-tag-btn" class="btn-laser">
+            <span class="btn-laser-bg"></span>
+            <span class="btn-laser-text">CONNECT YOUR ASSOCIATES TAG ⚡</span>
+          </button>
         </div>
 
-        <div class="feature-card">
-          <div class="f-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-              <polyline points="9 12 11 14 15 10"></polyline>
-            </svg>
+        <!-- Interactive Calculator Terminal -->
+        <div class="calc-terminal-card" id="calculator">
+          <div class="calc-head">
+            <span class="calc-dot"></span>
+            <span>COMMISSION_ESTIMATE_ENGINE</span>
           </div>
-          <h3>Verified Amazon ASINs</h3>
-          <p>Direct links to verified listings. When we're not 100% sure, we clearly flag it as a visual match.</p>
-          <div class="f-worth">Never land on a dead product page</div>
-        </div>
 
-        <div class="feature-card">
-          <div class="f-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="8" cy="21" r="1"></circle>
-              <circle cx="19" cy="21" r="1"></circle>
-              <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
-            </svg>
-          </div>
-          <h3>Multi-Item Amazon Cart</h3>
-          <p>Gather multiple finds throughout a stream and transfer them into your Amazon cart all at once.</p>
-          <div class="f-worth">Save shipping and checkout once</div>
-        </div>
+          <div class="calc-inputs-stack">
+            <div class="calc-input-group">
+              <div class="input-header-mono">
+                <span>CONCURRENT VIEWERS:</span>
+                <span id="val-viewers" class="text-gold">500</span>
+              </div>
+              <input type="range" id="input-viewers" min="50" max="10000" step="50" value="500" class="terminal-range" />
+            </div>
 
-        <div class="feature-card">
-          <div class="f-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path>
-              <path d="m3.3 7 8.7 5 8.7-5"></path>
-              <path d="M12 22V12"></path>
-            </svg>
-          </div>
-          <h3>Stream History &amp; Sightings</h3>
-          <p>Every product found is automatically saved with sighting frequency and timestamps.</p>
-          <div class="f-worth">Review and buy later anytime</div>
-        </div>
+            <div class="calc-input-group">
+              <div class="input-header-mono">
+                <span>STREAMING HOURS / WEEK:</span>
+                <span id="val-hours" class="text-gold">20 hrs</span>
+              </div>
+              <input type="range" id="input-hours" min="1" max="60" step="1" value="20" class="terminal-range" />
+            </div>
 
-        <div class="feature-card">
-          <div class="f-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-              <circle cx="12" cy="13" r="4"></circle>
-            </svg>
-          </div>
-          <h3>Source Frame Inspection</h3>
-          <p>See the exact video moment the item appeared in, side by side with the catalog image.</p>
-          <div class="f-worth">Confirm the exact match yourself</div>
-        </div>
+            <div class="calc-input-group">
+              <div class="input-header-mono">
+                <span>AVERAGE PRODUCT PRICE:</span>
+                <span id="val-price" class="text-gold">$75.00</span>
+              </div>
+              <input type="range" id="input-price" min="10" max="500" step="5" value="75" class="terminal-range" />
+            </div>
 
-        <div class="feature-card">
-          <div class="f-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-            </svg>
+            <div class="calc-output-box">
+              <div class="output-label-mono">ESTIMATED MONTHLY COMMISSION</div>
+              <div class="output-val-giant" id="calc-earnings">$0.00</div>
+              <div class="output-sub-annual" id="calc-annual-val">$0.00 / year</div>
+            </div>
           </div>
-          <h3>100% Free &amp; Private</h3>
-          <p>No credit card, no account required. Only the crop you select is processed for visual search.</p>
-          <div class="f-worth">Fast, safe, and private</div>
         </div>
       </div>
+
     </div>
   </section>
 
-  <!-- ===================== 6. CREATORS & STREAMERS ===================== -->
-  <section id="streamers" class="streamers-section">
+  <!-- ===================== FAQ ACCORDION ===================== -->
+  <section class="section-faq" id="faq">
     <div class="container narrow">
-      <div class="section-header">
-        <span class="section-badge">FOR CREATORS</span>
-        <h2>Monetize your stream gear automatically</h2>
+      <div class="section-head-mono">
+        <span class="mono-section-number">[ 05 // FAQ ]</span>
+        <h2 class="editorial-section-title">Frequently Asked Questions.</h2>
       </div>
 
-      <p class="lede">
-        Streamers spend hours setting up audio, cameras, and outfits, and answer "what mic is that?" fifty times per stream.
-      </p>
-
-      <p class="lede">
-        With StreamSnap, viewers click your gear and buy it directly. Connect your Amazon Associates tracking tag to earn 1%–20% commission on every qualifying purchase — without writing gear lists or posting manual links.
-      </p>
-
-      <div class="streamer-points">
-        <div class="s-point">✓ 1-minute setup with your Amazon Associates tag</div>
-        <div class="s-point">✓ You keep 100% of your affiliate earnings</div>
-        <div class="s-point">✓ No tag yet? Use StreamSnap for free right away, and add your tag whenever you want</div>
-      </div>
-
-      <div class="streamer-cta">
-        <button id="claim-tag-btn" class="btn-primary btn-large">
-          <span>Open Creator Setup</span>
-        </button>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== 7. COMMISSION CALCULATOR ===================== -->
-  <section id="calculator" class="calculator-section">
-    <div class="container narrow">
-      <div class="section-header">
-        <span class="section-badge">COMMISSION CALCULATOR</span>
-        <h2>Estimate your monthly creator earnings</h2>
-        <p>Based on official Amazon Associates fixed commission rates (1% to 20%).</p>
-      </div>
-
-      <div class="calc-card">
-        <div class="calc-group">
-          <label for="input-viewers">Average concurrent viewers: <span id="val-viewers">500</span></label>
-          <input type="range" id="input-viewers" min="50" max="10000" step="50" value="500" />
+      <div class="faq-accordion-list">
+        
+        <div class="faq-block">
+          <div class="faq-header">
+            <span class="faq-num">01</span>
+            <h3 class="faq-title">Which streaming platforms are supported?</h3>
+            <span class="faq-icon">+</span>
+          </div>
+          <div class="faq-body">
+            <p>YouTube, Twitch, TikTok, Kick, and Facebook Live. StreamSnap does not load on any unsupported domains.</p>
+          </div>
         </div>
 
-        <div class="calc-group">
-          <label for="input-hours">Streaming hours per week: <span id="val-hours">20</span></label>
-          <input type="range" id="input-hours" min="1" max="60" step="1" value="20" />
+        <div class="faq-block">
+          <div class="faq-header">
+            <span class="faq-num">02</span>
+            <h3 class="faq-title">Do I need an Amazon Associates ID to use StreamSnap?</h3>
+            <span class="faq-icon">+</span>
+          </div>
+          <div class="faq-body">
+            <p>No! Regular viewers and shoppers do not need an Amazon ID. An Associates tag is only needed if you are a streamer or creator who wants to collect affiliate commissions on products found in your broadcasts.</p>
+          </div>
         </div>
 
-        <div class="calc-group">
-          <label for="input-price">Average product price: $<span id="val-price">75</span></label>
-          <input type="range" id="input-price" min="10" max="500" step="5" value="75" />
+        <div class="faq-block">
+          <div class="faq-header">
+            <span class="faq-num">03</span>
+            <h3 class="faq-title">How do I sign in?</h3>
+            <span class="faq-icon">+</span>
+          </div>
+          <div class="faq-body">
+            <p>You can sign in with 1-click Google Sign-In directly inside the Chrome Extension setup tab, or use your own Gemini API key for complete autonomy.</p>
+          </div>
         </div>
 
-        <div class="calc-output">
-          <div class="calc-sub">Estimated monthly creator earnings</div>
-          <div class="calc-amount" id="calc-earnings">$0.00</div>
-          <div class="calc-annual" id="calc-annual-val">$0.00 / year</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== 8. FAQ ===================== -->
-  <section id="faq" class="faq-section">
-    <div class="container narrow">
-      <div class="section-header">
-        <span class="section-badge">FAQ</span>
-        <h2>Frequently Asked Questions</h2>
-      </div>
-
-      <div class="faq-grid">
-        <div class="faq-item">
-          <div class="faq-question"><span>Which streaming platforms are supported?</span><span class="faq-toggle">+</span></div>
-          <div class="faq-answer"><p>YouTube, Twitch, TikTok, Kick, and Facebook Live.</p></div>
+        <div class="faq-block">
+          <div class="faq-header">
+            <span class="faq-num">04</span>
+            <h3 class="faq-title">Does it slow down video streaming?</h3>
+            <span class="faq-icon">+</span>
+          </div>
+          <div class="faq-body">
+            <p>No. StreamSnap captures a single lightweight video frame only when you click or trigger a scan. It runs zero background video processes.</p>
+          </div>
         </div>
 
-        <div class="faq-item">
-          <div class="faq-question"><span>Do I need an Amazon Associates ID to use StreamSnap?</span><span class="faq-toggle">+</span></div>
-          <div class="faq-answer"><p>No! If you are a viewer or shopper, you do not need any Amazon tag. An Amazon tag is only required if you are a streamer or creator who wants to collect affiliate commissions on your own streams.</p></div>
+        <div class="faq-block">
+          <div class="faq-header">
+            <span class="faq-num">05</span>
+            <h3 class="faq-title">Is StreamSnap free?</h3>
+            <span class="faq-icon">+</span>
+          </div>
+          <div class="faq-body">
+            <p>Yes, 100% free to install from the Chrome Web Store with no subscriptions or hidden charges.</p>
+          </div>
         </div>
 
-        <div class="faq-item">
-          <div class="faq-question"><span>How do I sign in?</span><span class="faq-toggle">+</span></div>
-          <div class="faq-answer"><p>You can sign in with 1-click Google Sign-In directly inside the Chrome Extension setup tab, or use your own free Gemini API key.</p></div>
-        </div>
-
-        <div class="faq-item">
-          <div class="faq-question"><span>Does it slow down the stream?</span><span class="faq-toggle">+</span></div>
-          <div class="faq-answer"><p>Not at all. StreamSnap captures a single lightweight frame only when you click or trigger a scan.</p></div>
-        </div>
-
-        <div class="faq-item">
-          <div class="faq-question"><span>Is it free?</span><span class="faq-toggle">+</span></div>
-          <div class="faq-answer"><p>Yes, 100% free to install from the Chrome Web Store with no subscriptions or hidden charges.</p></div>
-        </div>
       </div>
     </div>
   </section>
 
   <!-- ===================== INSTALL MODAL ===================== -->
-  <div id="install-modal" class="modal-overlay" style="display:none;">
-    <div class="modal-window modal-install-window">
-      <div class="modal-top">
-        <h3>Get StreamSnap</h3>
-        <button id="close-install-modal" class="modal-x">✕</button>
+  <div id="install-modal" class="modal-overlay-studio" style="display:none;">
+    <div class="modal-card-studio">
+      <div class="modal-header-studio">
+        <div class="modal-title-mono">[ INSTALL STREAMSNAP AI ]</div>
+        <button id="close-install-modal" class="modal-close-btn">✕</button>
       </div>
-      <div class="modal-content-area">
-        <div class="install-option-card primary-option" style="border: 2px solid var(--primary-gold); background: linear-gradient(180deg, rgba(255, 153, 0, 0.12), rgba(21, 29, 42, 0.9));">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <h4 style="color:var(--primary-gold); font-size:16px;">⚡ Chrome Web Store Official Release</h4>
-            <span class="store-certified-badge">✓ Verified</span>
-          </div>
-          <p style="margin-bottom:16px;">Install StreamSnap AI directly from Google's official store with automatic updates and 1-click Google Sign-In.</p>
-          <a href="https://chromewebstore.google.com/detail/streamsnap-ai-%E2%80%94-live-stre/efbfecbochblmakpdllbnpdgkmmfmmel" target="_blank" rel="noopener noreferrer" class="btn-primary" style="width:100%; text-align:center; display:flex; justify-content:center; text-decoration:none; padding:14px;">
-            🛒 Add to Chrome (Official Store) ↗
+
+      <div class="modal-body-studio">
+        <div class="store-hero-banner">
+          <div class="store-tag text-gold">OFFICIAL CHROME STORE RELEASE // v1.5.0</div>
+          <h4>One-Click Installation</h4>
+          <p>Install directly from Google's Chrome Web Store with automatic updates and 1-click Google Sign-In.</p>
+          <a href="https://chromewebstore.google.com/detail/streamsnap-ai-%E2%80%94-live-stre/efbfecbochblmakpdllbnpdgkmmfmmel" target="_blank" rel="noopener noreferrer" class="btn-laser btn-full">
+            <span class="btn-laser-bg"></span>
+            <span class="btn-laser-text">🛒 ADD TO CHROME (OFFICIAL STORE) ↗</span>
           </a>
         </div>
 
-        <div class="install-option-card" style="margin-top:16px;">
-          <h4>Open Source &amp; Developer Mode</h4>
-          <p>Inspect the source code, review security rules, or contribute on GitHub.</p>
-          <a id="store-install-btn" href="https://github.com/rept0rix/streamsnap-ai" target="_blank" rel="noopener noreferrer" class="btn-secondary" style="width:100%; text-align:center; display:block;">
+        <div class="github-source-link">
+          <span>Developer / Open Source Mode:</span>
+          <a id="store-install-btn" href="https://github.com/rept0rix/streamsnap-ai" target="_blank" rel="noopener noreferrer" class="source-link-text">
             View GitHub Repository ↗
           </a>
         </div>
@@ -535,74 +623,72 @@
     </div>
   </div>
 
-  <!-- ===================== CONNECT / CREATOR MODAL ===================== -->
-  <div id="connect-modal" class="modal-overlay" style="display:none;">
-    <div class="modal-window modal-install-window">
-      <div class="modal-top">
-        <h3>Connect Amazon Associates Tag <span style="font-size:12px; font-weight:600; color:var(--text-muted);">(Optional)</span></h3>
-        <button id="close-connect-modal" class="modal-x">✕</button>
+  <!-- ===================== CREATOR / ASSOCIATES MODAL ===================== -->
+  <div id="connect-modal" class="modal-overlay-studio" style="display:none;">
+    <div class="modal-card-studio">
+      <div class="modal-header-studio">
+        <div class="modal-title-mono">[ CREATOR ASSOCIATES TAG // OPTIONAL ]</div>
+        <button id="close-connect-modal" class="modal-close-btn">✕</button>
       </div>
-      <div class="modal-content-area">
-        <div class="modal-tag-info-box" style="background:rgba(255,153,0,0.08); border:1px solid rgba(255,153,0,0.25); padding:12px; border-radius:8px; margin-bottom:14px;">
-          <p style="font-size:13px; color:var(--text-main); margin-bottom:4px;">
-            <strong>Creators &amp; Streamers:</strong> Enter your Amazon Associates tag (e.g. <code>yourname-20</code>) so purchases made by your viewers pay commissions to you.
-          </p>
-          <p style="font-size:12px; color:var(--text-muted);">
-            Regular viewers and shoppers do not need a tag.
-          </p>
+
+      <div class="modal-body-studio">
+        <div class="modal-explanation-box">
+          <p><strong>Are you a streamer or creator?</strong> Enter your Amazon Associates tracking ID (e.g. <code>yourname-20</code>) so viewer purchases from your streams pay commissions directly to your account.</p>
+          <p class="dim-note">Viewers and shoppers do not need an Amazon ID.</p>
         </div>
 
-        <div class="form-group">
-          <label for="modal-tag-input">Amazon Associates Tracking ID</label>
-          <input type="text" id="modal-tag-input" placeholder="e.g. streamer-20" />
-          <p class="field-hint">
+        <div class="studio-form-group">
+          <label for="modal-tag-input" class="studio-label">AMAZON ASSOCIATES TRACKING ID</label>
+          <input type="text" id="modal-tag-input" placeholder="e.g. streamer-20" class="studio-input" />
+          <div class="input-hint-mono">
             Don't have a tag? Join free at
-            <a href="https://affiliate-program.amazon.com/" target="_blank" rel="noopener noreferrer">Amazon Associates Central ↗</a>.
-          </p>
+            <a href="https://affiliate-program.amazon.com/" target="_blank" rel="noopener noreferrer" class="text-gold">Associates Central ↗</a>
+          </div>
         </div>
 
-        <div style="display:flex; flex-direction:column; gap:10px; margin-top:16px;">
-          <button id="modal-save-btn" class="btn-primary" style="width:100%;">Save Tag &amp; Activate ⚡</button>
-          <button id="modal-skip-tag-btn" class="btn-secondary" style="width:100%; border:1px solid rgba(255,255,255,0.15);">
-            Don't have a tag? Continue to Extension with Google Sign-in →
+        <div class="modal-btn-stack">
+          <button id="modal-save-btn" class="btn-laser btn-full">
+            <span class="btn-laser-bg"></span>
+            <span class="btn-laser-text">SAVE TAG &amp; ACTIVATE ⚡</span>
+          </button>
+          <button id="modal-skip-tag-btn" class="btn-ghost-mono btn-full">
+            <span>DON'T HAVE A TAG? CONTINUE WITH GOOGLE SIGN-IN →</span>
           </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ===================== FOOTER ===================== -->
-  <footer class="site-footer">
-    <div class="container footer-content">
-      <div class="footer-left">
-        <img src="assets/logo_full.svg" alt="StreamSnap AI" class="brand-logo" />
-        <p>Live Stream Visual Shopping &amp; Commerce Engine.</p>
-        <p class="footer-trust-badge">Runs on YouTube, Twitch, TikTok, Kick, and Facebook Live.</p>
+  <!-- ===================== STUDIO FOOTER ===================== -->
+  <footer class="footer-studio">
+    <div class="container footer-grid">
+      <div class="footer-brand-col">
+        <img src="assets/logo_full.svg" alt="StreamSnap AI" class="brand-vector-logo" />
+        <p class="footer-mission">Real-time optical commerce engine for live streaming platforms.</p>
+        <div class="footer-telemetry-pill">SYSTEM STATUS: OPTIMAL // MANIFEST V3</div>
       </div>
 
-      <div class="footer-links">
-        <div class="footer-col">
-          <h4>Product</h4>
-          <a href="#simulator">Live demo</a>
-          <a href="#how">How it works</a>
-          <a href="#scenarios">Use Cases</a>
-          <a href="#streamers">For Creators</a>
-        </div>
+      <div class="footer-links-col">
+        <div class="footer-col-header">[ PRODUCT ]</div>
+        <a href="#hero-stage">Live Stage</a>
+        <a href="#simulator">Simulator</a>
+        <a href="#architecture">Architecture</a>
+        <a href="#creators">For Creators</a>
+      </div>
 
-        <div class="footer-col">
-          <h4>Legal &amp; Trust</h4>
-          <a href="privacy.html">Privacy policy</a>
-          <a href="terms.html">Terms of service</a>
-          <a href="admin.html">Admin Console</a>
-          <a href="https://github.com/rept0rix/streamsnap-ai" target="_blank" rel="noopener noreferrer">GitHub Source ↗</a>
-        </div>
+      <div class="footer-links-col">
+        <div class="footer-col-header">[ LEGAL &amp; TRUST ]</div>
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms of Service</a>
+        <a href="admin.html">Admin Console</a>
+        <a href="https://github.com/rept0rix/streamsnap-ai" target="_blank" rel="noopener noreferrer">GitHub Source ↗</a>
       </div>
     </div>
 
-    <div class="container footer-bottom">
-      <span>© 2026 StreamSnap AI — All rights reserved.</span>
-      <span class="footer-disclosure">
-        As an Amazon Associate we may earn from qualifying purchases. You pay the same price either way.
+    <div class="container footer-bottom-mono">
+      <span>© 2026 STREAMSNAP AI — ALL RIGHTS RESERVED.</span>
+      <span class="footer-disclosure-mono">
+        AS AN AMAZON ASSOCIATE WE MAY EARN FROM QUALIFYING PURCHASES. YOU PAY THE SAME PRICE EITHER WAY.
       </span>
     </div>
   </footer>
