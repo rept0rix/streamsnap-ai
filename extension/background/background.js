@@ -30,7 +30,9 @@ const DEFAULTS = {
   cartItems: [],
   autoScanIntervalSec: 0, // 0 = manual
   minConfidence: 50,
-  affiliateTag: "streamsnap03-20"
+  affiliateTag: "streamsnap03-20",
+  showFloatingControls: true,
+  onboardingCompleted: false
 };
 
 const AUTO_SCAN_ALARM = "streamsnap-auto-scan";
@@ -50,9 +52,14 @@ async function ensureDefaults() {
   return { ...DEFAULTS, ...stored, ...updates };
 }
 
-chrome.runtime.onInstalled.addListener(async () => {
+chrome.runtime.onInstalled.addListener(async (details) => {
   const settings = await ensureDefaults();
   await syncAutoScanAlarm(settings.autoScanIntervalSec);
+  if (details.reason === "install") {
+    chrome.tabs.create({
+      url: chrome.runtime.getURL("onboarding/onboarding.html")
+    });
+  }
 });
 
 chrome.runtime.onStartup.addListener(async () => {
@@ -685,6 +692,13 @@ const handlers = {
 
     broadcast({ action: "ALL_DATA_DELETED" });
     return { status: "deleted" };
+  },
+
+  async OPEN_ONBOARDING() {
+    await chrome.tabs.create({
+      url: chrome.runtime.getURL("onboarding/onboarding.html")
+    });
+    return { status: "opened" };
   }
 };
 

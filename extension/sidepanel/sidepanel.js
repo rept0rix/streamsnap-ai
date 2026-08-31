@@ -46,6 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initAccount();
   initCatalogFilters();
   initModal();
+  initOnboarding();
   loadInitialData();
 });
 
@@ -399,6 +400,38 @@ function initModal() {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Onboarding Integration
+// ---------------------------------------------------------------------------
+
+function initOnboarding() {
+  const banner = byId("onboarding-welcome-banner");
+  const openBannerBtn = byId("open-onboarding-banner-btn");
+  const dismissBannerBtn = byId("dismiss-onboarding-banner-btn");
+  const launchWizardBtn = byId("launch-onboarding-wizard-btn");
+
+  function openOnboardingPage() {
+    chrome.tabs.create({ url: chrome.runtime.getURL("onboarding/onboarding.html") });
+  }
+
+  openBannerBtn?.addEventListener("click", openOnboardingPage);
+  launchWizardBtn?.addEventListener("click", openOnboardingPage);
+
+  dismissBannerBtn?.addEventListener("click", () => {
+    if (banner) banner.style.display = "none";
+    chrome.storage.local.set({ onboardingCompleted: true });
+  });
+
+  // Check onboarding status
+  chrome.storage.local.get(["onboardingCompleted"], (res = {}) => {
+    if (!res.onboardingCompleted && banner) {
+      banner.style.display = "flex";
+    } else if (banner) {
+      banner.style.display = "none";
+    }
+  });
+}
+
 function openSourceFrameModal(prod) {
   const modal = byId("source-frame-modal");
   const sourceImg = byId("modal-source-img");
@@ -457,6 +490,12 @@ function initListeners() {
     }
     if (changes.cartItems) renderCart(changes.cartItems.newValue || []);
     if (changes.analytics?.newValue) renderAnalytics(changes.analytics.newValue);
+    if (changes.onboardingCompleted) {
+      const banner = byId("onboarding-welcome-banner");
+      if (banner) {
+        banner.style.display = changes.onboardingCompleted.newValue ? "none" : "flex";
+      }
+    }
   });
 
   chrome.runtime.onMessage.addListener((message) => {

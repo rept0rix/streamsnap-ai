@@ -6,7 +6,7 @@ compatibility_date = "2026-08-01"
 # the crop from /img/:key, so a wrong value here fails every request.
 # After the first `wrangler deploy`, set it to the printed workers.dev URL.
 [vars]
-PUBLIC_BASE_URL = "https://streamsnap-lens.YOUR-SUBDOMAIN.workers.dev"
+PUBLIC_BASE_URL = "https://streamsnap-lens.na0ryank0.workers.dev"
 
 # Leave empty while developing to accept any origin. Once the extension is
 # published, set this to its chrome-extension:// origin.
@@ -15,7 +15,7 @@ ALLOWED_ORIGINS = ""
 # Cached Lens results and rate-limit counters.
 [[kv_namespaces]]
 binding = "CACHE"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"
+id = "069fbd2ea1174aa3913841f72bc37ed5"
 
 # Temporary crop storage. Objects live for seconds and are deleted after the
 # Lens call returns.
@@ -27,7 +27,7 @@ bucket_name = "streamsnap-crops"
 [[d1_databases]]
 binding = "DB"
 database_name = "streamsnap"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "caa4a66d-0cab-4dd5-9deb-ebf53c6b80da"
 migrations_dir = "migrations"
 
 # Secrets are set with `wrangler secret put`, never in this file:

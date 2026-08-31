@@ -1755,3 +1755,103 @@ details[open] .advanced-summary::before { content: "▾ "; }
   from { opacity: 0; transform: translate(-50%, 15px); }
   to { opacity: 1; transform: translate(-50%, 0); }
 }
+
+/* Onboarding Banner in SidePanel */
+.onboarding-welcome-banner {
+  background: linear-gradient(135deg, rgba(255, 153, 0, 0.15) 0%, rgba(0, 168, 225, 0.1) 100%);
+  border: 1px solid rgba(255, 153, 0, 0.4);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 4px 14px rgba(255, 153, 0, 0.1);
+  animation: fadeIn 0.3s ease;
+}
+
+.onboarding-banner-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.onboarding-banner-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.onboarding-banner-text strong {
+  font-size: 13px;
+  color: var(--text-primary);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.onboarding-banner-text p {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
+.onboarding-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.onboarding-banner-btn {
+  flex: 1;
+  background: linear-gradient(135deg, #FF9900, #FF7700);
+  color: #000000;
+  border: none;
+  padding: 7px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.onboarding-banner-btn:hover {
+  background: linear-gradient(135deg, #FFA826, #FF8800);
+  transform: translateY(-1px);
+}
+
+.onboarding-dismiss-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  transition: all 0.15s ease;
+}
+
+.onboarding-dismiss-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--text-primary);
+}
+
+.onboarding-tour-card {
+  border-color: rgba(255, 153, 0, 0.3);
+  background: linear-gradient(135deg, rgba(255, 153, 0, 0.06) 0%, var(--bg-card) 100%);
+}
+
+.launch-onboarding-btn {
+  background: linear-gradient(135deg, #FF9900, #FF7700) !important;
+  color: #000000 !important;
+  font-weight: 700 !important;
+  border: none !important;
+}
+
+.launch-onboarding-btn:hover {
+  background: linear-gradient(135deg, #FFA826, #FF8800) !important;
+  transform: translateY(-1px);
+}
+

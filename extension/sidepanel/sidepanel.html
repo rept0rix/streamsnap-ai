@@ -11,7 +11,7 @@
     <!-- Header -->
     <header class="panel-header">
       <div class="brand-row">
-        <a href="https://streamsnap.ai" target="_blank" rel="noopener noreferrer" class="logo-group logo-link" title="Visit StreamSnap AI Website (streamsnap.ai)">
+        <a href="https://streamsnap.online" target="_blank" rel="noopener noreferrer" class="logo-group logo-link" title="Visit StreamSnap AI Website (streamsnap.online)">
           <div class="logo-icon-svg">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
@@ -23,7 +23,7 @@
           </div>
         </a>
         <div class="header-status-group">
-          <a href="https://streamsnap.ai" target="_blank" rel="noopener noreferrer" class="website-header-btn" title="Open StreamSnap AI Website">
+          <a href="https://streamsnap.online" target="_blank" rel="noopener noreferrer" class="website-header-btn" title="Open StreamSnap AI Website">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="2" y1="12" x2="22" y2="12"></line>
@@ -96,6 +96,21 @@
     <main class="panel-body">
       <!-- Tab 1: Live Scanned Results -->
       <section id="tab-scanned" class="tab-pane active">
+        <!-- Onboarding Quick Start Banner -->
+        <div id="onboarding-welcome-banner" class="onboarding-welcome-banner" style="display: none;">
+          <div class="onboarding-banner-content">
+            <div class="onboarding-banner-icon">🚀</div>
+            <div class="onboarding-banner-text">
+              <strong>Welcome to StreamSnap AI!</strong>
+              <p>Complete the quick setup wizard &amp; connect Google to unlock all features.</p>
+            </div>
+          </div>
+          <div class="onboarding-banner-actions">
+            <button id="open-onboarding-banner-btn" class="onboarding-banner-btn">Start Setup Wizard ⚡</button>
+            <button id="dismiss-onboarding-banner-btn" class="onboarding-dismiss-btn" title="Dismiss">✕</button>
+          </div>
+        </div>
+
         <div id="scan-empty-state" class="empty-state">
           <div class="radar-box" id="radar-scan-trigger" style="cursor: pointer;" title="Click to Scan" role="button" tabindex="0" aria-label="Scan Live Stream">
             <div class="radar-sweep"></div>
@@ -393,9 +408,27 @@
                 <h4>Official Website &amp; Portal</h4>
                 <p class="settings-subtext" style="margin: 2px 0 0 0;">Explore live demos, feature guides, and tutorials.</p>
               </div>
-              <a href="https://streamsnap.ai" target="_blank" rel="noopener noreferrer" class="settings-action-btn website-visit-btn">
-                streamsnap.ai ↗
+              <a href="https://streamsnap.online" target="_blank" rel="noopener noreferrer" class="settings-action-btn website-visit-btn">
+                streamsnap.online ↗
               </a>
+            </div>
+          </div>
+
+          <!-- Onboarding & Setup Tour -->
+          <div class="guide-card onboarding-tour-card">
+            <div class="guide-header">
+              <span class="guide-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+              </span>
+              <div style="flex:1;">
+                <h4>Setup Wizard &amp; Onboarding Tour</h4>
+                <p class="settings-subtext" style="margin: 2px 0 0 0;">Revisit the 4-step setup guide, Google login, and preferences.</p>
+              </div>
+              <button id="launch-onboarding-wizard-btn" class="settings-action-btn launch-onboarding-btn">
+                Launch Wizard 🚀
+              </button>
             </div>
           </div>
 
@@ -649,7 +682,7 @@
     <!-- Footer Status -->
     <footer class="panel-footer">
       <div class="footer-info">
-        <a href="https://streamsnap.ai" target="_blank" rel="noopener noreferrer" class="footer-link">streamsnap.ai ↗</a>
+        <a href="https://streamsnap.online" target="_blank" rel="noopener noreferrer" class="footer-link">streamsnap.online ↗</a>
         <span>•</span>
         <span>v1.5.0</span>
         <span>•</span>

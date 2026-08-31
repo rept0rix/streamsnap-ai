@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to StreamSnap AI — Onboarding & Setup</title>
+  <link rel="stylesheet" href="onboarding.css" />
+</head>
+<body>
+  <div class="onboarding-container">
+    <!-- Header -->
+    <header class="onboarding-header">
+      <div class="brand-group">
+        <div class="logo-icon-svg">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+        </div>
+        <div class="logo-title-wrap">
+          <span class="logo-title">StreamSnap</span>
+          <span class="logo-badge">PRO AI</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <a href="https://streamsnap.online" target="_blank" rel="noopener noreferrer" class="header-link">
+          <span>Website ↗</span>
+        </a>
+        <button id="skip-all-btn" class="skip-btn" title="Skip to extension">Skip to App ✕</button>
+      </div>
+    </header>
+
+    <!-- Stepper Progress Bar -->
+    <nav class="stepper-nav" aria-label="Onboarding Steps">
+      <div class="step-item active" data-step="1" id="step-nav-1">
+        <div class="step-circle">1</div>
+        <span class="step-label">Welcome</span>
+      </div>
+      <div class="step-line" id="step-line-1"></div>
+
+      <div class="step-item" data-step="2" id="step-nav-2">
+        <div class="step-circle">2</div>
+        <span class="step-label">Google Sign-In</span>
+      </div>
+      <div class="step-line" id="step-line-2"></div>
+
+      <div class="step-item" data-step="3" id="step-nav-3">
+        <div class="step-circle">3</div>
+        <span class="step-label">Settings</span>
+      </div>
+      <div class="step-line" id="step-line-3"></div>
+
+      <div class="step-item" data-step="4" id="step-nav-4">
+        <div class="step-circle">4</div>
+        <span class="step-label">Get Started</span>
+      </div>
+    </nav>
+
+    <!-- Main Card Container -->
+    <main class="wizard-card-wrapper">
+      
+      <!-- STEP 1: WELCOME & OVERVIEW -->
+      <section class="wizard-step-pane active" id="pane-step-1">
+        <div class="step-hero">
+          <div class="hero-badge">
+            <span class="pulse-dot"></span>
+            Live Stream Visual Commerce
+          </div>
+          <h1 class="hero-title">Shazam for Live Streams</h1>
+          <p class="hero-subtitle">
+            Turn any live video stream on YouTube, Twitch, TikTok, or Kick into an instant 1-Click Amazon shopping experience.
+          </p>
+        </div>
+
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon gold-glow">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+            </div>
+            <h3>Click-to-Find Live</h3>
+            <p>Click ANY object directly on a playing stream to drop an animated pulse ripple and identify it in seconds.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon blue-glow">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00A8E1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </div>
+            <h3>Snip Box Precision</h3>
+            <p>Drag a box over microphones, sneakers, outfits, or studio equipment for high-accuracy Gemini Vision analysis.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon green-glow">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="8" cy="21" r="1"></circle>
+                <circle cx="19" cy="21" r="1"></circle>
+                <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
+              </svg>
+            </div>
+            <h3>1-Click Amazon Cart</h3>
+            <p>Build a multi-item Remote Cart with Prime shipping and earn affiliate commissions with your custom tracking tag.</p>
+          </div>
+        </div>
+
+        <div class="wizard-actions">
+          <div></div>
+          <button class="btn btn-primary btn-lg" id="btn-goto-step-2">
+            <span>Continue to Sign In</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+        </div>
+      </section>
+
+
+      <!-- STEP 2: GOOGLE SIGN-IN -->
+      <section class="wizard-step-pane" id="pane-step-2">
+        <div class="step-hero">
+          <div class="hero-badge">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            Secure Authentication
+          </div>
+          <h1 class="hero-title">Connect with Google</h1>
+          <p class="hero-subtitle">
+            Sign in with Google to enable cloud Vision AI analysis, sync your discovered items, and unlock your monthly free scans without needing an API key.
+          </p>
+        </div>
+
+        <!-- Signed Out State -->
+        <div id="auth-signed-out-card" class="auth-card">
+          <div class="auth-benefits">
+            <div class="benefit-item">
+              <span class="check-icon">✓</span>
+              <span><strong>Zero Setup Required:</strong> No billable Gemini API key required.</span>
+            </div>
+            <div class="benefit-item">
+              <span class="check-icon">✓</span>
+              <span><strong>100 Free Monthly Scans:</strong> AI vision identification on all supported platforms.</span>
+            </div>
+            <div class="benefit-item">
+              <span class="check-icon">✓</span>
+              <span><strong>Privacy Protected:</strong> We only read your email &amp; name. No browsing data or history is ever sold.</span>
+            </div>
+          </div>
+
+          <button id="onboarding-google-signin-btn" class="google-btn">
+            <svg class="google-logo" viewBox="0 0 24 24" width="20" height="20">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            <span id="google-btn-text">Continue with Google</span>
+          </button>
+
+          <p id="onboarding-signin-error" class="error-msg" style="display:none;"></p>
+
+          <!-- Fallback Accordion for Custom Key -->
+          <details class="custom-key-accordion">
+            <summary class="accordion-summary">Or configure a custom Gemini API Key instead</summary>
+            <div class="accordion-body">
+              <p class="subtext-muted">
+                If you prefer to bring your own Google AI Studio Gemini API key:
+              </p>
+              <div class="input-inline-group">
+                <input type="password" id="onboarding-gemini-key-input" placeholder="AIzaSy..." autocomplete="off" />
+                <button id="onboarding-save-gemini-key-btn" class="btn btn-secondary">Save Key</button>
+              </div>
+              <span id="onboarding-key-status" class="status-indicator">No key set</span>
+            </div>
+          </details>
+        </div>
+
+        <!-- Signed In State -->
+        <div id="auth-signed-in-card" class="auth-card user-profile-card" style="display:none;">
+          <div class="user-profile-header">
+            <img id="user-avatar-img" class="user-avatar" alt="Avatar" />
+            <div class="user-info">
+              <div class="user-name-row">
+                <h3 id="user-name-text">Signed In</h3>
+                <span class="user-plan-badge" id="user-plan-badge">FREE TIER</span>
+              </div>
+              <p id="user-email-text" class="user-email">user@gmail.com</p>
+            </div>
+          </div>
+
+          <div class="quota-container">
+            <div class="quota-header">
+              <span id="user-quota-text">0 of 100 scans used</span>
+              <span class="quota-reset-hint">Resets monthly</span>
+            </div>
+            <div class="quota-bar-track">
+              <div id="user-quota-fill" class="quota-bar-fill" style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <div class="signed-in-footer">
+            <span class="status-badge-success">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              Account Active &amp; Ready
+            </span>
+            <button id="onboarding-signout-btn" class="text-btn-secondary">Sign Out</button>
+          </div>
+        </div>
+
+        <div class="wizard-actions">
+          <button class="btn btn-ghost" id="btn-back-step-1">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Back</span>
+          </button>
+          <div class="actions-right">
+            <button class="btn btn-ghost" id="btn-skip-auth">Skip for now</button>
+            <button class="btn btn-primary btn-lg" id="btn-goto-step-3">
+              <span>Next: Settings</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- STEP 3: SETTINGS & PREFERENCES -->
+      <section class="wizard-step-pane" id="pane-step-3">
+        <div class="step-hero">
+          <div class="hero-badge">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            Preferences &amp; Monetization
+          </div>
+          <h1 class="hero-title">Configure StreamSnap</h1>
+          <p class="hero-subtitle">
+            Personalize your affiliate earnings, video overlay controls, and AI detection sensitivity.
+          </p>
+        </div>
+
+        <div class="settings-form">
+          <!-- Amazon Tag Input -->
+          <div class="form-group-card">
+            <div class="form-card-header">
+              <div class="form-card-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"></path>
+                  <path d="M7 7h.01"></path>
+                </svg>
+                <span>Amazon Associate Tracking ID</span>
+              </div>
+              <span class="pill-badge">Earn 100% Commission</span>
+            </div>
+            <p class="form-subtext">
+              Enter your Amazon Affiliate Associate Tag (e.g. <code>yourname-20</code>). All product cards and cart links will automatically attribute commissions directly to your account.
+            </p>
+            <div class="input-inline-group">
+              <input type="text" id="onboarding-affiliate-tag" placeholder="streamsnap03-20" />
+              <button id="onboarding-save-tag-btn" class="btn btn-secondary">Save Tag</button>
+            </div>
+          </div>
+
+          <!-- Video Floating Controls Toggle -->
+          <div class="form-group-card">
+            <div class="toggle-card-row">
+              <div class="toggle-info">
+                <div class="form-card-title">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                  </svg>
+                  <span>Video Player Floating Controls</span>
+                </div>
+                <p class="form-subtext">Show the floating "Click Anything Live" and "Snip Box" buttons on YouTube, Twitch, TikTok, and Kick streams.</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="onboarding-floating-controls" checked />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Auto Scan & Confidence Grid -->
+          <div class="settings-two-col">
+            <div class="form-group-card">
+              <div class="form-card-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <span>Live Auto-Scan</span>
+              </div>
+              <p class="form-subtext">Periodic background frame scanning.</p>
+              <select id="onboarding-auto-scan-select" class="custom-select">
+                <option value="0">Manual Scan Only (Recommended)</option>
+                <option value="15">Every 15 Seconds</option>
+                <option value="30">Every 30 Seconds</option>
+                <option value="60">Every 60 Seconds</option>
+              </select>
+            </div>
+
+            <div class="form-group-card">
+              <div class="form-card-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <circle cx="12" cy="12" r="6"></circle>
+                  <circle cx="12" cy="12" r="2"></circle>
+                </svg>
+                <span>Match Confidence</span>
+                <span id="onboarding-conf-badge" class="confidence-badge">50%</span>
+              </div>
+              <p class="form-subtext">Minimum threshold for detections.</p>
+              <div class="slider-row">
+                <input type="range" id="onboarding-conf-slider" min="0" max="90" step="5" value="50" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="wizard-actions">
+          <button class="btn btn-ghost" id="btn-back-step-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Back</span>
+          </button>
+          <button class="btn btn-primary btn-lg" id="btn-goto-step-4">
+            <span>Next: Quick Guide</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+        </div>
+      </section>
+
+
+      <!-- STEP 4: QUICK GUIDE & PIN EXTENSION -->
+      <section class="wizard-step-pane" id="pane-step-4">
+        <div class="step-hero">
+          <div class="hero-badge success-glow">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            Setup Complete
+          </div>
+          <h1 class="hero-title">How to Use StreamSnap AI</h1>
+          <p class="hero-subtitle">
+            You're ready! Follow these 3 easy steps to start visual shopping on any live broadcast.
+          </p>
+        </div>
+
+        <div class="guide-steps-grid">
+          <div class="guide-step-card">
+            <div class="guide-step-number">1</div>
+            <div class="guide-step-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2v8"></path>
+                <path d="m4.93 10.93 1.41 1.41"></path>
+                <path d="M2 18h2"></path>
+                <path d="M20 18h2"></path>
+                <path d="m19.07 10.93-1.41 1.41"></path>
+                <path d="M22 22H2"></path>
+                <path d="m8 22 4-10 4 10"></path>
+              </svg>
+            </div>
+            <h3>Pin StreamSnap</h3>
+            <p>Click the Chrome <strong>Puzzle Icon</strong> (🧩) in the top toolbar and click the <strong>Pin Icon</strong> next to StreamSnap AI.</p>
+          </div>
+
+          <div class="guide-step-card">
+            <div class="guide-step-number">2</div>
+            <div class="guide-step-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00A8E1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+              </svg>
+            </div>
+            <h3>Open a Stream</h3>
+            <p>Go to <a href="https://www.youtube.com" target="_blank" class="accent-link">YouTube</a>, <a href="https://www.twitch.tv" target="_blank" class="accent-link">Twitch</a>, or <a href="https://www.tiktok.com" target="_blank" class="accent-link">TikTok</a> and play any stream or video.</p>
+          </div>
+
+          <div class="guide-step-card">
+            <div class="guide-step-number">3</div>
+            <div class="guide-step-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polygon points="12 8 8 12 12 16 12 8"></polygon>
+              </svg>
+            </div>
+            <h3>Click or Snip</h3>
+            <p>Click the floating <strong>"🔴 Click Anything Live"</strong> or <strong>"🎯 Snip Box"</strong> button directly on the video player.</p>
+          </div>
+        </div>
+
+        <!-- Interactive Demo / Action Bar -->
+        <div class="finish-launch-box">
+          <div class="launch-info">
+            <h4>Ready to try it right now?</h4>
+            <p>Test the vision AI scanner directly on our interactive live stream demo page.</p>
+          </div>
+          <div class="launch-btn-group">
+            <button id="btn-open-demo" class="btn btn-secondary btn-lg">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              <span>Launch Demo Stream</span>
+            </button>
+            <button id="btn-finish-onboarding" class="btn btn-primary btn-lg">
+              <span>Finish &amp; Start Shopping</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="wizard-actions">
+          <button class="btn btn-ghost" id="btn-back-step-3">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Back</span>
+          </button>
+          <div></div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast-message" class="toast-popup" style="display:none;"></div>
+
+    <!-- Footer -->
+    <footer class="onboarding-footer">
+      <span>StreamSnap AI v1.5.0</span>
+      <span>•</span>
+      <a href="https://streamsnap.online" target="_blank" rel="noopener noreferrer">streamsnap.online</a>
+      <span>•</span>
+      <span>All data stored securely on your device</span>
+    </footer>
+  </div>
+
+  <script src="onboarding.js" type="module"></script>
+</body>
+</html>

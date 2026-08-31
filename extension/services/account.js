@@ -14,7 +14,7 @@ const SESSION_KEY = "sessionToken";
 const PROFILE_KEY = "userProfile";
 
 /** Configured at build time; overridable for local development. */
-export const DEFAULT_API_BASE = "https://streamsnap-lens.workers.dev";
+export const DEFAULT_API_BASE = "https://streamsnap-lens.na0ryank0.workers.dev";
 
 export async function getApiBase() {
   const { apiBase } = await chrome.storage.local.get(["apiBase"]);

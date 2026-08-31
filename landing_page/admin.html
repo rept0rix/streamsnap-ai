@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StreamSnap AI — Admin Management Console</title>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="icon" type="image/svg+xml" href="assets/logo_full.svg">
+</head>
+<body>
+
+  <div class="admin-wrapper">
+    <!-- Header -->
+    <header class="admin-header">
+      <div class="brand-section">
+        <a href="index.html">
+          <img src="assets/logo_full.svg" alt="StreamSnap AI" class="brand-logo" />
+        </a>
+        <span class="admin-badge">Admin Portal</span>
+      </div>
+
+      <div class="header-actions">
+        <div class="admin-user-pill">
+          <img id="admin-avatar" src="https://ui-avatars.com/api/?background=1E293B&color=FF9900&name=Admin" class="admin-avatar" alt="" />
+          <span id="admin-name" class="admin-user-name">Loading...</span>
+        </div>
+        <a href="index.html" class="btn-header-action">
+          <span>Website ↗</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- Demo Banner Notice (if offline/local) -->
+    <div id="demo-banner" style="display:none; background: rgba(255, 153, 0, 0.1); border: 1px solid var(--snap-gold); border-radius: var(--radius-md); padding: 12px 20px; margin-bottom: 24px; align-items: center; justify-content: space-between;">
+      <div style="font-size: 13px; color: var(--snap-gold); display:flex; align-items:center; gap: 8px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        <span><strong>Interactive Admin Preview Mode:</strong> You are viewing the live interactive console with seed data. Changes will reflect instantly on this screen.</span>
+      </div>
+      <a href="/auth/start?client=web&return_to=/admin.html" class="btn-primary" style="text-decoration:none; padding: 6px 14px; font-size: 12px;">Sign In with Google</a>
+    </div>
+
+    <!-- Metric Cards -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-title">Total Registered Users</div>
+        <div class="metric-value" id="stat-total-users">0</div>
+        <div class="metric-sub">Across Extension &amp; Web</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Pro Subscribers</div>
+        <div class="metric-value" id="stat-pro-users" style="color: var(--snap-gold);">0</div>
+        <div class="metric-sub">Active tier memberships</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Scans Processed Today</div>
+        <div class="metric-value" id="stat-scans-today" style="color: var(--snap-emerald);">0</div>
+        <div class="metric-sub">Multi-modal visual resolutions</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">pHash Cache Savings</div>
+        <div class="metric-value" id="stat-cache-rate" style="color: var(--snap-blue);">0%</div>
+        <div class="metric-sub">Instant zero-cost cache hits</div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="admin-nav">
+      <button class="nav-tab active" data-tab="users">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        <span>Users &amp; Permissions</span>
+      </button>
+      <button class="nav-tab" data-tab="analytics">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+        <span>Platform Analytics</span>
+      </button>
+      <button class="nav-tab" data-tab="audit">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+        <span>Audit Trail</span>
+      </button>
+    </nav>
+
+    <!-- Tab 1: Users & Permissions -->
+    <section id="pane-users" class="tab-pane">
+      <div class="control-bar">
+        <div class="search-group">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="text" id="user-search" class="search-input" placeholder="Search by name, email, or user ID..." />
+        </div>
+
+        <div class="filter-group">
+          <select id="filter-role" class="filter-select">
+            <option value="all">All Roles</option>
+            <option value="admin">Admins Only</option>
+            <option value="user">Standard Users</option>
+          </select>
+          <select id="filter-plan" class="filter-select">
+            <option value="all">All Plans</option>
+            <option value="pro">Pro Plan</option>
+            <option value="free">Free Tier</option>
+          </select>
+          <select id="filter-status" class="filter-select">
+            <option value="all">All Statuses</option>
+            <option value="active">Active Accounts</option>
+            <option value="blocked">Suspended Accounts</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>User &amp; Identity</th>
+              <th>Role</th>
+              <th>Plan Tier</th>
+              <th>Scans</th>
+              <th>Account Status</th>
+              <th>Last Seen</th>
+              <th>Admin Actions</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Tab 2: Analytics -->
+    <section id="pane-analytics" class="tab-pane" style="display:none;">
+      <div class="table-card" style="padding: 32px; text-align: center;">
+        <h3 style="font-size:18px; margin-bottom:12px;">Vision AI &amp; Cloud Performance</h3>
+        <p style="color:var(--text-muted); max-width:600px; margin: 0 auto 24px;">Real-time breakdown of Google Lens reverse search queries, perceptual hashing deduplication rates, and Amazon ASIN resolutions.</p>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; text-align:left;">
+          <div style="background:var(--bg-main); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+            <div style="font-size:12px; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Top Scanned Categories</div>
+            <ul style="margin-top:12px; list-style:none; line-height:2; font-size:13px;">
+              <li>🏋️ Fitness &amp; Gym Equipment <span style="float:right; font-weight:700; color:var(--snap-gold);">38%</span></li>
+              <li>👕 Apparel &amp; Fashion <span style="float:right; font-weight:700; color:var(--snap-gold);">29%</span></li>
+              <li>🎙️ Studio &amp; Audio Microphones <span style="float:right; font-weight:700; color:var(--snap-gold);">18%</span></li>
+              <li>⚡ Electronics &amp; Accessories <span style="float:right; font-weight:700; color:var(--snap-gold);">15%</span></li>
+            </ul>
+          </div>
+          <div style="background:var(--bg-main); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+            <div style="font-size:12px; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Resolution Latency</div>
+            <div style="font-size:28px; font-weight:800; color:var(--snap-emerald); margin-top:8px;">850 ms</div>
+            <div style="font-size:12px; color:var(--text-dim); margin-top:4px;">Average end-to-end multi-modal vision match speed.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 3: Audit Trail -->
+    <section id="pane-audit" class="tab-pane" style="display:none;">
+      <div class="table-card">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Admin Actor</th>
+              <th>Action Executed</th>
+              <th>Details &amp; Payload</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody id="audit-tbody">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>
