@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.5.2] - 2026-08-31 (14:45 IDT)
+
+### Added
+- **TikTok Left-Side Vertical Dock**: Relocated video action buttons to a compact vertical palette on the left edge (`left: 16px; top: 100px`) with stacked icons (`Scan ⚡`, `Snip 🎯`, `Live 🟢`), completely eliminating overlap with the creator header, "+ Follow" (+ לעקוב) button, and gift overlays.
+- **Built-in Version & Build Tracker**:
+  - Live version & timestamp badge in Sidepanel footer and Settings tab with detailed changelog breakdown.
+  - Content script startup banner in DevTools console showing active build and platform.
+  - Hover tooltips on video drag handle (`⋮⋮`) displaying current build version and timestamp.
+
+### Fixed
+- **Complete Event Shielding**: Added `stopImmediatePropagation` across all pointer/mouse/touch events preventing TikTok web player overlays from intercepting user clicks.
+
+---
+
+## [1.5.1] - 2026-08-31 (14:32 IDT)
+
+### Fixed
+- **TikTok Player Collision & Click Interception**:
+  - Replaced shallow container selection with deep `getPlayerContainer()` targeting TikTok's top-level video card containers (`[data-e2e="feed-video"]`, `.tiktok-web-player`, `.xgplayer`).
+  - Added full event shielding (`stopPropagation` & `stopImmediatePropagation` on mouse, pointer, touch, and click events) preventing TikTok from capturing clicks or toggling video play/pause.
+  - Adjusted TikTok positioning (`top: 72px`) safely below TikTok's author info header, "+ Follow" (+ לעקוב) button, and share icon.
+  - Added interactive draggable handle (`⋮⋮`) allowing users to drag and position the toolbar anywhere across any video.
+  - Updated TikTok stream title and channel description DOM selectors.
+
+---
+
 ## [1.5.0] - 2026-08-31
 
 ### Added

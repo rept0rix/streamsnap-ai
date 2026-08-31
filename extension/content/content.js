@@ -11,6 +11,12 @@
 (function () {
   "use strict";
 
+  console.log(
+    "%c⚡ [StreamSnap AI] Active Build: v1.5.2 (2026-08-31 14:45 IDT) | Platform: " +
+      window.location.hostname,
+    "background: #131921; color: #FF9900; font-weight: bold; padding: 4px 8px; border: 1px solid #FF9900; border-radius: 4px;"
+  );
+
   const hookedVideos = new WeakSet();
   let isLiveClickModeActive = false;
   let scanInFlight = false;
@@ -39,7 +45,11 @@
     const candidates = [
       "h1.ytd-watch-metadata yt-formatted-string",
       "h2[data-a-target='stream-title']",
-      "h1[data-e2e='browse-video-desc']"
+      "h1[data-e2e='browse-video-desc']",
+      "div[data-e2e='video-desc']",
+      "span[data-e2e='video-desc']",
+      "h1[data-e2e='video-title']",
+      "[data-e2e='video-desc'] span"
     ];
     for (const selector of candidates) {
       const text = document.querySelector(selector)?.textContent?.trim();
@@ -52,7 +62,12 @@
     const candidates = [
       "#channel-name yt-formatted-string",
       "h1[data-a-target='user-channel-name']",
-      "a[data-e2e='browse-username']"
+      "a[data-e2e='browse-username']",
+      "h3[data-e2e='video-author-uniqueid']",
+      "span[data-e2e='video-author-uniqueid']",
+      "a[data-e2e='video-author-avatar']",
+      "[data-e2e='user-title']",
+      "[data-e2e='video-author-uniqueid']"
     ];
     for (const selector of candidates) {
       const text = document.querySelector(selector)?.textContent?.trim();
@@ -62,16 +77,130 @@
   }
 
   // -------------------------------------------------------------------------
-  // Control injection
+  // Control injection & container resolution
   // -------------------------------------------------------------------------
+
+  function getPlayerContainer(video) {
+    if (!video) return null;
+    // 1. YouTube player shell
+    const yt = video.closest("#movie_player, .html5-video-player");
+    if (yt) return yt;
+    // 2. TikTok Live & TikTok Feed: outermost video card, live room or web player
+    const tiktok = video.closest(
+      '[data-e2e="live-player-container"], [data-e2e="live-room"], [data-e2e="feed-video"], [class*="LiveRoom"], [class*="live-player"], [class*="LivePlayer"], [class*="DivVideoCardContainer"], [class*="DivVideoWrapper"], [class*="DivPlayerContainer"], [data-e2e="recommend-list-item-container"], .tiktok-web-player, .xgplayer'
+    );
+    if (tiktok) return tiktok;
+    // 3. Twitch player
+    const twitch = video.closest(
+      ".video-player__container, .player-video, [data-a-target='video-player']"
+    );
+    if (twitch) return twitch;
+    // 4. Kick player
+    const kick = video.closest("#channel-player, .kick-player, [data-channel-player]");
+    if (kick) return kick;
+    // 5. Facebook Live
+    const fb = video.closest("div[data-pagelet*='Video'], div[role='region'], div[role='main']");
+    if (fb) return fb;
+    return video.parentElement;
+  }
+
+  function shieldInteractions(node) {
+    if (!node) return;
+    const events = [
+      "mousedown",
+      "mouseup",
+      "pointerdown",
+      "pointerup",
+      "touchstart",
+      "touchend",
+      "click",
+      "dblclick",
+      "contextmenu"
+    ];
+    events.forEach((evtName) => {
+      node.addEventListener(
+        evtName,
+        (e) => {
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+        },
+        true
+      );
+    });
+  }
+
+  function makeDraggable(element, handle, container) {
+    let startX = 0;
+    let startY = 0;
+    let initialLeft = 0;
+    let initialTop = 0;
+    let isDragging = false;
+
+    function onPointerDown(e) {
+      if (e.target.closest("button") || e.target.closest(".streamsnap-control-btn")) {
+        return;
+      }
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+
+      const rect = element.getBoundingClientRect();
+      const parentRect = container.getBoundingClientRect();
+      initialLeft = rect.left - parentRect.left;
+      initialTop = rect.top - parentRect.top;
+
+      element.style.right = "auto";
+      element.style.left = `${initialLeft}px`;
+      element.style.top = `${initialTop}px`;
+
+      const onPointerMove = (moveEvent) => {
+        if (!isDragging) return;
+        moveEvent.stopPropagation();
+        moveEvent.stopImmediatePropagation();
+        moveEvent.preventDefault();
+
+        const dx = moveEvent.clientX - startX;
+        const dy = moveEvent.clientY - startY;
+        const pRect = container.getBoundingClientRect();
+        const elRect = element.getBoundingClientRect();
+
+        const maxLeft = Math.max(0, pRect.width - elRect.width);
+        const maxTop = Math.max(0, pRect.height - elRect.height);
+
+        const newLeft = Math.min(Math.max(4, initialLeft + dx), maxLeft - 4);
+        const newTop = Math.min(Math.max(4, initialTop + dy), maxTop - 4);
+
+        element.style.left = `${newLeft}px`;
+        element.style.top = `${newTop}px`;
+      };
+
+      const onPointerUp = (upEvent) => {
+        if (!isDragging) return;
+        isDragging = false;
+        upEvent.stopPropagation();
+        upEvent.stopImmediatePropagation();
+        document.removeEventListener("pointermove", onPointerMove, true);
+        document.removeEventListener("pointerup", onPointerUp, true);
+        element.classList.remove("is-dragging");
+      };
+
+      document.addEventListener("pointermove", onPointerMove, true);
+      document.addEventListener("pointerup", onPointerUp, true);
+      element.classList.add("is-dragging");
+    }
+
+    handle.addEventListener("pointerdown", onPointerDown, true);
+  }
 
   function initUniversalVideoHook() {
     document.querySelectorAll("video").forEach((video) => {
       if (hookedVideos.has(video)) return;
-      // Prefer the site's player shell so controls sit above the video chrome.
-      const ytPlayer = video.closest("#movie_player, .html5-video-player");
+      const container = getPlayerContainer(video);
       hookedVideos.add(video);
-      attachStreamSnapControls(video, ytPlayer);
+      attachStreamSnapControls(video, container);
     });
 
     injectYouTubeControlBarButton();
@@ -108,20 +237,35 @@
       parent.style.position = "relative";
     }
 
+    const isTikTok = window.location.hostname.includes("tiktok.com");
+    const iconSize = isTikTok ? 16 : 14;
+    const liveLabel = isTikTok ? "Live" : "Click-to-Find";
+    const snipLabel = isTikTok ? "Snip" : "Snip Box";
+    const scanLabel = isTikTok ? "Scan" : "Scan Frame";
+
     const btnGroup = el("div", "streamsnap-btn-group");
+    if (isTikTok) {
+      btnGroup.classList.add("streamsnap-tiktok-mode");
+    }
 
     // 1. Minimized Pill (Shown when collapsed)
     const miniPill = el("div", "streamsnap-minimized-pill");
-    miniPill.title = "Click to expand StreamSnap controls";
-    miniPill.append(createSvgIcon("scan", 13), el("span", null, "⚡ StreamSnap"));
+    miniPill.title = "StreamSnap AI v1.5.2 (31/08/2026 14:45) — Click to expand";
+    miniPill.append(createSvgIcon("scan", 13), el("span", null, isTikTok ? "⚡ Snap" : "⚡ StreamSnap"));
     miniPill.style.display = "none";
+    shieldInteractions(miniPill);
 
     // 2. Expanded Toolbar
     const expandedToolbar = el("div", "streamsnap-expanded-toolbar");
 
+    const dragHandle = el("div", "streamsnap-drag-handle", "⋮⋮");
+    dragHandle.title = "StreamSnap AI v1.5.2 (31/08/2026 14:45) — Drag toolbar (גרור לשינוי מיקום)";
+    shieldInteractions(dragHandle);
+
     const liveBtn = el("button", "streamsnap-floating-btn streamsnap-live-btn");
     liveBtn.title = "Click-to-Find: click any object on the video to identify it";
-    liveBtn.append(createSvgIcon("live", 12), el("span", null, "Click-to-Find"));
+    liveBtn.append(createSvgIcon("live", iconSize), el("span", null, liveLabel));
+    shieldInteractions(liveBtn);
 
     liveBtn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -129,8 +273,8 @@
       isLiveClickModeActive = !isLiveClickModeActive;
       liveBtn.classList.toggle("active", isLiveClickModeActive);
       liveBtn.replaceChildren(
-        createSvgIcon("live", 12),
-        el("span", null, isLiveClickModeActive ? "Stop Click Mode" : "Click-to-Find")
+        createSvgIcon("live", iconSize),
+        el("span", null, isLiveClickModeActive ? (isTikTok ? "Stop" : "Stop Click Mode") : liveLabel)
       );
       showToast(
         parent,
@@ -142,7 +286,8 @@
 
     const snipBtn = el("button", "streamsnap-floating-btn streamsnap-snip-btn");
     snipBtn.title = "Draw a box around any item to search for it";
-    snipBtn.append(createSvgIcon("snip", 14), el("span", null, "Snip Box"));
+    snipBtn.append(createSvgIcon("snip", iconSize), el("span", null, snipLabel));
+    shieldInteractions(snipBtn);
     snipBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       e.preventDefault();
@@ -151,7 +296,8 @@
 
     const scanBtn = el("button", "streamsnap-floating-btn");
     scanBtn.title = "Scan the whole frame (Alt+S)";
-    scanBtn.append(createSvgIcon("scan", 14), el("span", null, "Scan Frame"));
+    scanBtn.append(createSvgIcon("scan", iconSize), el("span", null, scanLabel));
+    shieldInteractions(scanBtn);
     scanBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       e.preventDefault();
@@ -162,6 +308,7 @@
     const minimizeBtn = el("button", "streamsnap-control-btn minimize-btn");
     minimizeBtn.title = "Minimize buttons to a small pill (קבץ כפתורים)";
     minimizeBtn.innerHTML = "—";
+    shieldInteractions(minimizeBtn);
     minimizeBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       e.preventDefault();
@@ -175,6 +322,7 @@
     const hideBtn = el("button", "streamsnap-control-btn hide-btn");
     hideBtn.title = "Hide buttons from video (הסתר כפתורים מהווידאו)";
     hideBtn.innerHTML = "✕";
+    shieldInteractions(hideBtn);
     hideBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       e.preventDefault();
@@ -195,8 +343,12 @@
 
     // Hidden restore dot
     const hiddenDot = el("div", "streamsnap-hidden-dot");
+    if (isTikTok) {
+      hiddenDot.classList.add("streamsnap-tiktok-dot");
+    }
     hiddenDot.title = "Click to restore StreamSnap video controls (שחזר כפתורים)";
     hiddenDot.style.display = "none";
+    shieldInteractions(hiddenDot);
     hiddenDot.addEventListener("click", (e) => {
       e.stopPropagation();
       e.preventDefault();
@@ -207,7 +359,12 @@
       chrome.storage.local.set({ floatingControlsHidden: false, floatingControlsMinimized: false });
     });
 
-    expandedToolbar.append(liveBtn, snipBtn, scanBtn, minimizeBtn, hideBtn);
+    makeDraggable(btnGroup, dragHandle, parent);
+
+    const controlRow = el("div", "streamsnap-control-row");
+    controlRow.append(minimizeBtn, hideBtn);
+
+    expandedToolbar.append(dragHandle, liveBtn, snipBtn, scanBtn, controlRow);
     btnGroup.append(miniPill, expandedToolbar);
     parent.append(btnGroup, hiddenDot);
 
@@ -721,7 +878,7 @@
     const video =
       document.querySelector("#movie_player video") || document.querySelector("video");
     if (!video) return null;
-    const container = video.closest("#movie_player, .html5-video-player") || video.parentElement;
+    const container = getPlayerContainer(video);
     return container ? { video, container } : null;
   }
 

@@ -19,6 +19,7 @@ import {
   deleteAccount,
   saveAffiliateTag
 } from "../services/account.js";
+import { CURRENT_BUILD, VERSION_HISTORY } from "../services/version_info.js";
 
 const state = {
   scan: null,
@@ -159,6 +160,34 @@ function initSettings() {
       ? "Key saved — Gemini Vision active"
       : "No API key. Scanning is disabled until you add one.";
     keyStatus.style.color = hasKey ? "#10B981" : "#F59E0B";
+  }
+
+  // Populate dynamic version tracking
+  const versionTag = byId("panel-version-tag");
+  const versionTime = byId("panel-version-time");
+  const versionTitle = byId("panel-version-title");
+  const changelogList = byId("panel-changelog-list");
+  const footerVersionTag = byId("footer-version-tag");
+
+  if (versionTag) versionTag.textContent = `v${CURRENT_BUILD.version}`;
+  if (versionTime) versionTime.textContent = CURRENT_BUILD.buildTimestamp;
+  if (versionTitle) versionTitle.textContent = CURRENT_BUILD.title;
+
+  if (changelogList && Array.isArray(CURRENT_BUILD.highlights)) {
+    changelogList.replaceChildren();
+    for (const item of CURRENT_BUILD.highlights) {
+      const li = document.createElement("li");
+      li.textContent = item;
+      changelogList.appendChild(li);
+    }
+  }
+
+  if (footerVersionTag) {
+    footerVersionTag.textContent = `v${CURRENT_BUILD.version} (${CURRENT_BUILD.buildDate} ${CURRENT_BUILD.buildTime})`;
+    footerVersionTag.title = `StreamSnap AI v${CURRENT_BUILD.version} Built ${CURRENT_BUILD.buildTimestamp} — Click to open Release Notes`;
+    footerVersionTag.addEventListener("click", () => {
+      document.querySelector('[data-tab="settings"]')?.click();
+    });
   }
 
   const floatingControlsToggle = byId("toggle-floating-controls-checkbox");

@@ -19,6 +19,12 @@
   align-items: center !important;
   pointer-events: auto !important;
   user-select: none !important;
+  touch-action: none;
+}
+
+.streamsnap-btn-group,
+.streamsnap-btn-group * {
+  pointer-events: auto !important;
 }
 
 .streamsnap-expanded-toolbar {
@@ -26,6 +32,126 @@
   gap: 8px;
   align-items: center;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  background: rgba(19, 25, 33, 0.75);
+  padding: 4px 6px;
+  border-radius: 9999px;
+  border: 1px solid var(--snap-border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 12px var(--snap-glow);
+  backdrop-filter: blur(10px);
+}
+
+/* Drag Handle */
+.streamsnap-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  color: #9CA3AF;
+  font-size: 13px;
+  letter-spacing: -1px;
+  padding: 0 4px 0 6px;
+  user-select: none;
+  touch-action: none;
+  opacity: 0.6;
+  transition: opacity 0.2s ease, color 0.2s ease;
+  line-height: 1;
+}
+
+.streamsnap-drag-handle:hover,
+.streamsnap-btn-group.is-dragging .streamsnap-drag-handle {
+  opacity: 1;
+  color: var(--snap-primary);
+  cursor: grabbing;
+}
+
+/* Control Row (Minimize & Hide) */
+.streamsnap-control-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* TikTok-Specific Vertical Sidebar Dock on Left Side */
+.streamsnap-btn-group.streamsnap-tiktok-mode {
+  top: 100px !important;
+  left: 16px !important;
+  right: auto !important;
+  bottom: auto !important;
+  z-index: 2147483647 !important;
+  width: auto !important;
+  max-width: none !important;
+}
+
+.streamsnap-btn-group.streamsnap-tiktok-mode .streamsnap-expanded-toolbar {
+  flex-direction: column !important;
+  gap: 7px !important;
+  padding: 8px 6px !important;
+  border-radius: 18px !important;
+  background: rgba(19, 25, 33, 0.92) !important;
+  border: 1.5px solid var(--snap-border) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7), 0 0 16px var(--snap-glow) !important;
+  backdrop-filter: blur(14px) !important;
+  align-items: center !important;
+  width: 54px !important;
+}
+
+.streamsnap-btn-group.streamsnap-tiktok-mode .streamsnap-drag-handle {
+  padding: 0 0 2px 0 !important;
+  font-size: 13px !important;
+  width: 100% !important;
+  text-align: center !important;
+  cursor: grab !important;
+}
+
+.streamsnap-btn-group.streamsnap-tiktok-mode .streamsnap-floating-btn {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 44px !important;
+  min-height: 42px !important;
+  padding: 5px 2px !important;
+  border-radius: 10px !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  line-height: 1.1 !important;
+  text-align: center !important;
+  gap: 2px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+}
+
+.streamsnap-btn-group.streamsnap-tiktok-mode .streamsnap-floating-btn svg {
+  margin-right: 0 !important;
+  width: 15px !important;
+  height: 15px !important;
+}
+
+.streamsnap-btn-group.streamsnap-tiktok-mode .streamsnap-control-row {
+  display: flex !important;
+  gap: 4px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  margin-top: 2px !important;
+}
+
+.streamsnap-btn-group.streamsnap-tiktok-mode .streamsnap-control-btn {
+  width: 20px !important;
+  height: 20px !important;
+  font-size: 9px !important;
+}
+
+/* Minimized Pill on TikTok */
+.streamsnap-btn-group.streamsnap-tiktok-mode .streamsnap-minimized-pill {
+  padding: 6px 12px !important;
+  font-size: 11px !important;
+}
+
+/* Hidden Restore Dot on TikTok */
+.streamsnap-hidden-dot.streamsnap-tiktok-dot {
+  left: 12px !important;
+  top: 100px !important;
+  right: auto !important;
 }
 
 /* Minimized Floating Pill */

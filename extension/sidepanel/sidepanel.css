@@ -1855,3 +1855,68 @@ details[open] .advanced-summary::before { content: "▾ "; }
   transform: translateY(-1px);
 }
 
+/* Version & Changelog Release Card */
+.version-card {
+  background: rgba(19, 25, 33, 0.7);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  margin-top: 8px;
+}
+
+.version-badge-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.version-pill-tag {
+  background: rgba(255, 153, 0, 0.15);
+  border: 1px solid var(--snap-border);
+  color: var(--snap-primary);
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.3px;
+}
+
+.version-timestamp-tag {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: monospace;
+}
+
+.version-title-text {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.version-changelog-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.version-changelog-list li {
+  margin-bottom: 5px;
+}
+
+.footer-version-badge {
+  color: var(--snap-primary);
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.footer-version-badge:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+

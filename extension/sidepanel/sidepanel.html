@@ -588,7 +588,33 @@
             </div>
             <p class="settings-subtext" style="margin-top:6px;">
               Set to 0 to see everything. Items with no score are always shown.
-            </p>
+            <!-- Version & Release Changelog Section -->
+          <div class="settings-section">
+            <label class="settings-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:4px;">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+              גרסה ויומן עדכונים (Version & Release Notes)
+            </label>
+            <p class="settings-subtext">מעקב מבוקר אחר תאריכי שחרור ומה חדש בכל גרסה.</p>
+            
+            <div id="version-info-container" class="version-card">
+              <div class="version-badge-header">
+                <span class="version-pill-tag" id="panel-version-tag">v1.5.2</span>
+                <span class="version-timestamp-tag" id="panel-version-time">31/08/2026 14:45 IDT</span>
+              </div>
+              <div class="version-title-text" id="panel-version-title">TikTok Left Dock & Direct Click Shielding</div>
+              <ul class="version-changelog-list" id="panel-changelog-list">
+                <li>🎯 <strong>TikTok Left Dock:</strong> סרגל כפתורים אנכי חדש ומעוצב בצד שמאל של הווידאו למניעת חפיפה.</li>
+                <li>🛡️ <strong>Click Shielding:</strong> הגנת לחיצות מוחלטת שלא מאפשרת לטיקטוק לחסום קליקים.</li>
+                <li>🖐️ <strong>Draggable Toolbar:</strong> אפשרות לגרור את הכפתורים לכל נקודה על המסך.</li>
+                <li>🕒 <strong>Version Tracker:</strong> חותמת זמן מדויקת לכל גרסה ויומן שינויים מובנה.</li>
+              </ul>
+            </div>
           </div>
 
           <!-- Data & Privacy — everything stored must be removable -->
@@ -655,7 +681,7 @@
             </div>
             <div class="comparison-col">
               <div class="comparison-lbl">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:4px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:4px;">
                   <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
                   <path d="M3 6h18"></path>
                   <path d="M16 10a4 4 0 0 1-8 0"></path>
@@ -684,7 +710,7 @@
       <div class="footer-info">
         <a href="https://streamsnap.online" target="_blank" rel="noopener noreferrer" class="footer-link">streamsnap.online ↗</a>
         <span>•</span>
-        <span>v1.5.0</span>
+        <span id="footer-version-tag" class="footer-version-badge" title="StreamSnap AI v1.5.2 Built 2026-08-31 14:45 IDT">v1.5.2 (31/08 14:45)</span>
         <span>•</span>
         <span id="footer-storage-note">Data stored locally</span>
       </div>
