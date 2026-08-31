@@ -105,6 +105,9 @@
             </div>
           </div>
 
+          <!-- Explains an empty result instead of leaving a blank panel -->
+          <div id="filter-notice" class="filter-notice" style="display:none;"></div>
+
           <!-- Filter Pills for Live Scan -->
           <div class="filter-pills-row" id="live-filter-pills">
             <button class="filter-pill active" data-filter="all">All Items</button>
@@ -286,11 +289,17 @@
           <!-- Minimum Confidence -->
           <div class="settings-section">
             <label class="settings-label">🎯 Minimum Match Confidence</label>
-            <p class="settings-subtext">Filter out lower confidence items from display.</p>
+            <p class="settings-subtext">
+              Hides items the model scored below this. Leave it low — the score is the model's own
+              guess about itself, and a high setting hides real products.
+            </p>
             <div class="confidence-slider-row">
-              <input type="range" id="confidence-slider" min="60" max="95" step="5" value="75" />
-              <span id="confidence-val" class="confidence-val-badge">75%</span>
+              <input type="range" id="confidence-slider" min="0" max="90" step="5" value="50" />
+              <span id="confidence-val" class="confidence-val-badge">50%</span>
             </div>
+            <p class="settings-subtext" style="margin-top:6px;">
+              Set to 0 to see everything. Items with no score are always shown.
+            </p>
           </div>
 
         </div>

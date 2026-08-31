@@ -424,8 +424,31 @@ function renderScanResults(data) {
     cropBox.style.display = "none";
   }
 
-  renderList("exact-matches-list", exactMatches, "No high-confidence matches in this frame.");
+  // "Nothing found" must always explain itself. An empty panel after a scan of
+  // a frame full of products reads as a broken extension, when the usual cause
+  // is the confidence slider silently discarding everything.
+  const hidden = data.filteredCount || 0;
+  const threshold = data.minConfidence;
+
+  const emptyExact = hidden
+    ? `${hidden} item${hidden === 1 ? "" : "s"} found but hidden — they scored below your ${threshold}% confidence setting. Lower it in Setup to see them.`
+    : "Nothing recognisable in this frame. Try Snip Box on one specific object.";
+
+  renderList("exact-matches-list", exactMatches, emptyExact);
   renderList("lookalikes-list", lookAlikes, "No look-alike suggestions for this frame.");
+
+  const notice = byId("filter-notice");
+  if (notice) {
+    if (hidden && total === 0) {
+      notice.textContent = `⚠️ Confidence filter is set to ${threshold}%. ${hidden} detection${hidden === 1 ? " was" : "s were"} discarded.`;
+      notice.style.display = "block";
+    } else if (hidden) {
+      notice.textContent = `${hidden} lower-confidence item${hidden === 1 ? "" : "s"} hidden by your ${threshold}% setting.`;
+      notice.style.display = "block";
+    } else {
+      notice.style.display = "none";
+    }
+  }
 
   applyTierFilter();
 }

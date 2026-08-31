@@ -29,7 +29,7 @@ const DEFAULTS = {
   analytics: { totalScans: 0, amazonClicks: 0, cartAdds: 0, estimatedEarnings: 0 },
   cartItems: [],
   autoScanIntervalSec: 0, // 0 = manual
-  minConfidence: 75,
+  minConfidence: 50,
   affiliateTag: "streamsnap03-20"
 };
 
@@ -111,24 +111,46 @@ function normalizeConfidence(item) {
 
 /**
  * Validate and reconcile the raw model response.
- * Anything that fails validation is dropped rather than passed through.
+ *
+ * Two rules learned the hard way:
+ *
+ *  1. A missing confidence means *unknown*, not zero. Treating an absent field
+ *     as 0 silently deleted every detection whenever the model omitted the
+ *     field — which it does often — and the panel showed "nothing found" for a
+ *     frame full of products.
+ *
+ *  2. An item is never dropped without telling anyone. `filteredCount` is
+ *     returned so the UI can say "3 items were hidden by your confidence
+ *     setting" instead of pretending the frame was empty.
  */
 function reconcileResults(raw, minConfidence) {
-  const out = { exactMatches: [], lookAlikes: [] };
+  const out = { exactMatches: [], lookAlikes: [], filteredCount: 0 };
   if (!raw || typeof raw !== "object") return out;
+
+  let filtered = 0;
 
   const process = (list, tier) =>
     (Array.isArray(list) ? list : [])
       .map((item) => {
         const resolved = resolveDetection(item);
         if (!resolved) return null;
-        const confidence = normalizeConfidence(item);
-        return { ...resolved, tier, confidence: confidence ?? 0 };
+        // null = the model did not report a confidence for this item.
+        return { ...resolved, tier, confidence: normalizeConfidence(item) };
       })
-      .filter((item) => item && item.confidence >= minConfidence);
+      .filter((item) => {
+        if (!item) return false;
+        // Unknown confidence is shown, not hidden. A self-reported score from a
+        // language model is a weak signal at best; it should never be the only
+        // thing standing between the user and a real detection.
+        if (item.confidence === null) return true;
+        if (item.confidence >= minConfidence) return true;
+        filtered += 1;
+        return false;
+      });
 
   out.exactMatches = process(raw.exactMatches, "exact");
   out.lookAlikes = process(raw.lookAlikes, "lookalike");
+  out.filteredCount = filtered;
   return out;
 }
 
@@ -420,6 +442,8 @@ async function runAnalysis({ imageDataUrl, apiKey, streamContext, mode }) {
     croppedThumbnail: isCrop ? snapshot : null,
     items: results,
     matchCount: countResults(results),
+    filteredCount: results.filteredCount || 0,
+    minConfidence,
     fromCache,
     capturedAt: new Date().toLocaleTimeString()
   };
