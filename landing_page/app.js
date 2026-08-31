@@ -212,7 +212,7 @@ function initHeroInteractive() {
       box: { top: "44%", left: "48%", width: "140px", height: "180px" },
       label: "AC_MILAN_PUMA_JERSEY",
       conf: "99.4%",
-      img: "https://m.media-amazon.com/images/I/61y8E+Y2B1L._AC_SL1500_.jpg",
+      img: "assets/products/ac_milan_jersey.png",
       link: "https://www.amazon.com/s?k=PUMA+AC+Milan+2023%2F24+Home+Jersey&tag=streamsnap03-20"
     },
     cap: {
@@ -222,7 +222,7 @@ function initHeroInteractive() {
       box: { top: "24%", left: "62%", width: "100px", height: "90px" },
       label: "LA_ANGELS_SNAPBACK",
       conf: "98.7%",
-      img: "https://m.media-amazon.com/images/I/71N1UOD340L._AC_SL1500_.jpg",
+      img: "assets/products/angels_cap.png",
       link: "https://www.amazon.com/s?k=Angels+Snapback+Cap+Black&tag=streamsnap03-20"
     },
     tee: {
@@ -232,7 +232,7 @@ function initHeroInteractive() {
       box: { top: "42%", left: "36%", width: "110px", height: "140px" },
       label: "CREWNECK_WHITE_TEE",
       conf: "97.1%",
-      img: "https://m.media-amazon.com/images/I/61dF8YF8iCL._AC_SL1500_.jpg",
+      img: "assets/products/white_tee.png",
       link: "https://www.amazon.com/s?k=White+Crewneck+T-Shirt+Men&tag=streamsnap03-20"
     }
   };
@@ -332,43 +332,43 @@ const CHANNELS_DB = {
     isYouTube: true,
     ytId: "5NXo4gdhpCk",
     targets: [
-      { key: "jersey", top: "54%", left: "52%", icon: "⚽", label: "PUMA AC MILAN // $89.99", title: "PUMA AC Milan 2023/24 Home Soccer Jersey (MSC & Emirates)", price: "$89.99", verified: true, img: "https://m.media-amazon.com/images/I/61y8E+Y2B1L._AC_SL1500_.jpg", link: "https://www.amazon.com/s?k=PUMA+AC+Milan+2023%2F24+Home+Jersey&tag=streamsnap03-20" },
-      { key: "cap", top: "28%", left: "65%", icon: "🧢", label: "ANGELS CAP // $34.99", title: "New Era Los Angeles Angels Black Snapback Cap", price: "$34.99", verified: true, img: "https://m.media-amazon.com/images/I/71N1UOD340L._AC_SL1500_.jpg", link: "https://www.amazon.com/s?k=Angels+Snapback+Cap+Black&tag=streamsnap03-20" },
-      { key: "tee", top: "48%", left: "38%", icon: "👕", label: "WHITE TEE // $18.50", title: "Classic White Heavyweight Crewneck T-Shirt", price: "$18.50", verified: false, img: "https://m.media-amazon.com/images/I/61dF8YF8iCL._AC_SL1500_.jpg", link: "https://www.amazon.com/s?k=White+Crewneck+T-Shirt+Men&tag=streamsnap03-20" }
+      { key: "jersey", top: "54%", left: "52%", icon: "⚽", label: "PUMA AC MILAN // $89.99", title: "PUMA AC Milan 2023/24 Home Soccer Jersey (MSC & Emirates)", price: "$89.99", verified: true, img: "assets/products/ac_milan_jersey.png", link: "https://www.amazon.com/s?k=PUMA+AC+Milan+2023%2F24+Home+Jersey&tag=streamsnap03-20" },
+      { key: "cap", top: "28%", left: "65%", icon: "🧢", label: "ANGELS CAP // $34.99", title: "New Era Los Angeles Angels Black Snapback Cap", price: "$34.99", verified: true, img: "assets/products/angels_cap.png", link: "https://www.amazon.com/s?k=Angels+Snapback+Cap+Black&tag=streamsnap03-20" },
+      { key: "tee", top: "48%", left: "38%", icon: "👕", label: "WHITE TEE // $18.50", title: "Classic White Heavyweight Crewneck T-Shirt", price: "$18.50", verified: false, img: "assets/products/white_tee.png", link: "https://www.amazon.com/s?k=White+Crewneck+T-Shirt+Men&tag=streamsnap03-20" }
     ]
   },
   studio: {
     streamTitle: "🔴 BROADCAST // KAI_CENAT_CREATOR_STUDIO_HD.STREAM",
     bgClass: "sim-scene-studio",
     targets: [
-      { key: "mic", top: "48%", left: "32%", icon: "🎙️", label: "MIC // $399.00", title: "Shure SM7B Cardioid Dynamic Vocal Microphone", price: "$399.00", verified: true, img: "https://m.media-amazon.com/images/I/71P4q+HqKQL._AC_SL1500_.jpg", link: "https://www.amazon.com/dp/B0002E4Z8M?tag=streamsnap03-20" },
-      { key: "headphones", top: "26%", left: "46%", icon: "🎧", label: "SONY XM5 // $348.00", title: "Sony WH-1000XM5 Wireless Noise Canceling Headphones", price: "$348.00", verified: true, img: "https://m.media-amazon.com/images/I/61vJtKbAssL._AC_SL1500_.jpg", link: "https://www.amazon.com/dp/B09XS7JWHH?tag=streamsnap03-20" },
-      { key: "light", top: "18%", left: "76%", icon: "💡", label: "KEY LIGHT // $159.99", title: "Elgato Key Light — 2800 Lumen Studio LED Panel", price: "$159.99", verified: true, img: "https://m.media-amazon.com/images/I/61LpX3fXQAL._AC_SL1500_.jpg", link: "https://www.amazon.com/dp/B07W755322?tag=streamsnap03-20" }
+      { key: "mic", top: "48%", left: "32%", icon: "🎙️", label: "MIC // $399.00", title: "Shure SM7B Cardioid Dynamic Vocal Microphone", price: "$399.00", verified: true, img: "assets/products/shure_sm7b.png", link: "https://www.amazon.com/dp/B0002E4Z8M?tag=streamsnap03-20" },
+      { key: "headphones", top: "26%", left: "46%", icon: "🎧", label: "SONY XM5 // $348.00", title: "Sony WH-1000XM5 Wireless Noise Canceling Headphones", price: "$348.00", verified: true, img: "assets/products/sony_headphones.png", link: "https://www.amazon.com/dp/B09XS7JWHH?tag=streamsnap03-20" },
+      { key: "light", top: "18%", left: "76%", icon: "💡", label: "KEY LIGHT // $159.99", title: "Elgato Key Light — 2800 Lumen Studio LED Panel", price: "$159.99", verified: true, img: "assets/products/elgato_light.png", link: "https://www.amazon.com/dp/B07W755322?tag=streamsnap03-20" }
     ]
   },
   fashion: {
     streamTitle: "🔴 BROADCAST // TOKYO_STREETWEAR_HAUL_4K.STREAM",
     bgClass: "sim-scene-fashion",
     targets: [
-      { key: "hoodie", top: "44%", left: "40%", icon: "👕", label: "HOODIE // $38.50", title: "Champion Men's Powerblend Fleece Oversized Hoodie", price: "$38.50", verified: false, img: "https://m.media-amazon.com/images/I/71j1n-1Pq-L._AC_SL1500_.jpg", link: "https://www.amazon.com/s?k=Champion+Hoodie&tag=streamsnap03-20" },
-      { key: "lounge", top: "62%", left: "50%", icon: "👗", label: "LOUNGE SET // $29.99", title: "Sampeel 2-Piece Ribbed Knit Matching Lounge Set", price: "$29.99", verified: true, img: "https://m.media-amazon.com/images/I/71j1n-1Pq-L._AC_SL1500_.jpg", link: "https://www.amazon.com/dp/B0HDSPFHR2?tag=streamsnap03-20" },
-      { key: "watch", top: "54%", left: "30%", icon: "⌚", label: "APPLE WATCH // $399", title: "Apple Watch Series 10 (GPS 46mm Jet Black)", price: "$399.00", verified: true, img: "https://m.media-amazon.com/images/I/81+23E2GgQL._AC_SL1500_.jpg", link: "https://www.amazon.com/s?k=Apple+Watch+Series+10&tag=streamsnap03-20" }
+      { key: "hoodie", top: "44%", left: "40%", icon: "👕", label: "HOODIE // $38.50", title: "Champion Men's Powerblend Fleece Oversized Hoodie", price: "$38.50", verified: false, img: "assets/products/champion_hoodie.png", link: "https://www.amazon.com/s?k=Champion+Hoodie&tag=streamsnap03-20" },
+      { key: "lounge", top: "62%", left: "50%", icon: "👗", label: "LOUNGE SET // $29.99", title: "Sampeel 2-Piece Ribbed Knit Matching Lounge Set", price: "$29.99", verified: true, img: "assets/products/champion_hoodie.png", link: "https://www.amazon.com/dp/B0HDSPFHR2?tag=streamsnap03-20" },
+      { key: "watch", top: "54%", left: "30%", icon: "⌚", label: "APPLE WATCH // $399", title: "Apple Watch Series 10 (GPS 46mm Jet Black)", price: "$399.00", verified: true, img: "assets/products/apple_watch.png", link: "https://www.amazon.com/s?k=Apple+Watch+Series+10&tag=streamsnap03-20" }
     ]
   },
   fitness: {
     streamTitle: "🔴 BROADCAST // HEAVY_LIFTING_WORKOUT_60FPS.STREAM",
     bgClass: "sim-scene-fitness",
     targets: [
-      { key: "plates", top: "58%", left: "28%", icon: "🏋️", label: "BUMPER PLATES // $179", title: "Fringe Sport Black Bumper Plates (Pair of 45lb)", price: "$179.00", verified: false, img: "https://m.media-amazon.com/images/I/61k2YfR1L-L._AC_SL1500_.jpg", link: "https://www.amazon.com/s?k=Fringe+Sport+Bumper+Plates&tag=streamsnap03-20" },
-      { key: "tumbler", top: "42%", left: "62%", icon: "🥤", label: "STANLEY 40OZ // $45.00", title: "Stanley Quencher H2.0 FlowState Tumbler 40oz", price: "$45.00", verified: true, img: "https://m.media-amazon.com/images/I/61vK+GvKxLL._AC_SL1500_.jpg", link: "https://www.amazon.com/dp/B0B94ZDFM9?tag=streamsnap03-20" }
+      { key: "plates", top: "58%", left: "28%", icon: "🏋️", label: "BUMPER PLATES // $179", title: "Fringe Sport Black Bumper Plates (Pair of 45lb)", price: "$179.00", verified: false, img: "assets/products/bumper_plates.png", link: "https://www.amazon.com/s?k=Fringe+Sport+Bumper+Plates&tag=streamsnap03-20" },
+      { key: "tumbler", top: "42%", left: "62%", icon: "🥤", label: "STANLEY 40OZ // $45.00", title: "Stanley Quencher H2.0 FlowState Tumbler 40oz", price: "$45.00", verified: true, img: "assets/products/stanley_tumbler.png", link: "https://www.amazon.com/dp/B0B94ZDFM9?tag=streamsnap03-20" }
     ]
   },
   gaming: {
     streamTitle: "🔴 BROADCAST // TWITCH_MASTERS_ESPORTS_ARENA.STREAM",
     bgClass: "sim-scene-gaming",
     targets: [
-      { key: "airpods", top: "30%", left: "44%", icon: "🎧", label: "AIRPODS MAX // $479", title: "Apple AirPods Max Wireless Over-Ear Headphones", price: "$479.00", verified: true, img: "https://m.media-amazon.com/images/I/81jqUPkIVRL._AC_SL1500_.jpg", link: "https://www.amazon.com/dp/B08PZHYWJS?tag=streamsnap03-20" },
-      { key: "deck", top: "64%", left: "54%", icon: "🎮", label: "STREAM DECK // $129", title: "Elgato Stream Deck MK.2 — 15 Custom Macro Keys", price: "$129.99", verified: true, img: "https://m.media-amazon.com/images/I/61B5UjF7pKL._AC_SL1500_.jpg", link: "https://www.amazon.com/dp/B07W5JK7B6?tag=streamsnap03-20" }
+      { key: "airpods", top: "30%", left: "44%", icon: "🎧", label: "AIRPODS MAX // $479", title: "Apple AirPods Max Wireless Over-Ear Headphones", price: "$479.00", verified: true, img: "assets/products/airpods_max.png", link: "https://www.amazon.com/dp/B08PZHYWJS?tag=streamsnap03-20" },
+      { key: "deck", top: "64%", left: "54%", icon: "🎮", label: "STREAM DECK // $129", title: "Elgato Stream Deck MK.2 — 15 Custom Macro Keys", price: "$129.99", verified: true, img: "assets/products/elgato_deck.png", link: "https://www.amazon.com/dp/B07W5JK7B6?tag=streamsnap03-20" }
     ]
   }
 };
