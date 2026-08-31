@@ -770,11 +770,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 
 /* Price we could not confirm against a real listing. */
+.product-price-unpriced,
 .product-price-unknown {
   font-size: 11px;
   font-weight: 700;
   color: var(--text-secondary);
-  font-style: italic;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1px 6px;
+  border-radius: 4px;
 }
 
 /* Matched against a manually verified ASIN — safe to deep link. */

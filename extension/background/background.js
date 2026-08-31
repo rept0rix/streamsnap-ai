@@ -225,8 +225,8 @@ Detect every prominent consumer product visible (electronics, microphones, headp
 Rules:
 - Identify recognizable products accurately even if in slight motion or dynamic studio lighting.
 - Only include "asin" if you know the exact real Amazon ASIN. Otherwise omit.
-- If you know the price or estimated price, provide "price" as a USD number (e.g. 149.99).
-- If there is an original list price or standard MSRP higher than the sale price, provide "originalPrice" (e.g. 199.99) and "discountPercent" (e.g. 25).
+- Always provide an estimated market retail price in USD as "price" (a number, e.g. 29.99) based on typical retail pricing for this item or brand.
+- If there is an original list price or standard MSRP higher than the sale price, provide "originalPrice" (e.g. 39.99) and "discountPercent" (e.g. 25).
 - If on discount or special deal, include "dealBadge" (e.g. "25% OFF 🔥" or "Live Deal ⚡").
 - Set "confidence" honestly between 0.3 and 1.0.
 - Give each item a bounding box [ymin, xmin, ymax, xmax] normalized 0-1000.
@@ -267,7 +267,7 @@ The user cropped a specific object from a live stream titled: "${streamTitle}".
 Identify ONLY the object in this cropped region.
 
 Rules:
-- Identify the product, brand, current "price" (number), "originalPrice" (if known), "discountPercent", and "dealBadge".
+- Identify the product, brand, estimated USD "price" (number, e.g. 29.99), "originalPrice" (if known), "discountPercent", and "dealBadge".
 - Set "confidence" between 0.3 and 1.0.
 - Only include "asin" if you are certain of the exact real Amazon ASIN.
 
