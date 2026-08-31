@@ -1277,3 +1277,167 @@ body {
   background: var(--danger-red);
   color: #FFFFFF;
 }
+
+/* ---------------------------------------------------------------------------
+   Account
+   --------------------------------------------------------------------------- */
+
+.account-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+.account-headline {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.account-icon { font-size: 24px; line-height: 1; }
+
+.account-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 2px solid var(--primary-gold);
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.account-headline h4 {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+
+.account-headline p {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.signin-btn {
+  width: 100%;
+  background: #FFFFFF;
+  color: #1F2937;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 11px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.signin-btn:hover:not(:disabled) { background: #E8EAED; transform: translateY(-1px); }
+.signin-btn:disabled { opacity: 0.6; cursor: default; }
+
+.signin-error {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #FCA5A5;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.account-footnote {
+  margin-top: 10px;
+  font-size: 10px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* Quota */
+.quota-bar-wrap { margin-bottom: 12px; }
+
+.quota-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 5px;
+}
+
+.quota-plan {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: var(--primary-gold);
+  background: rgba(255, 153, 0, 0.14);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.quota-track {
+  height: 5px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.quota-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 99px;
+  background: var(--exact-green);
+  transition: width 0.3s ease, background 0.3s ease;
+}
+
+.account-actions { display: flex; gap: 6px; }
+
+.account-btn {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.account-btn:hover { background: rgba(255, 255, 255, 0.12); }
+
+.account-btn.danger { color: #FCA5A5; }
+.account-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: var(--danger-red);
+}
+
+/* Advanced / bring-your-own-key */
+.advanced-section { padding: 0; }
+
+.advanced-summary {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  padding: 10px 0;
+  list-style: none;
+  user-select: none;
+}
+
+.advanced-summary::before { content: "▸ "; color: var(--primary-gold); }
+details[open] .advanced-summary::before { content: "▾ "; }
+.advanced-summary:hover { color: var(--text-primary); }
+
+.warning-text {
+  background: rgba(245, 158, 11, 0.1);
+  border-left: 2px solid var(--lookalike-orange);
+  padding: 8px 10px;
+  border-radius: 4px;
+  color: #FCD34D !important;
+  margin-bottom: 8px;
+}

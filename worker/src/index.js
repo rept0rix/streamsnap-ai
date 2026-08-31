@@ -18,6 +18,7 @@
  */
 
 import { parseLensResponse, collectRawShape } from "./parser.js";
+import { handleAuthRoute } from "./routes_auth.js";
 
 const LIMITS = {
   MAX_IMAGE_BYTES: 3 * 1024 * 1024,
@@ -34,6 +35,11 @@ export default {
 
     if (request.method === "OPTIONS") return preflight(request, env);
     if (url.pathname === "/health") return json({ ok: true }, 200, request, env);
+
+    if (url.pathname.startsWith("/auth/") || url.pathname.startsWith("/account")) {
+      const response = await handleAuthRoute(request, env, url, json);
+      if (response) return response;
+    }
 
     if (url.pathname.startsWith("/img/")) {
       return serveImage(url.pathname.slice(5), env);

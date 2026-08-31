@@ -239,6 +239,45 @@
       <section id="tab-settings" class="tab-pane">
         <div class="settings-pane-content">
           
+          <!-- Account — the primary path. No key pasting required. -->
+          <div id="account-signed-out" class="account-card" style="display:none;">
+            <div class="account-headline">
+              <span class="account-icon">🔐</span>
+              <div>
+                <h4>Sign in to start scanning</h4>
+                <p>No API key, no setup. Scanning runs on our servers, so nothing billable is ever stored on your device.</p>
+              </div>
+            </div>
+            <button id="signin-btn" class="signin-btn">Continue with Google</button>
+            <p id="signin-error" class="signin-error" style="display:none;"></p>
+            <p class="account-footnote">
+              We receive your email address and nothing else. No browsing history, no page URLs.
+            </p>
+          </div>
+
+          <div id="account-signed-in" class="account-card" style="display:none;">
+            <div class="account-headline">
+              <img id="account-avatar" class="account-avatar" alt="" />
+              <div>
+                <h4 id="account-name">Signed in</h4>
+                <p id="account-email"></p>
+              </div>
+            </div>
+
+            <div class="quota-bar-wrap">
+              <div class="quota-labels">
+                <span id="quota-text">— scans used</span>
+                <span id="quota-plan" class="quota-plan"></span>
+              </div>
+              <div class="quota-track"><div id="quota-fill" class="quota-fill"></div></div>
+            </div>
+
+            <div class="account-actions">
+              <button id="signout-btn" class="account-btn">Sign out</button>
+              <button id="delete-account-btn" class="account-btn danger">Delete account</button>
+            </div>
+          </div>
+
           <!-- Guide Box: How to get Amazon Tag -->
           <div class="guide-card">
             <div class="guide-header">
@@ -263,16 +302,26 @@
             </div>
           </div>
 
-          <!-- Gemini Key Input -->
-          <div class="settings-section">
-            <label class="settings-label">🤖 Google Gemini Vision API Key</label>
-            <p class="settings-subtext">Optional: Enter your free key from <a href="https://aistudio.google.com/app/apikey" target="_blank" class="guide-link">Google AI Studio ↗</a> (stored safely on your device only).</p>
+          <!-- Advanced: bring your own key. Collapsed, and clearly labelled as
+               the riskier path, because it is. -->
+          <details class="settings-section advanced-section">
+            <summary class="advanced-summary">Advanced: use your own Gemini key</summary>
+            <p class="settings-subtext warning-text">
+              A Gemini key is billable, and it is stored on this device as plain text. Anyone who
+              obtains it can spend money on your account. Signing in above is safer and needs no key.
+              Only use this if you specifically want your own key.
+            </p>
             <div class="settings-input-row">
-              <input type="password" id="gemini-api-key-input" placeholder="AIzaSy..." />
+              <input type="password" id="gemini-api-key-input" placeholder="AIzaSy..." autocomplete="off" />
               <button id="save-api-key-btn" class="settings-action-btn">Save</button>
             </div>
-            <div id="api-key-status" class="settings-status-pill">Ready: Vision Engine Active ⚡</div>
-          </div>
+            <div id="api-key-status" class="settings-status-pill">No key set</div>
+            <p class="settings-subtext" style="margin-top:6px;">
+              Get one free at
+              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="guide-link">Google AI Studio ↗</a>.
+              You can remove it any time under Your Data.
+            </p>
+          </details>
 
           <!-- Auto-Scan Interval -->
           <div class="settings-section">
@@ -363,7 +412,7 @@
     <!-- Footer Status -->
     <footer class="panel-footer">
       <div class="footer-info">
-        <span>StreamSnap AI v1.3.2</span>
+        <span>StreamSnap AI v1.4</span>
         <span>•</span>
         <span id="footer-storage-note">Data stored locally</span>
       </div>

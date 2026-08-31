@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Resolves live-stream crops to real Amazon listings via Google Lens.",
   "scripts": {
-    "test": "node test/parser.test.mjs && node test/schema.test.mjs",
+    "test": "node test/parser.test.mjs && node test/schema.test.mjs && node test/auth.test.mjs",
     "dev": "wrangler dev",
     "deploy": "npm test && wrangler deploy",
     "migrate:local": "wrangler d1 migrations apply streamsnap --local",

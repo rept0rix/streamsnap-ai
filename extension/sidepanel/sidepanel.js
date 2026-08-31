@@ -12,6 +12,13 @@ import {
   getWebSearchUrl,
   isVerifiedAsin
 } from "../services/amazon_service.js";
+import {
+  signIn,
+  signOut,
+  fetchProfile,
+  deleteAccount,
+  saveAffiliateTag
+} from "../services/account.js";
 
 const state = {
   scan: null,
@@ -36,6 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initTabs();
   initListeners();
   initSettings();
+  initAccount();
   initCatalogFilters();
   initModal();
   loadInitialData();
@@ -179,6 +187,114 @@ function initSettings() {
       flashSaved(saveTagBtn);
       renderCatalog();
     });
+    // Also persist server-side when signed in, so the tag follows the account
+    // across devices rather than living only in this browser.
+    saveAffiliateTag(tag).catch(() => {});
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Account
+// ---------------------------------------------------------------------------
+
+function renderAccount(profile) {
+  const signedIn = Boolean(profile?.signedIn);
+  show("account-signed-out", !signedIn);
+  show("account-signed-in", signedIn);
+  if (!signedIn) return;
+
+  const user = profile.user || {};
+  const nameEl = byId("account-name");
+  const emailEl = byId("account-email");
+  const avatar = byId("account-avatar");
+
+  if (nameEl) nameEl.textContent = user.name || "Signed in";
+  if (emailEl) emailEl.textContent = user.email || "";
+  if (avatar) {
+    if (user.avatarUrl) {
+      avatar.src = user.avatarUrl;
+      avatar.style.display = "block";
+      avatar.addEventListener("error", () => { avatar.style.display = "none"; }, { once: true });
+    } else {
+      avatar.style.display = "none";
+    }
+  }
+
+  if (user.affiliateTag) {
+    state.affiliateTag = user.affiliateTag;
+    const input = byId("affiliate-tag-input");
+    if (input && !input.value) input.value = user.affiliateTag;
+  }
+
+  const quota = profile.quota || {};
+  const used = quota.used ?? 0;
+  const limit = quota.limit ?? 0;
+
+  const quotaText = byId("quota-text");
+  if (quotaText) {
+    quotaText.textContent = profile.stale
+      ? `${used} of ${limit} scans used (offline)`
+      : `${used} of ${limit} scans used this month`;
+  }
+
+  const planEl = byId("quota-plan");
+  if (planEl) planEl.textContent = (user.plan || "free").toUpperCase();
+
+  const fill = byId("quota-fill");
+  if (fill && limit > 0) {
+    const pct = Math.min(100, Math.round((used / limit) * 100));
+    fill.style.width = `${pct}%`;
+    fill.style.background = pct >= 90 ? "#EF4444" : pct >= 70 ? "#F59E0B" : "#10B981";
+  }
+}
+
+function showSignInError(message) {
+  const box = byId("signin-error");
+  if (!box) return;
+  box.textContent = message;
+  box.style.display = message ? "block" : "none";
+}
+
+function initAccount() {
+  fetchProfile().then(renderAccount);
+
+  byId("signin-btn")?.addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    btn.textContent = "Opening Google…";
+    showSignInError("");
+
+    try {
+      const profile = await signIn();
+      renderAccount(profile);
+    } catch (err) {
+      showSignInError(err.message || "Sign-in failed.");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Continue with Google";
+    }
+  });
+
+  byId("signout-btn")?.addEventListener("click", async () => {
+    await signOut();
+    renderAccount({ signedIn: false });
+  });
+
+  byId("delete-account-btn")?.addEventListener("click", async () => {
+    const warning =
+      "Permanently delete your StreamSnap account?\n\n" +
+      "This removes your profile, saved products and usage history from our servers. " +
+      "It cannot be undone.";
+    if (!confirm(warning)) return;
+    if (prompt('Type DELETE to confirm.') !== "DELETE") return;
+
+    try {
+      await deleteAccount();
+      renderAccount({ signedIn: false });
+      alert("Your account and all its data have been deleted.");
+    } catch (err) {
+      alert(`Could not delete the account: ${err.message}`);
+    }
   });
 }
 
