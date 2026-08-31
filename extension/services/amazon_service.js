@@ -18,6 +18,9 @@ export const VERIFIED_PRODUCTS = {
     brand: "Shure",
     category: "Audio & Mic",
     price: 399.0,
+    originalPrice: 499.0,
+    discountPercent: 20,
+    dealBadge: "Pro Choice 🔥",
     image: "https://m.media-amazon.com/images/I/71P4q+HqKQL._AC_SL1500_.jpg"
   },
   B09XS7JWHH: {
@@ -26,6 +29,9 @@ export const VERIFIED_PRODUCTS = {
     brand: "Sony",
     category: "Headphones",
     price: 348.0,
+    originalPrice: 399.99,
+    discountPercent: 13,
+    dealBadge: "Save $52 ⚡",
     image: "https://m.media-amazon.com/images/I/61vJtKbAssL._AC_SL1500_.jpg"
   },
   B07W755322: {
@@ -33,7 +39,10 @@ export const VERIFIED_PRODUCTS = {
     title: "Elgato Key Light — 2800 Lumen Studio LED Panel",
     brand: "Elgato",
     category: "Studio Lighting",
-    price: 199.99,
+    price: 159.99,
+    originalPrice: 199.99,
+    discountPercent: 20,
+    dealBadge: "20% OFF 🔥",
     image: "https://m.media-amazon.com/images/I/61LpX3fXQAL._AC_SL1500_.jpg"
   },
   B07W5JK7B6: {
@@ -41,7 +50,10 @@ export const VERIFIED_PRODUCTS = {
     title: "Elgato Stream Deck MK.2 — 15 Macro Keys Studio Controller",
     brand: "Elgato",
     category: "Gaming & Gear",
-    price: 149.99,
+    price: 129.99,
+    originalPrice: 149.99,
+    discountPercent: 13,
+    dealBadge: "Stream Deal ⚡",
     image: "https://m.media-amazon.com/images/I/61B5UjF7pKL._AC_SL1500_.jpg"
   },
   B0B94ZDFM9: {
@@ -57,7 +69,10 @@ export const VERIFIED_PRODUCTS = {
     title: "Apple AirPods Max Wireless Over-Ear Headphones",
     brand: "Apple",
     category: "Headphones",
-    price: 549.0,
+    price: 479.0,
+    originalPrice: 549.0,
+    discountPercent: 13,
+    dealBadge: "Limited Deal 🔥",
     image: "https://m.media-amazon.com/images/I/81jqUPkIVRL._AC_SL1500_.jpg"
   },
   B0DHJ3SRDL: {
@@ -73,7 +88,10 @@ export const VERIFIED_PRODUCTS = {
     title: "Sampeel Airport Outfits 2-Piece Lounge Matching Set",
     brand: "Sampeel",
     category: "Fashion & Apparel",
-    price: 39.99,
+    price: 29.99,
+    originalPrice: 39.99,
+    discountPercent: 25,
+    dealBadge: "25% OFF 🔥",
     image: "https://m.media-amazon.com/images/I/71j1n-1Pq-L._AC_SL1500_.jpg"
   },
   B0HGDV476B: {
@@ -81,7 +99,10 @@ export const VERIFIED_PRODUCTS = {
     title: "Ninja HydraSense Intelligent Water Filtration System",
     brand: "Ninja",
     category: "Home & Kitchen",
-    price: 199.99,
+    price: 169.99,
+    originalPrice: 199.99,
+    discountPercent: 15,
+    dealBadge: "Save $30 ⚡",
     image: "https://m.media-amazon.com/images/I/71UqI4pWv1L._AC_SL1500_.jpg"
   },
   B08285CV9C: {
@@ -89,7 +110,10 @@ export const VERIFIED_PRODUCTS = {
     title: "Replacement Analog 3D Thumbstick Joystick for Controller",
     brand: "Generic",
     category: "Gaming & Gear",
-    price: 9.99,
+    price: 7.99,
+    originalPrice: 9.99,
+    discountPercent: 20,
+    dealBadge: "20% OFF",
     image: "https://m.media-amazon.com/images/I/61k2YfR1L-L._AC_SL1500_.jpg"
   },
   B0FRY24FNG: {
@@ -97,7 +121,10 @@ export const VERIFIED_PRODUCTS = {
     title: "The Complete Matrix Trilogy (3-Pack 4K Ultra HD)",
     brand: "Warner Bros",
     category: "Movies & Media",
-    price: 49.99,
+    price: 34.99,
+    originalPrice: 49.99,
+    discountPercent: 30,
+    dealBadge: "30% OFF 🔥",
     image: "https://m.media-amazon.com/images/I/81h9iZf5vVL._AC_SL1500_.jpg"
   }
 };
@@ -140,6 +167,9 @@ export function resolveDetection(item) {
       title: known.title,
       brand: known.brand,
       price: known.price,
+      originalPrice: known.originalPrice || null,
+      discountPercent: known.discountPercent || null,
+      dealBadge: known.dealBadge || null,
       image: known.image,
       category: known.category,
       verified: true
@@ -155,18 +185,32 @@ export function resolveDetection(item) {
       title: byTitle.title,
       brand: byTitle.brand,
       price: byTitle.price,
+      originalPrice: byTitle.originalPrice || null,
+      discountPercent: byTitle.discountPercent || null,
+      dealBadge: byTitle.dealBadge || null,
       image: byTitle.image,
       category: byTitle.category,
       verified: true
     };
   }
 
-  // Unverified: keep the visual detection, drop the unconfirmed ASIN and price.
+  // Unverified: keep the visual detection, handle optional price/discount fields.
+  const price = typeof item.price === "number" && item.price > 0 ? item.price : null;
+  const originalPrice = typeof item.originalPrice === "number" && item.originalPrice > (price || 0)
+    ? item.originalPrice
+    : null;
+  const discountPercent = originalPrice && price
+    ? Math.round(((originalPrice - price) / originalPrice) * 100)
+    : (typeof item.discountPercent === "number" ? item.discountPercent : null);
+
   return {
     ...item,
     asin: null,
     title,
-    price: typeof item.price === "number" && item.price > 0 ? item.price : null,
+    price,
+    originalPrice,
+    discountPercent,
+    dealBadge: item.dealBadge || (discountPercent ? `${discountPercent}% OFF 🔥` : null),
     image: null,
     category: categorizeProduct(title),
     verified: false

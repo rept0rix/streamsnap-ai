@@ -11,7 +11,7 @@
     <!-- Header -->
     <header class="panel-header">
       <div class="brand-row">
-        <div class="logo-group">
+        <a href="https://streamsnap.ai" target="_blank" rel="noopener noreferrer" class="logo-group logo-link" title="Visit StreamSnap AI Website (streamsnap.ai)">
           <div class="logo-icon-svg">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
@@ -21,8 +21,16 @@
             <span class="logo-title">StreamSnap</span>
             <span class="logo-badge">PRO AI</span>
           </div>
-        </div>
+        </a>
         <div class="header-status-group">
+          <a href="https://streamsnap.ai" target="_blank" rel="noopener noreferrer" class="website-header-btn" title="Open StreamSnap AI Website">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+            <span>Website ↗</span>
+          </a>
           <div class="amazon-badge" title="Amazon 1-Click Remote Cart Active">
             <span class="prime-text">prime</span>
             <span class="status-dot"></span>
@@ -31,28 +39,54 @@
       </div>
 
       <!-- Navigation Tabs -->
-      <nav class="tab-nav">
-        <button class="tab-btn active" data-tab="scanned" title="Live Video Scans">
-          <span class="tab-icon">⚡</span>
+      <nav class="tab-nav" aria-label="Main Navigation">
+        <button class="tab-btn active" data-tab="scanned" title="Live Video Scans" aria-label="Live Scans">
+          <span class="tab-icon" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+          </span>
           <span class="tab-lbl">Live</span>
           <span class="tab-count" id="scanned-count">0</span>
         </button>
-        <button class="tab-btn" data-tab="catalog" title="History & Catalog">
-          <span class="tab-icon">📦</span>
+        <button class="tab-btn" data-tab="catalog" title="History & Catalog" aria-label="Scan History">
+          <span class="tab-icon" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path>
+              <path d="m3.3 7 8.7 5 8.7-5"></path>
+              <path d="M12 22V12"></path>
+            </svg>
+          </span>
           <span class="tab-lbl">History</span>
           <span class="tab-count" id="catalog-count">0</span>
         </button>
-        <button class="tab-btn" data-tab="cart" title="Amazon Remote Cart">
-          <span class="tab-icon">🛒</span>
+        <button class="tab-btn" data-tab="cart" title="Amazon Remote Cart" aria-label="Shopping Cart">
+          <span class="tab-icon" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="8" cy="21" r="1"></circle>
+              <circle cx="19" cy="21" r="1"></circle>
+              <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
+            </svg>
+          </span>
           <span class="tab-lbl">Cart</span>
           <span class="tab-count" id="cart-count">0</span>
         </button>
-        <button class="tab-btn" data-tab="analytics" title="Performance & Revenue">
-          <span class="tab-icon">📊</span>
+        <button class="tab-btn" data-tab="analytics" title="Performance & Revenue" aria-label="Analytics">
+          <span class="tab-icon" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 3v18h18"></path>
+              <path d="m19 9-5 5-4-4-3 3"></path>
+            </svg>
+          </span>
           <span class="tab-lbl">Stats</span>
         </button>
-        <button class="tab-btn" data-tab="settings" title="Settings & Amazon Setup">
-          <span class="tab-icon">⚙️</span>
+        <button class="tab-btn" data-tab="settings" title="Settings & Amazon Setup" aria-label="Settings">
+          <span class="tab-icon" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </span>
           <span class="tab-lbl">Setup</span>
         </button>
       </nav>
@@ -63,35 +97,94 @@
       <!-- Tab 1: Live Scanned Results -->
       <section id="tab-scanned" class="tab-pane active">
         <div id="scan-empty-state" class="empty-state">
-          <div class="radar-box" id="radar-scan-trigger" style="cursor: pointer;" title="Click to Scan">
+          <div class="radar-box" id="radar-scan-trigger" style="cursor: pointer;" title="Click to Scan" role="button" tabindex="0" aria-label="Scan Live Stream">
             <div class="radar-sweep"></div>
-            <span class="radar-icon">⚡</span>
+            <span class="radar-icon" aria-hidden="true">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+            </span>
           </div>
           <h3>Ready to Scan Live Stream</h3>
           <p>Click below or snip directly on the video to identify items with AI Vision &amp; Amazon.</p>
-          <button id="direct-scan-btn" class="direct-scan-btn">⚡ SCAN ACTIVE STREAM</button>
+          <button id="direct-scan-btn" class="direct-scan-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; margin-right:4px;">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            SCAN ACTIVE STREAM
+          </button>
         </div>
 
         <div id="scan-loading-state" class="empty-state" style="display: none;">
           <div class="radar-box">
             <div class="radar-sweep" style="animation-duration: 0.7s;"></div>
-            <span class="radar-icon">🤖</span>
+            <span class="radar-icon" aria-hidden="true">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="8"></circle>
+                <line x1="12" y1="2" x2="12" y2="6"></line>
+                <line x1="12" y1="18" x2="12" y2="22"></line>
+                <line x1="2" y1="12" x2="6" y2="12"></line>
+                <line x1="18" y1="12" x2="22" y2="12"></line>
+                <circle cx="12" cy="12" r="2" fill="#FF9900"></circle>
+              </svg>
+            </span>
           </div>
           <h3>AI Vision Scanning...</h3>
           <p id="loading-status-text">Identifying products in the current frame...</p>
         </div>
 
         <div id="scan-error-state" class="empty-state" style="display: none;">
-          <span class="empty-icon">⚠️</span>
+          <span class="empty-icon svg-icon-wrap" aria-hidden="true">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+              <line x1="12" y1="9" x2="12" y2="13"></line>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+          </span>
           <h3>Scan Failed</h3>
           <p id="scan-error-text">Something went wrong.</p>
-          <button id="retry-scan-btn" class="direct-scan-btn">↻ Try Again</button>
+          <button id="retry-scan-btn" class="direct-scan-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; margin-right:4px;">
+              <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+              <path d="M3 3v5h5"></path>
+              <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+              <path d="M16 21h5v-5"></path>
+            </svg>
+            Try Again
+          </button>
         </div>
 
         <div id="scan-results-container" class="results-view" style="display: none;">
           <div class="stream-info-bar">
-            <span id="stream-name-tag" class="stream-tag">🔴 Live Stream</span>
-            <button id="rescan-btn" class="rescan-btn" title="Rescan current live frame">🔄 Rescan</button>
+            <span id="stream-name-tag" class="stream-tag">
+              <span class="live-dot-indicator"></span>
+              Live Stream
+            </span>
+            <div class="stream-actions-group">
+              <button id="rescan-btn" class="rescan-btn" title="Rescan current live frame">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                  <path d="M3 3v5h5"></path>
+                  <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+                  <path d="M16 21h5v-5"></path>
+                </svg>
+                Rescan
+              </button>
+              <button id="clear-live-btn" class="rescan-btn clear-live-btn" title="Clear current live feed">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 6h18"></path>
+                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                </svg>
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <!-- Non-disruptive Live Scan Progress Bar -->
+          <div id="scan-live-progress" class="scan-live-progress" style="display: none;">
+            <div class="scan-pulse-dot"></div>
+            <span>📡 Scanning live stream in background...</span>
           </div>
 
           <!-- Crop Preview Box -->
@@ -99,7 +192,13 @@
             <div class="crop-preview-inner">
               <img id="crop-preview-img" src="" alt="Cropped Patch" />
               <div class="crop-details">
-                <div class="crop-badge">🎯 Video Snip Patch</div>
+                <div class="crop-badge">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:4px;">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  Video Snip Patch
+                </div>
                 <div class="crop-subtitle">Pinpoint visual search for selected item</div>
               </div>
             </div>
@@ -141,7 +240,12 @@
       <section id="tab-catalog" class="tab-pane">
         <div class="catalog-header-bar">
           <div class="search-input-box">
-            <span class="search-icon">🔍</span>
+            <span class="search-icon" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </span>
             <input type="text" id="catalog-search-input" placeholder="Search history by item, brand, stream..." />
           </div>
           
@@ -162,7 +266,13 @@
         </div>
 
         <div id="catalog-empty-state" class="empty-state" style="display: none;">
-          <span class="empty-icon">📦</span>
+          <span class="empty-icon svg-icon-wrap" aria-hidden="true">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path>
+              <path d="m3.3 7 8.7 5 8.7-5"></path>
+              <path d="M12 22V12"></path>
+            </svg>
+          </span>
           <h3>No Scans in History Yet</h3>
           <p>Scan a live stream or snip any object to save products automatically.</p>
         </div>
@@ -173,14 +283,27 @@
       <!-- Tab 3: 1-Click Amazon Cart -->
       <section id="tab-cart" class="tab-pane">
         <div id="cart-empty-state" class="empty-state">
-          <span class="empty-icon">🛒</span>
+          <span class="empty-icon svg-icon-wrap" aria-hidden="true">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="8" cy="21" r="1"></circle>
+              <circle cx="19" cy="21" r="1"></circle>
+              <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
+            </svg>
+          </span>
           <h3>Your Stream Cart is Empty</h3>
           <p>Click "+ Add" on any detected product to stage items for 1-Click Amazon Checkout.</p>
         </div>
 
         <div id="cart-content-view" style="display: none;">
           <div class="cart-header-strip">
-            <span>🛒 Staged Amazon Items</span>
+            <span class="strip-title">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:4px;">
+                <circle cx="8" cy="21" r="1"></circle>
+                <circle cx="19" cy="21" r="1"></circle>
+                <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
+              </svg>
+              Staged Amazon Items
+            </span>
             <button id="clear-cart-btn" class="text-btn-danger">Clear Cart</button>
           </div>
 
@@ -193,7 +316,12 @@
             </div>
             <div class="summary-subtext">Free Prime Two-Day Shipping &amp; Secure Amazon Checkout</div>
             <a id="amazon-checkout-btn" href="#" target="_blank" class="checkout-btn">
-              <span>🛒 Open Amazon 1-Click Cart</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;">
+                <circle cx="8" cy="21" r="1"></circle>
+                <circle cx="19" cy="21" r="1"></circle>
+                <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
+              </svg>
+              <span>Open Amazon 1-Click Cart</span>
             </a>
           </div>
         </div>
@@ -202,7 +330,13 @@
       <!-- Tab 4: Performance & Analytics -->
       <section id="tab-analytics" class="tab-pane">
         <div class="analytics-header">
-          <h3>📊 Visual Commerce Stats</h3>
+          <h3>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:4px;">
+              <path d="M3 3v18h18"></path>
+              <path d="m19 9-5 5-4-4-3 3"></path>
+            </svg>
+            Visual Commerce Stats
+          </h3>
           <p>Live stream shopping performance and estimated affiliate commissions.</p>
         </div>
 
@@ -226,7 +360,13 @@
         </div>
 
         <div class="analytics-card">
-          <div class="analytics-card-title">🔗 Affiliate Tracking</div>
+          <div class="analytics-card-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:4px;">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+            Affiliate Tracking
+          </div>
           <p class="analytics-card-desc">Amazon Associates pays 1%–10% depending on category, on qualifying purchases made within 24h of a click. The figure above is a projection from list prices and published rate cards — not reported earnings. Your actual payouts appear only in your Amazon Associates dashboard.</p>
           <div class="affiliate-tag-display">
             <span>Tracking ID:</span>
@@ -239,10 +379,35 @@
       <section id="tab-settings" class="tab-pane">
         <div class="settings-pane-content">
           
+          <!-- Official Website & Resources -->
+          <div class="guide-card website-promo-card">
+            <div class="guide-header">
+              <span class="guide-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="2" y1="12" x2="22" y2="12"></line>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                </svg>
+              </span>
+              <div style="flex:1;">
+                <h4>Official Website &amp; Portal</h4>
+                <p class="settings-subtext" style="margin: 2px 0 0 0;">Explore live demos, feature guides, and tutorials.</p>
+              </div>
+              <a href="https://streamsnap.ai" target="_blank" rel="noopener noreferrer" class="settings-action-btn website-visit-btn">
+                streamsnap.ai ↗
+              </a>
+            </div>
+          </div>
+
           <!-- Account — the primary path. No key pasting required. -->
           <div id="account-signed-out" class="account-card" style="display:none;">
             <div class="account-headline">
-              <span class="account-icon">🔐</span>
+              <span class="account-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              </span>
               <div>
                 <h4>Sign in to start scanning</h4>
                 <p>No API key, no setup. Scanning runs on our servers, so nothing billable is ever stored on your device.</p>
@@ -281,7 +446,13 @@
           <!-- Guide Box: How to get Amazon Tag -->
           <div class="guide-card">
             <div class="guide-header">
-              <span class="guide-icon">💡</span>
+              <span class="guide-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"></path>
+                  <path d="M9 18h6"></path>
+                  <path d="M10 22h4"></path>
+                </svg>
+              </span>
               <h4>How to Get Your Amazon Affiliate Tag</h4>
             </div>
             <ol class="guide-steps">
@@ -294,7 +465,13 @@
 
           <!-- Amazon Tag Input -->
           <div class="settings-section">
-            <label class="settings-label">🏷️ Your Amazon Associate Tracking ID</label>
+            <label class="settings-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:4px;">
+                <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"></path>
+                <path d="M7 7h.01"></path>
+              </svg>
+              Your Amazon Associate Tracking ID
+            </label>
             <p class="settings-subtext">All product links and cart additions will use this tag for commission attribution.</p>
             <div class="settings-input-row">
               <input type="text" id="affiliate-tag-input" placeholder="e.g. yourname-20" />
@@ -323,13 +500,36 @@
             </p>
           </details>
 
+          <!-- Video Player Floating Controls -->
+          <div class="settings-section">
+            <label class="settings-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:4px;">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+              Video Player Floating Controls
+            </label>
+            <p class="settings-subtext">Show, minimize, or hide the floating scan buttons over videos (TikTok, YouTube, Twitch).</p>
+            <label class="toggle-switch-row" style="display:flex; align-items:center; justify-content:space-between; margin-top:8px; cursor:pointer;">
+              <span style="font-size:12px; font-weight:600; color:var(--text-primary);">Show floating buttons on video</span>
+              <input type="checkbox" id="toggle-floating-controls-checkbox" checked style="width:18px; height:18px; accent-color:#FF9900; cursor:pointer;" />
+            </label>
+          </div>
+
           <!-- Auto-Scan Interval -->
           <div class="settings-section">
-            <label class="settings-label">⏱️ Live Stream Auto-Scan Interval</label>
+            <label class="settings-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:4px;">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              Live Stream Auto-Scan Interval
+            </label>
             <p class="settings-subtext">Automatically scan the video stream in the background without clicking.</p>
             <select id="auto-scan-select" class="settings-select">
               <option value="0">Manual Scan Only (Default)</option>
-              <option value="15">Auto-Scan Every 15 Seconds ⚡</option>
+              <option value="15">Auto-Scan Every 15 Seconds</option>
               <option value="30">Auto-Scan Every 30 Seconds</option>
               <option value="60">Auto-Scan Every 60 Seconds</option>
             </select>
@@ -337,7 +537,14 @@
 
           <!-- Minimum Confidence -->
           <div class="settings-section">
-            <label class="settings-label">🎯 Minimum Match Confidence</label>
+            <label class="settings-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:4px;">
+                <circle cx="12" cy="12" r="10"></circle>
+                <circle cx="12" cy="12" r="6"></circle>
+                <circle cx="12" cy="12" r="2"></circle>
+              </svg>
+              Minimum Match Confidence
+            </label>
             <p class="settings-subtext">
               Hides items the model scored below this. Leave it low — the score is the model's own
               guess about itself, and a high setting hides real products.
@@ -353,7 +560,14 @@
 
           <!-- Data & Privacy — everything stored must be removable -->
           <div class="settings-section danger-section">
-            <label class="settings-label">🗑️ Your Data</label>
+            <label class="settings-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:4px;">
+                <path d="M3 6h18"></path>
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+              </svg>
+              Your Data
+            </label>
             <p class="settings-subtext">
               Everything StreamSnap stores lives on this device. You can remove any of it, at any
               time, and nothing is kept elsewhere.
@@ -384,25 +598,48 @@
     <div id="source-frame-modal" class="modal-backdrop" style="display: none;">
       <div class="modal-card">
         <div class="modal-header">
-          <h4>📸 Source Frame Traceability</h4>
-          <button id="close-modal-btn" class="modal-close-btn">✕</button>
+          <h4>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:6px;">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+              <circle cx="12" cy="13" r="4"></circle>
+            </svg>
+            Source Frame Traceability
+          </h4>
+          <button id="close-modal-btn" class="modal-close-btn" aria-label="Close modal">✕</button>
         </div>
         <div class="modal-body">
           <div class="comparison-grid">
             <div class="comparison-col">
-              <div class="comparison-lbl">🎯 Zoomed-in Video Crop</div>
+              <div class="comparison-lbl">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:4px;">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                Zoomed-in Video Crop
+              </div>
               <img id="modal-source-img" src="" alt="Video Frame Crop" />
               <div class="comparison-stream-tag" id="modal-stream-name">Live Stream</div>
             </div>
             <div class="comparison-col">
-              <div class="comparison-lbl">🛍️ Matched Amazon Product</div>
+              <div class="comparison-lbl">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:4px;">
+                  <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
+                  <path d="M3 6h18"></path>
+                  <path d="M16 10a4 4 0 0 1-8 0"></path>
+                </svg>
+                Matched Amazon Product
+              </div>
               <img id="modal-product-img" src="" alt="Amazon Product" />
               <div class="comparison-product-title" id="modal-product-title">Product Name</div>
               <div class="comparison-price" id="modal-product-price">$0.00</div>
             </div>
           </div>
           <div id="modal-detection-desc" class="modal-detection-banner">
-            🔎 <strong>Visual Detection:</strong> <span id="modal-detection-label">Item description</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:4px;">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <strong>Visual Detection:</strong> <span id="modal-detection-label">Item description</span>
           </div>
         </div>
       </div>
@@ -412,7 +649,9 @@
     <!-- Footer Status -->
     <footer class="panel-footer">
       <div class="footer-info">
-        <span>StreamSnap AI v1.4</span>
+        <a href="https://streamsnap.ai" target="_blank" rel="noopener noreferrer" class="footer-link">streamsnap.ai ↗</a>
+        <span>•</span>
+        <span>v1.5.0</span>
         <span>•</span>
         <span id="footer-storage-note">Data stored locally</span>
       </div>

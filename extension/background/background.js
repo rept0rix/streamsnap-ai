@@ -129,27 +129,38 @@ function reconcileResults(raw, minConfidence) {
 
   let filtered = 0;
 
-  const process = (list, tier) =>
-    (Array.isArray(list) ? list : [])
-      .map((item) => {
-        const resolved = resolveDetection(item);
-        if (!resolved) return null;
-        // null = the model did not report a confidence for this item.
-        return { ...resolved, tier, confidence: normalizeConfidence(item) };
-      })
-      .filter((item) => {
-        if (!item) return false;
-        // Unknown confidence is shown, not hidden. A self-reported score from a
-        // language model is a weak signal at best; it should never be the only
-        // thing standing between the user and a real detection.
-        if (item.confidence === null) return true;
-        if (item.confidence >= minConfidence) return true;
-        filtered += 1;
-        return false;
-      });
+  const rawExact = Array.isArray(raw.exactMatches) ? raw.exactMatches : [];
+  const rawLookAlikes = Array.isArray(raw.lookAlikes) ? raw.lookAlikes : [];
 
-  out.exactMatches = process(raw.exactMatches, "exact");
-  out.lookAlikes = process(raw.lookAlikes, "lookalike");
+  for (const item of rawExact) {
+    const resolved = resolveDetection(item);
+    if (!resolved) continue;
+    const conf = normalizeConfidence(item);
+    const resolvedItem = { ...resolved, tier: "exact", confidence: conf };
+
+    if (conf === null || conf >= minConfidence) {
+      out.exactMatches.push(resolvedItem);
+    } else if (conf >= Math.max(30, minConfidence - 25)) {
+      // Instead of discarding live detections under motion blur, gracefully downgrade to lookAlikes
+      out.lookAlikes.push({ ...resolvedItem, tier: "lookalike" });
+    } else {
+      filtered += 1;
+    }
+  }
+
+  for (const item of rawLookAlikes) {
+    const resolved = resolveDetection(item);
+    if (!resolved) continue;
+    const conf = normalizeConfidence(item);
+    const resolvedItem = { ...resolved, tier: "lookalike", confidence: conf };
+
+    if (conf === null || conf >= Math.max(25, minConfidence - 20)) {
+      out.lookAlikes.push(resolvedItem);
+    } else {
+      filtered += 1;
+    }
+  }
+
   out.filteredCount = filtered;
   return out;
 }
@@ -206,51 +217,61 @@ async function extractCropFromBox(imageDataUrl, box) {
   }
 }
 
-const FULL_FRAME_PROMPT = (streamTitle) => `You are StreamSnap AI, a visual commerce engine for live streams.
-Analyze this video frame from a stream titled: "${streamTitle}".
-Detect every prominent, distinct consumer product visible (fitness equipment, apparel, consumer tech, drinkware, accessories).
+const FULL_FRAME_PROMPT = (streamTitle) => `You are StreamSnap AI, an advanced visual commerce engine for live streams.
+Analyze this video frame from an active live stream titled: "${streamTitle}".
+Streamers show products in real-world conditions (in hand, worn, desk setup, background, active motion).
+Detect every prominent consumer product visible (electronics, microphones, headphones, lighting, controllers, apparel, tumblers/bottles, fitness gear, gadgets).
 
 Rules:
-- Only report products you can actually see. Do not guess at items that may be off-frame.
-- Only include an "asin" if you are certain of the real Amazon ASIN. If you are not certain, omit the field entirely. Never invent one.
-- Only include "price" if you are confident of the real current price. Otherwise omit it.
-- Set "confidence" honestly between 0 and 1.
+- Identify recognizable products accurately even if in slight motion or dynamic studio lighting.
+- Only include "asin" if you know the exact real Amazon ASIN. Otherwise omit.
+- If you know the price or estimated price, provide "price" as a USD number (e.g. 149.99).
+- If there is an original list price or standard MSRP higher than the sale price, provide "originalPrice" (e.g. 199.99) and "discountPercent" (e.g. 25).
+- If on discount or special deal, include "dealBadge" (e.g. "25% OFF 🔥" or "Live Deal ⚡").
+- Set "confidence" honestly between 0.3 and 1.0.
 - Give each item a bounding box [ymin, xmin, ymax, xmax] normalized 0-1000.
 
 Return JSON:
 {
   "exactMatches": [
     {
-      "title": "Specific product name including brand and model",
+      "title": "Specific product name with brand & model",
       "brand": "Brand",
-      "confidence": 0.9,
-      "detectionLabel": "Short label, e.g. Black smartwatch on wrist",
-      "matchReason": "What you saw that identifies it",
-      "box_2d": [380, 440, 420, 470]
+      "price": 149.99,
+      "originalPrice": 199.99,
+      "discountPercent": 25,
+      "dealBadge": "25% OFF 🔥",
+      "confidence": 0.92,
+      "detectionLabel": "Short label",
+      "matchReason": "Visual cues identifying this product",
+      "box_2d": [380, 440, 710, 620]
     }
   ],
   "lookAlikes": [
     {
-      "title": "Product category and description for a visually similar item",
-      "similarityScore": 88,
+      "title": "Similar product style/category description",
+      "price": 39.99,
+      "originalPrice": 49.99,
+      "discountPercent": 20,
+      "dealBadge": "20% OFF",
+      "similarityScore": 85,
       "detectionLabel": "Short label",
-      "matchReason": "Why this is a style match rather than an exact one",
+      "matchReason": "Style or category match",
       "box_2d": [450, 310, 710, 390]
     }
   ]
 }`;
 
-const CROP_PROMPT = (streamTitle) => `You are StreamSnap AI, a visual search engine.
-The user cropped one specific object from a live stream titled: "${streamTitle}".
-Identify ONLY the object in this crop.
+const CROP_PROMPT = (streamTitle) => `You are StreamSnap AI, a visual commerce search engine.
+The user cropped a specific object from a live stream titled: "${streamTitle}".
+Identify ONLY the object in this cropped region.
 
 Rules:
-- Only include an "asin" if you are certain of the real Amazon ASIN. Otherwise omit it. Never invent one.
-- Only include "price" if you are confident of the real price. Otherwise omit it.
-- Set "confidence" honestly between 0 and 1.
+- Identify the product, brand, current "price" (number), "originalPrice" (if known), "discountPercent", and "dealBadge".
+- Set "confidence" between 0.3 and 1.0.
+- Only include "asin" if you are certain of the exact real Amazon ASIN.
 
-Return JSON with the same shape: { "exactMatches": [...], "lookAlikes": [...] }
-Each entry needs: title, brand, confidence (or similarityScore), detectionLabel, matchReason.`;
+Return JSON: { "exactMatches": [...], "lookAlikes": [...] }`;
 
 async function callGemini(imageDataUrl, apiKey, prompt) {
   if (!apiKey) {
@@ -342,6 +363,10 @@ async function saveDiscoveredProducts(results, streamContext) {
       existing.lastSeenAt = now;
       existing.lastStream = streamContext?.title || "Live Stream";
       if (item.thumbnail && !existing.sourceCrop) existing.sourceCrop = item.thumbnail;
+      if (item.price && !existing.price) existing.price = item.price;
+      if (item.originalPrice) existing.originalPrice = item.originalPrice;
+      if (item.discountPercent) existing.discountPercent = item.discountPercent;
+      if (item.dealBadge) existing.dealBadge = item.dealBadge;
       // Move recently-seen items to the front so eviction drops truly stale ones.
       catalog.splice(existingIndex, 1);
       catalog.unshift(existing);
@@ -354,6 +379,9 @@ async function saveDiscoveredProducts(results, streamContext) {
       verified: Boolean(item.verified),
       title: item.title,
       price: typeof item.price === "number" ? item.price : null,
+      originalPrice: typeof item.originalPrice === "number" ? item.originalPrice : null,
+      discountPercent: typeof item.discountPercent === "number" ? item.discountPercent : null,
+      dealBadge: item.dealBadge || null,
       image: item.image || null,
       category,
       tier: item.tier || "exact",
@@ -427,7 +455,9 @@ async function runAnalysis({ imageDataUrl, apiKey, streamContext, mode }) {
       const source = isCrop
         ? imageDataUrl
         : (await extractCropFromBox(imageDataUrl, item.box_2d)) || imageDataUrl;
-      item.thumbnail = await downscaleDataUrl(source, LIMITS.THUMB_MAX_EDGE);
+      const thumb = await downscaleDataUrl(source, LIMITS.THUMB_MAX_EDGE);
+      item.thumbnail = thumb;
+      item.sourceCrop = thumb;
     })
   );
 

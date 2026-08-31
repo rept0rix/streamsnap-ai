@@ -60,6 +60,36 @@ function el(tag, className, text) {
   return node;
 }
 
+function createSvgIcon(name, size = 12) {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("width", String(size));
+  svg.setAttribute("height", String(size));
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("stroke", "currentColor");
+  svg.setAttribute("stroke-width", "2.2");
+  svg.setAttribute("stroke-linecap", "round");
+  svg.setAttribute("stroke-linejoin", "round");
+  svg.classList.add("btn-icon-svg");
+  svg.style.marginRight = "3px";
+  svg.style.verticalAlign = "middle";
+
+  const paths = {
+    camera: '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle>',
+    zap: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>',
+    cart: '<circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>',
+    external: '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line>',
+    globe: '<circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>',
+    trash: '<path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>',
+    check: '<polyline points="20 6 9 17 4 12"></polyline>',
+    target: '<circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle>',
+    bag: '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path>'
+  };
+
+  svg.innerHTML = paths[name] || paths.zap;
+  return svg;
+}
+
 function byId(id) {
   return document.getElementById(id);
 }
@@ -130,11 +160,17 @@ function initSettings() {
     keyStatus.style.color = hasKey ? "#10B981" : "#F59E0B";
   }
 
+  const floatingControlsToggle = byId("toggle-floating-controls-checkbox");
+
   chrome.storage.local.get(
-    ["geminiApiKey", "autoScanIntervalSec", "minConfidence", "affiliateTag"],
+    ["geminiApiKey", "autoScanIntervalSec", "minConfidence", "affiliateTag", "showFloatingControls"],
     (res = {}) => {
       if (keyInput && res.geminiApiKey) keyInput.value = res.geminiApiKey;
       paintKeyStatus(Boolean(res.geminiApiKey));
+
+      if (floatingControlsToggle && res.showFloatingControls !== undefined) {
+        floatingControlsToggle.checked = Boolean(res.showFloatingControls);
+      }
 
       if (autoScanSelect && res.autoScanIntervalSec !== undefined) {
         autoScanSelect.value = String(res.autoScanIntervalSec);
@@ -151,6 +187,10 @@ function initSettings() {
       }
     }
   );
+
+  floatingControlsToggle?.addEventListener("change", () => {
+    chrome.storage.local.set({ showFloatingControls: floatingControlsToggle.checked });
+  });
 
   saveKeyBtn?.addEventListener("click", () => {
     const key = keyInput.value.trim();
@@ -363,6 +403,7 @@ function openSourceFrameModal(prod) {
   const modal = byId("source-frame-modal");
   const sourceImg = byId("modal-source-img");
   const prodImg = byId("modal-product-img");
+  const prodCol = prodImg?.closest(".comparison-col");
 
   const fallback = placeholderThumbnail(prod);
   const sourceSrc =
@@ -373,15 +414,28 @@ function openSourceFrameModal(prod) {
     sourceImg.src = fallback;
   };
 
-  prodImg.src = prod.image || fallback;
-  prodImg.onerror = () => {
-    prodImg.src = fallback;
-  };
+  const hasRealCatalogImage = Boolean(
+    prod.image &&
+    typeof prod.image === "string" &&
+    (prod.image.startsWith("http://") || prod.image.startsWith("https://")) &&
+    prod.image !== prod.sourceCrop &&
+    prod.image !== prod.thumbnail
+  );
+
+  if (hasRealCatalogImage) {
+    if (prodCol) prodCol.style.display = "flex";
+    prodImg.src = prod.image;
+    prodImg.onerror = () => {
+      prodImg.src = fallback;
+    };
+  } else {
+    if (prodCol) prodCol.style.display = "none";
+  }
 
   byId("modal-stream-name").textContent =
     prod.streamTitle || prod.lastStream || state.scan?.streamType || "Live Stream";
   byId("modal-product-title").textContent = prod.title || "Detected item";
-  byId("modal-product-price").textContent = formatPrice(prod.price) || "Price not confirmed";
+  byId("modal-product-price").textContent = formatPrice(prod.price) || "Price on Amazon";
   byId("modal-detection-label").textContent =
     prod.matchReason || prod.detectionLabel || "Detected in the live video frame";
 
@@ -435,6 +489,19 @@ function initListeners() {
   byId("radar-scan-trigger")?.addEventListener("click", triggerDirectScan);
   byId("rescan-btn")?.addEventListener("click", triggerDirectScan);
   byId("retry-scan-btn")?.addEventListener("click", triggerDirectScan);
+
+  byId("clear-live-btn")?.addEventListener("click", () => {
+    liveSessionFeed = { exactMatches: [], lookAlikes: [] };
+    state.scan = null;
+    chrome.storage.local.remove(["latestScanResults"], () => {
+      show("scan-results-container", false);
+      show("scan-loading-state", false);
+      show("scan-error-state", false);
+      show("scan-empty-state", true);
+      const countBadge = byId("scanned-count");
+      if (countBadge) countBadge.textContent = "0";
+    });
+  });
 
   byId("clear-cart-btn")?.addEventListener("click", () => {
     chrome.runtime.sendMessage({ action: "CLEAR_CART" });
@@ -566,20 +633,58 @@ function initDeletion() {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Live Session Accumulation State
+// ---------------------------------------------------------------------------
+let liveSessionFeed = {
+  exactMatches: [],
+  lookAlikes: []
+};
+
 function showScanningState() {
-  show("scan-empty-state", false);
-  show("scan-error-state", false);
-  show("scan-results-container", false);
-  show("scan-loading-state", true);
+  const hasExistingResults =
+    liveSessionFeed.exactMatches.length > 0 || liveSessionFeed.lookAlikes.length > 0;
+
+  if (hasExistingResults) {
+    // Non-disruptive radar banner while preserving existing cards
+    show("scan-empty-state", false);
+    show("scan-loading-state", false);
+    show("scan-error-state", false);
+    show("scan-results-container", true);
+
+    const liveProgressBar = byId("scan-live-progress");
+    if (liveProgressBar) liveProgressBar.style.display = "flex";
+  } else {
+    // First time scan: show the full-screen scanning animation
+    show("scan-empty-state", false);
+    show("scan-error-state", false);
+    show("scan-results-container", false);
+    show("scan-loading-state", true);
+  }
 }
 
 function showScanError(message) {
-  show("scan-loading-state", false);
-  show("scan-results-container", false);
-  show("scan-empty-state", false);
-  const text = byId("scan-error-text");
-  if (text) text.textContent = message || "The scan could not be completed.";
-  show("scan-error-state", true);
+  const liveProgressBar = byId("scan-live-progress");
+  if (liveProgressBar) liveProgressBar.style.display = "none";
+
+  const hasExistingResults =
+    liveSessionFeed.exactMatches.length > 0 || liveSessionFeed.lookAlikes.length > 0;
+
+  if (hasExistingResults) {
+    // If we already have items, don't wipe them on a temporary error; just show a toast
+    const notice = byId("filter-notice");
+    if (notice) {
+      notice.textContent = `⚠️ Scan warning: ${message || "Could not complete latest frame scan."}`;
+      notice.style.display = "block";
+    }
+  } else {
+    show("scan-loading-state", false);
+    show("scan-results-container", false);
+    show("scan-empty-state", false);
+    const text = byId("scan-error-text");
+    if (text) text.textContent = message || "The scan could not be completed.";
+    show("scan-error-state", true);
+  }
 }
 
 function triggerDirectScan() {
@@ -628,7 +733,7 @@ function loadInitialData() {
       state.catalog = res.discoveredCatalog || [];
       state.cart = res.cartItems || [];
 
-      if (res.latestScanResults) renderScanResults(res.latestScanResults);
+      if (res.latestScanResults) renderScanResults(res.latestScanResults, false);
       renderCatalog();
       renderCart(state.cart);
       renderAnalytics(res.analytics);
@@ -640,7 +745,41 @@ function loadInitialData() {
 // Live scan rendering
 // ---------------------------------------------------------------------------
 
-function renderScanResults(data) {
+function mergeSessionItems(targetList, incomingList) {
+  for (const item of incomingList) {
+    const normTitle = String(item.title || item.detectionLabel || "").toLowerCase().trim();
+    if (!normTitle) continue;
+
+    const existingIdx = targetList.findIndex(
+      (p) =>
+        (item.asin && p.asin && p.asin === item.asin) ||
+        String(p.title || p.detectionLabel || "").toLowerCase().trim() === normTitle
+    );
+
+    if (existingIdx >= 0) {
+      const existing = targetList[existingIdx];
+      const updated = {
+        ...existing,
+        ...item,
+        sourceCrop: item.sourceCrop || item.thumbnail || existing.sourceCrop,
+        image: item.image || existing.image,
+        price: item.price !== null && item.price !== undefined ? item.price : existing.price,
+        originalPrice: item.originalPrice || existing.originalPrice,
+        discountPercent: item.discountPercent || existing.discountPercent,
+        dealBadge: item.dealBadge || existing.dealBadge,
+        sightingCount: (existing.sightingCount || 1) + 1,
+        confidence: item.confidence ?? existing.confidence
+      };
+      targetList.splice(existingIdx, 1);
+      targetList.unshift(updated);
+    } else {
+      targetList.unshift({ ...item, sightingCount: 1 });
+    }
+  }
+  return targetList.slice(0, 30);
+}
+
+function renderScanResults(data, isIncremental = true) {
   if (!data?.items) return;
   state.scan = data;
 
@@ -649,7 +788,22 @@ function renderScanResults(data) {
   show("scan-error-state", false);
   show("scan-results-container", true);
 
-  const { exactMatches = [], lookAlikes = [] } = data.items;
+  const liveProgressBar = byId("scan-live-progress");
+  if (liveProgressBar) liveProgressBar.style.display = "none";
+
+  const incomingExact = data.items.exactMatches || [];
+  const incomingLookAlikes = data.items.lookAlikes || [];
+
+  if (isIncremental) {
+    liveSessionFeed.exactMatches = mergeSessionItems(liveSessionFeed.exactMatches, incomingExact);
+    liveSessionFeed.lookAlikes = mergeSessionItems(liveSessionFeed.lookAlikes, incomingLookAlikes);
+  } else {
+    liveSessionFeed.exactMatches = [...incomingExact];
+    liveSessionFeed.lookAlikes = [...incomingLookAlikes];
+  }
+
+  const exactMatches = liveSessionFeed.exactMatches;
+  const lookAlikes = liveSessionFeed.lookAlikes;
   const total = exactMatches.length + lookAlikes.length;
 
   const countBadge = byId("scanned-count");
@@ -670,18 +824,15 @@ function renderScanResults(data) {
     cropBox.style.display = "none";
   }
 
-  // "Nothing found" must always explain itself. An empty panel after a scan of
-  // a frame full of products reads as a broken extension, when the usual cause
-  // is the confidence slider silently discarding everything.
   const hidden = data.filteredCount || 0;
   const threshold = data.minConfidence;
 
   const emptyExact = hidden
-    ? `${hidden} item${hidden === 1 ? "" : "s"} found but hidden — they scored below your ${threshold}% confidence setting. Lower it in Setup to see them.`
-    : "Nothing recognisable in this frame. Try Snip Box on one specific object.";
+    ? `${hidden} item${hidden === 1 ? "" : "s"} found but hidden — scored below your ${threshold}% confidence setting.`
+    : "No exact matches in live feed yet. Try Snip Box on one specific object.";
 
   renderList("exact-matches-list", exactMatches, emptyExact);
-  renderList("lookalikes-list", lookAlikes, "No look-alike suggestions for this frame.");
+  renderList("lookalikes-list", lookAlikes, "No look-alike suggestions yet.");
 
   const notice = byId("filter-notice");
   if (notice) {
@@ -760,37 +911,36 @@ function renderCatalog() {
 }
 
 // ---------------------------------------------------------------------------
-// Product card
+// Product card rendering
 // ---------------------------------------------------------------------------
 
 function placeholderThumbnail(prod) {
-  const title = String(prod.title || prod.detectionLabel || "").toLowerCase();
-  const table = [
-    [["plate", "weight", "dumbbell", "gym", "fitness"], "🏋️", "#2563EB", "Gym & Fitness"],
-    [["costume", "bodysuit", "cosplay"], "🦸", "#DC2626", "Cosplay"],
-    [["hoodie", "jacket", "shirt", "streetwear"], "👕", "#10B981", "Streetwear"],
-    [["mic", "microphone", "shure"], "🎙️", "#6366F1", "Audio"],
-    [["headphone", "airpods", "sony"], "🎧", "#8B5CF6", "Headphones"],
-    [["light", "govee", "elgato"], "💡", "#F59E0B", "Lighting"],
-    [["cup", "tumbler", "stanley", "bottle"], "🥤", "#EC4899", "Drinkware"],
-    [["deck", "controller", "keyboard"], "🎮", "#14B8A6", "Gaming"]
-  ];
-
-  let [icon, bg, label] = ["🛍️", "#FF9900", prod.category || "Detected item"];
-  for (const [keywords, i, b, l] of table) {
-    if (keywords.some((k) => title.includes(k))) {
-      [icon, bg, label] = [i, b, l];
-      break;
-    }
-  }
-
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
-    <rect width="120" height="120" rx="16" fill="#131924" stroke="${bg}" stroke-width="2"/>
-    <circle cx="60" cy="46" r="28" fill="${bg}" opacity="0.25"/>
-    <text x="60" y="55" font-size="32" text-anchor="middle" dominant-baseline="middle">${icon}</text>
-    <text x="60" y="96" font-size="9" font-weight="bold" fill="#F3F4F6" font-family="sans-serif" text-anchor="middle">${label}</text>
+    <defs>
+      <linearGradient id="pbg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#182030"/>
+        <stop offset="100%" stop-color="#0B0F19"/>
+      </linearGradient>
+    </defs>
+    <rect width="120" height="120" rx="10" fill="url(#pbg)" stroke="rgba(255,153,0,0.25)" stroke-width="1.5"/>
+    <circle cx="60" cy="50" r="22" fill="rgba(255,153,0,0.12)"/>
+    <path d="M50 44h20v14a4 4 0 0 1-4 4H54a4 4 0 0 1-4-4V44z M56 44v-3a4 4 0 0 1 8 0v3" fill="none" stroke="#FF9900" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="60" y="88" font-size="10" font-weight="700" fill="#94A3B8" font-family="-apple-system,BlinkMacSystemFont,sans-serif" text-anchor="middle">Live Match</text>
   </svg>`;
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+function showToast(container, message) {
+  const existing = document.querySelector(".streamsnap-sidepanel-toast");
+  if (existing) existing.remove();
+
+  const toast = el("div", "streamsnap-sidepanel-toast", message);
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translate(-50%, 15px)";
+    setTimeout(() => toast.remove(), 350);
+  }, 2400);
 }
 
 function createProductCard(prod, { catalog = false } = {}) {
@@ -799,17 +949,101 @@ function createProductCard(prod, { catalog = false } = {}) {
   const verified = Boolean(prod.verified) && isVerifiedAsin(prod.asin);
   const fallback = placeholderThumbnail(prod);
 
-  // --- thumbnail ---
-  const thumb = el("div", "product-thumb");
-  const img = document.createElement("img");
-  img.src = prod.image || prod.thumbnail || prod.sourceCrop || fallback;
-  img.alt = title;
-  img.referrerPolicy = "no-referrer";
-  img.loading = "lazy";
-  img.addEventListener("error", () => {
-    img.src = fallback;
-  });
-  thumb.appendChild(img);
+  // Check if we have a real distinct product catalog image
+  const hasRealCatalogImage = Boolean(
+    prod.image &&
+    typeof prod.image === "string" &&
+    (prod.image.startsWith("http://") || prod.image.startsWith("https://")) &&
+    prod.image !== prod.sourceCrop &&
+    prod.image !== prod.thumbnail
+  );
+
+  const liveSrc =
+    prod.sourceCrop ||
+    prod.thumbnail ||
+    prod.croppedThumbnail ||
+    state.scan?.croppedThumbnail ||
+    state.scan?.frameSnapshot ||
+    (hasRealCatalogImage ? prod.image : fallback);
+
+  let thumbElement;
+
+  // If a distinct catalog photo exists, show dual comparison. Otherwise show the crisp live camera crop.
+  if (hasRealCatalogImage && liveSrc && liveSrc !== prod.image) {
+    const dualThumbs = el("div", "product-dual-thumbs");
+
+    // 1. Live Video Frame Crop
+    const liveBox = el("div", "thumb-box thumb-box-live");
+    liveBox.title = "Live camera crop from stream (Click for full frame)";
+    const liveTag = el("span", "thumb-badge thumb-badge-live");
+    liveTag.append(createSvgIcon("camera", 10), el("span", null, "Live"));
+    const liveImg = document.createElement("img");
+    liveImg.src = liveSrc;
+    liveImg.alt = "Live Capture";
+    liveImg.loading = "lazy";
+    liveImg.referrerPolicy = "no-referrer";
+    liveImg.addEventListener("error", () => {
+      liveImg.src = fallback;
+    });
+    liveBox.append(liveTag, liveImg);
+    liveBox.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openSourceFrameModal(prod);
+    });
+
+    // Visual match arrow
+    const matchArrow = el("div", "thumb-match-arrow", "➔");
+
+    // 2. Catalog Matched Product Image
+    const catalogBox = el("div", "thumb-box thumb-box-catalog");
+    catalogBox.title = "Amazon Product Listing (Click to view)";
+    const catalogTag = el("span", "thumb-badge thumb-badge-catalog");
+    catalogTag.append(createSvgIcon(verified ? "bag" : "target", 10), el("span", null, verified ? "Amazon" : "Match"));
+    const catalogImg = document.createElement("img");
+    catalogImg.src = prod.image;
+    catalogImg.alt = title;
+    catalogImg.loading = "lazy";
+    catalogImg.referrerPolicy = "no-referrer";
+    catalogImg.addEventListener("error", () => {
+      catalogImg.src = fallback;
+    });
+    catalogBox.append(catalogTag, catalogImg);
+    catalogBox.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (verified && prod.asin) {
+        window.open(getAmazonProductUrl(prod.asin, title, state.affiliateTag), "_blank");
+      } else {
+        window.open(getWebSearchUrl(title), "_blank");
+      }
+    });
+
+    dualThumbs.append(liveBox, matchArrow, catalogBox);
+    thumbElement = dualThumbs;
+  } else {
+    // Single high-resolution live stream crop thumbnail
+    const singleThumb = el("div", "product-thumb product-single-thumb");
+    singleThumb.title = "Live visual crop (Click to view full video frame)";
+
+    const cropBadge = el("span", "thumb-badge " + (verified ? "thumb-badge-catalog" : "thumb-badge-live"));
+    cropBadge.append(createSvgIcon(verified ? "bag" : "camera", 10), el("span", null, verified ? "Amazon" : "Live Crop"));
+
+    const singleImg = document.createElement("img");
+    singleImg.src = liveSrc;
+    singleImg.alt = title;
+    singleImg.loading = "lazy";
+    singleImg.referrerPolicy = "no-referrer";
+    singleImg.addEventListener("error", () => {
+      singleImg.src = fallback;
+    });
+
+    singleThumb.append(cropBadge, singleImg);
+    singleThumb.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openSourceFrameModal(prod);
+    });
+
+    thumbElement = singleThumb;
+  }
 
   // --- details ---
   const details = el("div", "product-details");
@@ -821,70 +1055,120 @@ function createProductCard(prod, { catalog = false } = {}) {
 
   const metaRow = el("div", "product-meta-row");
   const price = formatPrice(prod.price);
-  metaRow.appendChild(
-    price ? el("span", "product-price", price) : el("span", "product-price-unknown", "Price on Amazon")
-  );
+  if (price) {
+    metaRow.appendChild(el("span", "product-price", price));
 
-  if (verified) {
-    metaRow.appendChild(el("span", "product-verified", "✓ Verified listing"));
+    if (prod.originalPrice && prod.originalPrice > prod.price) {
+      const orig = formatPrice(prod.originalPrice);
+      if (orig) {
+        const origSpan = el("span", "product-original-price", orig);
+        origSpan.title = "Original List Price";
+        metaRow.appendChild(origSpan);
+      }
+    }
+
+    if (prod.discountPercent && prod.discountPercent > 0) {
+      const disc = el("span", "product-discount-badge", `${Math.round(prod.discountPercent)}% OFF`);
+      metaRow.appendChild(disc);
+    }
   } else {
-    const pill = el("span", "product-unverified", "Visual match");
-    pill.title = "Identified from the video. Opens an Amazon search rather than a specific listing.";
-    metaRow.appendChild(pill);
+    metaRow.appendChild(el("span", "product-price-unpriced", "Price on Amazon"));
   }
 
-  if (catalog) {
-    metaRow.appendChild(el("span", "catalog-seen-tag", `Seen ${prod.sightingCount || 1}×`));
-  } else if (typeof prod.confidence === "number" && prod.confidence > 0) {
-    metaRow.appendChild(el("span", "product-confidence", `${prod.confidence}% confidence`));
+  // Verification status pill
+  const statusPill = el(
+    "span",
+    verified ? "verification-pill verified" : "verification-pill unverified",
+    verified ? "Verified listing" : "Visual match"
+  );
+  statusPill.title = verified
+    ? "Confirmed Amazon product page"
+    : "Visual match — leads to a filtered search";
+  metaRow.appendChild(statusPill);
+
+  if (typeof prod.confidence === "number" && prod.confidence > 0) {
+    const conf = el(
+      "span",
+      "confidence-pill",
+      `${Math.round(prod.confidence * 100)}% confidence`
+    );
+    metaRow.appendChild(conf);
   }
+
+  if (prod.dealBadge && !prod.discountPercent) {
+    const deal = el("span", "product-deal-badge", prod.dealBadge);
+    metaRow.appendChild(deal);
+  }
+
   top.appendChild(metaRow);
 
-  const desc = catalog
-    ? `${prod.category || "Gear"} • ${truncate(prod.streamTitle || "Stream", 24)}`
-    : prod.matchReason || prod.detectionLabel || "Detected in the live stream";
-  top.appendChild(el("div", "product-match-desc", desc));
+  if (prod.matchReason) {
+    const reason = el("div", "product-match-reason", prod.matchReason);
+    reason.title = prod.matchReason;
+    top.appendChild(reason);
+  }
 
   // --- actions ---
-  const actions = el("div", "card-actions");
+  const actions = el("div", "product-actions");
 
-  const frameBtn = el("button", "source-frame-btn");
-  frameBtn.title = "View the video frame this came from";
-  frameBtn.appendChild(el("span", null, "📸 Frame"));
+  // 1. Source Frame Traceability
+  const frameBtn = el("button", "view-btn source-frame-btn");
+  frameBtn.title = "View source frame comparison";
+  frameBtn.append(createSvgIcon("camera", 11), el("span", null, "Frame"));
   frameBtn.addEventListener("click", () => openSourceFrameModal(prod));
   actions.appendChild(frameBtn);
 
-  if (verified) {
-    const addBtn = el("button", "add-cart-btn");
-    addBtn.appendChild(el("span", null, "🛒 Add"));
-    addBtn.addEventListener("click", () => addToCart(prod, addBtn));
-    actions.appendChild(addBtn);
-  }
+  // 2. Add to Cart (Internal)
+  const addCartBtn = el("button", "add-cart-btn");
+  addCartBtn.title = "Add to StreamSnap cart";
+  addCartBtn.append(createSvgIcon("cart", 12), el("span", null, "Add"));
+  addCartBtn.addEventListener("click", () => addToCart(prod, addCartBtn));
+  actions.appendChild(addCartBtn);
 
+  // 3. 1-Click Buy Direct
+  const buyBtn = el("button", "buy-direct-btn");
+  buyBtn.title = verified ? "1-Click Buy on Amazon" : "1-Click Search on Amazon";
+  buyBtn.append(createSvgIcon("zap", 12), el("span", null, "Buy"));
+  buyBtn.addEventListener("click", () => {
+    handleDirectBuy(prod, buyBtn);
+    setTimeout(() => {
+      if (verified && prod.asin) {
+        window.open(getAmazonProductUrl(prod.asin, title, state.affiliateTag), "_blank");
+      } else {
+        window.open(getAmazonSearchUrl(title, state.affiliateTag), "_blank");
+      }
+    }, 450);
+  });
+  actions.appendChild(buyBtn);
+
+  // 4. Amazon direct / search link
   const amazonLink = el("a", "view-btn amazon-link");
-  amazonLink.href = getAmazonProductUrl(prod.asin, title, state.affiliateTag);
+  amazonLink.href = verified && prod.asin
+    ? getAmazonProductUrl(prod.asin, title, state.affiliateTag)
+    : getAmazonSearchUrl(title, state.affiliateTag);
   amazonLink.target = "_blank";
   amazonLink.rel = "noopener noreferrer";
-  amazonLink.title = verified ? "Open this listing on Amazon" : "Search Amazon for this item";
-  amazonLink.appendChild(el("span", null, verified ? "Amazon ↗" : "Search ↗"));
+  amazonLink.title = verified ? "Open verified Amazon listing" : "Search on Amazon";
+  amazonLink.append(el("span", null, verified ? "Amazon" : "Search"), createSvgIcon("external", 11));
   amazonLink.addEventListener("click", () => {
     chrome.runtime.sendMessage({ action: "TRACK_AMAZON_CLICK" });
   });
   actions.appendChild(amazonLink);
 
+  // 5. Google Shopping link
   const webLink = el("a", "view-btn web-search-link");
   webLink.href = getWebSearchUrl(title);
   webLink.target = "_blank";
   webLink.rel = "noopener noreferrer";
   webLink.title = "Compare prices on Google Shopping";
-  webLink.appendChild(el("span", null, "🌐 Web"));
+  webLink.append(createSvgIcon("globe", 12), el("span", null, "Web"));
   actions.appendChild(webLink);
 
   if (catalog) {
     const delBtn = el("button", "view-btn delete-btn");
     delBtn.title = "Remove from history";
     delBtn.style.color = "#EF4444";
-    delBtn.appendChild(el("span", null, "✕"));
+    delBtn.append(createSvgIcon("trash", 12));
     delBtn.addEventListener("click", () => {
       chrome.runtime.sendMessage({ action: "DELETE_CATALOG_ITEM", id: prod.id });
     });
@@ -892,13 +1176,43 @@ function createProductCard(prod, { catalog = false } = {}) {
   }
 
   details.append(top, actions);
-  card.append(thumb, details);
+  card.append(thumbElement, details);
   return card;
 }
 
+function handleDirectBuy(prod, buttonEl) {
+  const original = buttonEl.innerHTML;
+  buttonEl.textContent = "Opening…";
+  buttonEl.style.background = "#10B981";
+
+  // Add to cart automatically
+  chrome.runtime.sendMessage({
+    action: "ADD_TO_CART",
+    product: {
+      asin: prod.asin,
+      title: prod.title,
+      price: typeof prod.price === "number" ? prod.price : null,
+      image: prod.image || prod.thumbnail || null,
+      category: prod.category
+    }
+  });
+
+  setTimeout(() => {
+    buttonEl.replaceChildren(createSvgIcon("check", 12), document.createTextNode(" Ready!"));
+    showToast(
+      document.body,
+      `1-Click Buy: "${truncate(prod.title, 26)}" added to cart & checkout initiated!`
+    );
+    setTimeout(() => {
+      buttonEl.innerHTML = original;
+      buttonEl.style.background = "";
+    }, 2200);
+  }, 400);
+}
+
 function addToCart(prod, buttonEl) {
-  const original = buttonEl.textContent;
-  buttonEl.textContent = "✓ Added";
+  const original = buttonEl.innerHTML;
+  buttonEl.replaceChildren(createSvgIcon("check", 12), document.createTextNode(" Added"));
   buttonEl.style.background = "#10B981";
 
   chrome.runtime.sendMessage(
@@ -914,13 +1228,13 @@ function addToCart(prod, buttonEl) {
     },
     (res) => {
       if (res?.cartItems) renderCart(res.cartItems);
+      showToast(document.body, `"${truncate(prod.title, 26)}" added to cart!`);
+      setTimeout(() => {
+        buttonEl.innerHTML = original;
+        buttonEl.style.background = "";
+      }, 1800);
     }
   );
-
-  setTimeout(() => {
-    buttonEl.textContent = original;
-    buttonEl.style.background = "";
-  }, 1800);
 }
 
 // ---------------------------------------------------------------------------
@@ -980,9 +1294,10 @@ function renderCart(items) {
     qty.style.cssText = "font-size:11px;color:#9CA3AF;";
     meta.appendChild(qty);
 
-    const remove = el("button", "view-btn delete-btn", "✕");
+    const remove = el("button", "view-btn delete-btn");
     remove.title = "Remove from cart";
     remove.style.color = "#EF4444";
+    remove.append(createSvgIcon("trash", 12));
     remove.addEventListener("click", () => {
       chrome.runtime.sendMessage({
         action: "REMOVE_CART_ITEM",

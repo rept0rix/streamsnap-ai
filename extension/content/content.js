@@ -77,6 +77,29 @@
     injectYouTubeControlBarButton();
   }
 
+  function createSvgIcon(name, size = 14) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("width", String(size));
+    svg.setAttribute("height", String(size));
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2.2");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.style.marginRight = "4px";
+    svg.style.verticalAlign = "middle";
+
+    const paths = {
+      live: '<circle cx="12" cy="12" r="6" fill="currentColor"></circle>',
+      snip: '<path d="M6 2v14a2 2 0 0 0 2 2h14"></path><path d="M18 22V8a2 2 0 0 0-2-2H2"></path>',
+      scan: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>'
+    };
+
+    svg.innerHTML = paths[name] || paths.scan;
+    return svg;
+  }
+
   function attachStreamSnapControls(video, explicitContainer) {
     const parent = explicitContainer || video.parentElement;
     if (!parent || parent.querySelector(".streamsnap-btn-group")) return;
@@ -87,11 +110,18 @@
 
     const btnGroup = el("div", "streamsnap-btn-group");
 
+    // 1. Minimized Pill (Shown when collapsed)
+    const miniPill = el("div", "streamsnap-minimized-pill");
+    miniPill.title = "Click to expand StreamSnap controls";
+    miniPill.append(createSvgIcon("scan", 13), el("span", null, "⚡ StreamSnap"));
+    miniPill.style.display = "none";
+
+    // 2. Expanded Toolbar
+    const expandedToolbar = el("div", "streamsnap-expanded-toolbar");
+
     const liveBtn = el("button", "streamsnap-floating-btn streamsnap-live-btn");
     liveBtn.title = "Click-to-Find: click any object on the video to identify it";
-    // Two flex children; .streamsnap-floating-btn supplies the gap, so no
-    // leading whitespace in the labels.
-    liveBtn.append(el("span", null, "🟢"), el("span", null, "Click-to-Find"));
+    liveBtn.append(createSvgIcon("live", 12), el("span", null, "Click-to-Find"));
 
     liveBtn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -99,8 +129,8 @@
       isLiveClickModeActive = !isLiveClickModeActive;
       liveBtn.classList.toggle("active", isLiveClickModeActive);
       liveBtn.replaceChildren(
-        el("span", null, isLiveClickModeActive ? "🔴" : "🟢"),
-        el("span", null, isLiveClickModeActive ? "Click Anything Live" : "Click-to-Find")
+        createSvgIcon("live", 12),
+        el("span", null, isLiveClickModeActive ? "Stop Click Mode" : "Click-to-Find")
       );
       showToast(
         parent,
@@ -112,7 +142,7 @@
 
     const snipBtn = el("button", "streamsnap-floating-btn streamsnap-snip-btn");
     snipBtn.title = "Draw a box around any item to search for it";
-    snipBtn.append(el("span", null, "🎯"), el("span", null, "Snip Box"));
+    snipBtn.append(createSvgIcon("snip", 14), el("span", null, "Snip Box"));
     snipBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       e.preventDefault();
@@ -121,15 +151,101 @@
 
     const scanBtn = el("button", "streamsnap-floating-btn");
     scanBtn.title = "Scan the whole frame (Alt+S)";
-    scanBtn.append(el("span", "streamsnap-bolt", "⚡"), el("span", null, "Scan Frame"));
+    scanBtn.append(createSvgIcon("scan", 14), el("span", null, "Scan Frame"));
     scanBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       e.preventDefault();
       triggerStreamScan(video, parent);
     });
 
-    btnGroup.append(liveBtn, snipBtn, scanBtn);
-    parent.appendChild(btnGroup);
+    // 3. Minimize button (Collapse into small pill)
+    const minimizeBtn = el("button", "streamsnap-control-btn minimize-btn");
+    minimizeBtn.title = "Minimize buttons to a small pill (קבץ כפתורים)";
+    minimizeBtn.innerHTML = "—";
+    minimizeBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      expandedToolbar.style.display = "none";
+      miniPill.style.display = "inline-flex";
+      chrome.storage.local.set({ floatingControlsMinimized: true });
+      showToast(parent, "Controls minimized — click ⚡ StreamSnap to expand.");
+    });
+
+    // 4. Hide button (Dismiss completely with restore dot)
+    const hideBtn = el("button", "streamsnap-control-btn hide-btn");
+    hideBtn.title = "Hide buttons from video (הסתר כפתורים מהווידאו)";
+    hideBtn.innerHTML = "✕";
+    hideBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      btnGroup.style.display = "none";
+      hiddenDot.style.display = "block";
+      chrome.storage.local.set({ floatingControlsHidden: true });
+      showToast(parent, "Controls hidden — click top corner dot to restore.");
+    });
+
+    // Expand when clicking mini pill
+    miniPill.addEventListener("click", (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      miniPill.style.display = "none";
+      expandedToolbar.style.display = "flex";
+      chrome.storage.local.set({ floatingControlsMinimized: false });
+    });
+
+    // Hidden restore dot
+    const hiddenDot = el("div", "streamsnap-hidden-dot");
+    hiddenDot.title = "Click to restore StreamSnap video controls (שחזר כפתורים)";
+    hiddenDot.style.display = "none";
+    hiddenDot.addEventListener("click", (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      hiddenDot.style.display = "none";
+      btnGroup.style.display = "flex";
+      expandedToolbar.style.display = "flex";
+      miniPill.style.display = "none";
+      chrome.storage.local.set({ floatingControlsHidden: false, floatingControlsMinimized: false });
+    });
+
+    expandedToolbar.append(liveBtn, snipBtn, scanBtn, minimizeBtn, hideBtn);
+    btnGroup.append(miniPill, expandedToolbar);
+    parent.append(btnGroup, hiddenDot);
+
+    // Check stored display preferences
+    chrome.storage.local.get(
+      ["showFloatingControls", "floatingControlsMinimized", "floatingControlsHidden"],
+      (prefs = {}) => {
+        if (prefs.showFloatingControls === false) {
+          btnGroup.style.display = "none";
+          hiddenDot.style.display = "none";
+          return;
+        }
+
+        if (prefs.floatingControlsHidden) {
+          btnGroup.style.display = "none";
+          hiddenDot.style.display = "block";
+        } else if (prefs.floatingControlsMinimized) {
+          expandedToolbar.style.display = "none";
+          miniPill.style.display = "inline-flex";
+        }
+      }
+    );
+
+    // Listen for setting changes in real time
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== "local") return;
+      if (changes.showFloatingControls) {
+        if (changes.showFloatingControls.newValue === false) {
+          btnGroup.style.display = "none";
+          hiddenDot.style.display = "none";
+        } else {
+          btnGroup.style.display = "flex";
+          expandedToolbar.style.display = "flex";
+          miniPill.style.display = "none";
+          hiddenDot.style.display = "none";
+        }
+      }
+    });
 
     parent.addEventListener(
       "click",
@@ -308,15 +424,25 @@
   // Capture
   // -------------------------------------------------------------------------
 
-  function cropFromScreenshot(screenshotDataUrl, x, y, width, height) {
+  function cropFromScreenshot(screenshotDataUrl, rect) {
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
         try {
+          const naturalW = img.naturalWidth || img.width;
+          const naturalH = img.naturalHeight || img.height;
+          const scaleX = naturalW / (window.innerWidth || 1);
+          const scaleY = naturalH / (window.innerHeight || 1);
+
+          const sx = Math.max(0, Math.round(rect.left * scaleX));
+          const sy = Math.max(0, Math.round(rect.top * scaleY));
+          const sw = Math.max(10, Math.min(naturalW - sx, Math.round(rect.width * scaleX)));
+          const sh = Math.max(10, Math.min(naturalH - sy, Math.round(rect.height * scaleY)));
+
           const canvas = document.createElement("canvas");
-          canvas.width = Math.max(1, Math.round(width));
-          canvas.height = Math.max(1, Math.round(height));
-          canvas.getContext("2d").drawImage(img, x, y, width, height, 0, 0, canvas.width, canvas.height);
+          canvas.width = sw;
+          canvas.height = sh;
+          canvas.getContext("2d").drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
           resolve(canvas.toDataURL("image/jpeg", 0.92));
         } catch (err) {
           console.warn("[StreamSnap] crop failed:", err);
@@ -364,14 +490,12 @@
       }
 
       const rect = container.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      const cropped = await cropFromScreenshot(
-        capture.dataUrl,
-        (rect.left + cropX) * dpr,
-        (rect.top + cropY) * dpr,
-        cropW * dpr,
-        cropH * dpr
-      );
+      const cropped = await cropFromScreenshot(capture.dataUrl, {
+        left: rect.left + cropX,
+        top: rect.top + cropY,
+        width: cropW,
+        height: cropH
+      });
 
       const { geminiApiKey } = await chrome.storage.local.get(["geminiApiKey"]);
       if (!geminiApiKey) {
@@ -403,34 +527,69 @@
     }
   }
 
-  async function captureTargetVideoFrame(video, container) {
-    // Fast path: draw the video element straight to a canvas. Fails on
-    // cross-origin media, in which case we fall back to a cropped screenshot.
+  function isNonBlankCanvas(canvas) {
     try {
-      if (video?.videoWidth > 0 && video?.videoHeight > 0) {
-        const canvas = document.createElement("canvas");
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
-        if (dataUrl && dataUrl.length > 500) return dataUrl;
+      const ctx = canvas.getContext("2d");
+      const w = canvas.width;
+      const h = canvas.height;
+      if (w <= 0 || h <= 0) return false;
+      const sampleW = Math.min(80, Math.floor(w * 0.4));
+      const sampleH = Math.min(80, Math.floor(h * 0.4));
+      const sampleX = Math.floor((w - sampleW) / 2);
+      const sampleY = Math.floor((h - sampleH) / 2);
+      const sample = ctx.getImageData(sampleX, sampleY, sampleW, sampleH);
+      const data = sample.data;
+      let totalLuminance = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        totalLuminance += data[i] + data[i + 1] + data[i + 2];
       }
+      const avg = totalLuminance / ((data.length / 4) * 3);
+      return avg > 8; // Frame is not purely black/empty
     } catch {
-      // Tainted canvas — expected on DRM/cross-origin video.
+      return false;
+    }
+  }
+
+  async function captureTargetVideoFrame(video, container) {
+    // 1. Try burst sampling directly from the HTML5 video element (fastest & highest resolution)
+    if (video && video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const maxW = 1280;
+          const targetW = Math.min(maxW, video.videoWidth);
+          const scale = targetW / video.videoWidth;
+          const targetH = Math.round(video.videoHeight * scale);
+
+          const canvas = document.createElement("canvas");
+          canvas.width = targetW;
+          canvas.height = targetH;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(video, 0, 0, targetW, targetH);
+
+          if (isNonBlankCanvas(canvas)) {
+            const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+            if (dataUrl && dataUrl.length > 1000) return dataUrl;
+          }
+        } catch {
+          // Tainted canvas (CORS/DRM protected video) — exit burst loop and fall through to screenshot
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 60));
+      }
     }
 
+    // 2. Fallback: viewport screenshot with precision scale alignment
     const capture = await sendMessage({ action: "CAPTURE_VISIBLE_TAB" });
     if (!capture.dataUrl) return null;
 
-    const rect = (video || container).getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    return cropFromScreenshot(
-      capture.dataUrl,
-      Math.max(0, rect.left * dpr),
-      Math.max(0, rect.top * dpr),
-      Math.max(10, rect.width * dpr),
-      Math.max(10, rect.height * dpr)
-    );
+    const targetEl = video || container;
+    const rect = targetEl.getBoundingClientRect();
+    return cropFromScreenshot(capture.dataUrl, {
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+      height: rect.height
+    });
   }
 
   async function triggerStreamScan(video, container, isSilent = false) {
