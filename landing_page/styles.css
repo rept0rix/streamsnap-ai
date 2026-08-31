@@ -1532,23 +1532,23 @@ body.studio-dark {
 }
 
 .sim-scene-studio {
-  background: linear-gradient(180deg, rgba(4, 6, 10, 0.3) 0%, rgba(4, 6, 10, 0.8) 100%),
-              url("assets/streamsnap_live_youtube.png") center center / cover no-repeat;
+  background: linear-gradient(180deg, rgba(4, 6, 10, 0.15) 0%, rgba(4, 6, 10, 0.85) 100%),
+              url("https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&w=1600&q=85") center center / cover no-repeat;
 }
 
 .sim-scene-fashion {
-  background: radial-gradient(circle at 50% 40%, rgba(217, 70, 239, 0.2) 0%, rgba(4, 6, 10, 0.9) 80%),
-              linear-gradient(180deg, #1E1B4B 0%, #060910 100%);
+  background: linear-gradient(180deg, rgba(4, 6, 10, 0.15) 0%, rgba(4, 6, 10, 0.85) 100%),
+              url("https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1600&q=85") center center / cover no-repeat;
 }
 
 .sim-scene-fitness {
-  background: radial-gradient(circle at 50% 40%, rgba(234, 88, 12, 0.2) 0%, rgba(4, 6, 10, 0.9) 80%),
-              linear-gradient(180deg, #1C1917 0%, #060910 100%);
+  background: linear-gradient(180deg, rgba(4, 6, 10, 0.15) 0%, rgba(4, 6, 10, 0.85) 100%),
+              url("https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1600&q=85") center center / cover no-repeat;
 }
 
 .sim-scene-gaming {
-  background: radial-gradient(circle at 50% 40%, rgba(59, 130, 246, 0.25) 0%, rgba(4, 6, 10, 0.9) 80%),
-              linear-gradient(180deg, #064E3B 0%, #022C22 100%);
+  background: linear-gradient(180deg, rgba(4, 6, 10, 0.15) 0%, rgba(4, 6, 10, 0.85) 100%),
+              url("https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1600&q=85") center center / cover no-repeat;
 }
 
 .sim-hotspot {
