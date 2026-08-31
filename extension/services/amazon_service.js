@@ -252,19 +252,101 @@ export function categorizeProduct(title = "") {
 }
 
 /**
- * Estimate affiliate commission in USD.
- * This is a projection from public Amazon Associates rate cards, not reported
- * revenue. Call sites must label it as an estimate.
+ * Official Amazon Associates Standard Fixed Commission Income Rates.
+ */
+export const OFFICIAL_COMMISSION_RATES = {
+  amazon_games: 0.20,
+  luxury_beauty: 0.10,
+  digital_music_video: 0.05,
+  books_kitchen_auto: 0.045,
+  fashion_apparel_devices: 0.04,
+  home_sports_toys_tools: 0.03,
+  pc_components_dvd: 0.025,
+  televisions_digital_games: 0.02,
+  grocery_health_consoles: 0.01,
+  gift_cards_alcohol: 0.00,
+  default: 0.04
+};
+
+/**
+ * Estimate affiliate commission in USD based on official Amazon Associates rate card.
+ * This is a projection from public Amazon Associates rate cards, not reported revenue.
  */
 export function estimateCommission(price, category = "") {
   const amount = Number(price);
   if (!Number.isFinite(amount) || amount <= 0) return 0;
 
   const cat = String(category).toLowerCase();
-  let rate = 0.04;
-  if (cat.includes("apparel") || cat.includes("streetwear") || cat.includes("costume")) rate = 0.07;
-  else if (cat.includes("drinkware") || cat.includes("fitness") || cat.includes("gym")) rate = 0.05;
-  else if (cat.includes("audio") || cat.includes("headphone") || cat.includes("gaming")) rate = 0.03;
+  let rate = OFFICIAL_COMMISSION_RATES.default;
+
+  if (cat.includes("gift card") || cat.includes("alcohol") || cat.includes("cell phone plan")) {
+    rate = OFFICIAL_COMMISSION_RATES.gift_cards_alcohol; // 0.0%
+  } else if (cat.includes("amazon game") || cat.includes("amazon games")) {
+    rate = OFFICIAL_COMMISSION_RATES.amazon_games; // 20.0%
+  } else if (cat.includes("luxury") || cat.includes("luxury beauty")) {
+    rate = OFFICIAL_COMMISSION_RATES.luxury_beauty; // 10.0%
+  } else if (cat.includes("music") || cat.includes("movie") || cat.includes("digital video") || cat.includes("media")) {
+    rate = OFFICIAL_COMMISSION_RATES.digital_music_video; // 5.0%
+  } else if (cat.includes("book") || cat.includes("kitchen") || cat.includes("automotive") || cat.includes("auto accessory")) {
+    rate = OFFICIAL_COMMISSION_RATES.books_kitchen_auto; // 4.5%
+  } else if (
+    cat.includes("fashion") ||
+    cat.includes("apparel") ||
+    cat.includes("streetwear") ||
+    cat.includes("clothing") ||
+    cat.includes("shoe") ||
+    cat.includes("watch") ||
+    cat.includes("jewelry") ||
+    cat.includes("bag") ||
+    cat.includes("luggage") ||
+    cat.includes("kindle") ||
+    cat.includes("echo") ||
+    cat.includes("amazon device")
+  ) {
+    rate = OFFICIAL_COMMISSION_RATES.fashion_apparel_devices; // 4.0%
+  } else if (
+    cat.includes("toy") ||
+    cat.includes("furniture") ||
+    cat.includes("home") ||
+    cat.includes("garden") ||
+    cat.includes("pet") ||
+    cat.includes("sport") ||
+    cat.includes("fitness") ||
+    cat.includes("gym") ||
+    cat.includes("baby") ||
+    cat.includes("tool") ||
+    cat.includes("beauty") ||
+    cat.includes("drinkware") ||
+    cat.includes("tumbler") ||
+    cat.includes("light")
+  ) {
+    rate = OFFICIAL_COMMISSION_RATES.home_sports_toys_tools; // 3.0%
+  } else if (
+    cat.includes("pc") ||
+    cat.includes("computer") ||
+    cat.includes("component") ||
+    cat.includes("dvd") ||
+    cat.includes("blu-ray")
+  ) {
+    rate = OFFICIAL_COMMISSION_RATES.pc_components_dvd; // 2.5%
+  } else if (
+    cat.includes("tv") ||
+    cat.includes("television") ||
+    cat.includes("digital game") ||
+    cat.includes("video game")
+  ) {
+    rate = OFFICIAL_COMMISSION_RATES.televisions_digital_games; // 2.0%
+  } else if (
+    cat.includes("grocery") ||
+    cat.includes("food") ||
+    cat.includes("health") ||
+    cat.includes("personal care") ||
+    cat.includes("supplement") ||
+    cat.includes("protein") ||
+    cat.includes("console")
+  ) {
+    rate = OFFICIAL_COMMISSION_RATES.grocery_health_consoles; // 1.0%
+  }
 
   return parseFloat((amount * rate).toFixed(2));
 }

@@ -136,10 +136,17 @@ test("commission is zero for an unknown price rather than a made-up number", () 
   assert.equal(estimateCommission(-5, "Headphones"), 0);
 });
 
-test("commission rate varies by category", () => {
-  assert.equal(estimateCommission(100, "Streetwear & Apparel"), 7.0);
-  assert.equal(estimateCommission(100, "Headphones"), 3.0);
-  assert.equal(estimateCommission(100, "General Gear"), 4.0);
+test("commission rate varies by category according to official Amazon rates", () => {
+  assert.equal(estimateCommission(100, "Amazon Games"), 20.0);
+  assert.equal(estimateCommission(100, "Luxury Beauty"), 10.0);
+  assert.equal(estimateCommission(100, "Digital Music & Movies"), 5.0);
+  assert.equal(estimateCommission(100, "Physical Books & Kitchen"), 4.5);
+  assert.equal(estimateCommission(100, "Streetwear & Apparel"), 4.0);
+  assert.equal(estimateCommission(100, "Gym & Fitness"), 3.0);
+  assert.equal(estimateCommission(100, "PC & Computers"), 2.5);
+  assert.equal(estimateCommission(100, "Televisions"), 2.0);
+  assert.equal(estimateCommission(100, "Grocery & Supplements"), 1.0);
+  assert.equal(estimateCommission(100, "Gift Cards"), 0.0);
 });
 
 test("categorization matches known product families", () => {
