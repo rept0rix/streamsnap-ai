@@ -641,21 +641,22 @@
         <button id="close-install-modal" class="modal-x">✕</button>
       </div>
       <div class="modal-content-area">
-        <div class="install-option-card primary-option">
-          <h4>Get notified at launch</h4>
-          <p>StreamSnap is in review for the Chrome Web Store. Leave your email and you'll get the link the day it's approved.</p>
-          <form class="waitlist-form" id="waitlist-form">
-            <input type="email" id="waitlist-email" placeholder="you@example.com" required />
-            <button type="submit" class="btn-primary">Notify me</button>
-          </form>
-          <p class="field-hint">One email at launch. Nothing else.</p>
+        <div class="install-option-card primary-option" style="border: 2px solid var(--primary-gold); background: linear-gradient(180deg, rgba(255, 153, 0, 0.12), rgba(21, 29, 42, 0.9));">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <h4 style="color:var(--primary-gold); font-size:16px;">⚡ Officially Live on Chrome Web Store!</h4>
+            <span class="store-certified-badge">✓ Verified</span>
+          </div>
+          <p style="margin-bottom:16px;">Install StreamSnap AI directly in one click with automatic updates and full Manifest V3 security.</p>
+          <a href="https://chromewebstore.google.com/detail/streamsnap-ai-%E2%80%94-live-stre/efbfecbochblmakpdllbnpdgkmmfmmel" target="_blank" rel="noopener noreferrer" class="btn-primary" style="width:100%; text-align:center; display:flex; justify-content:center; text-decoration:none; padding:14px;">
+            🛒 Add to Chrome (Official Store) ↗
+          </a>
         </div>
 
-        <div class="install-option-card">
-          <h4>Install it now, manually</h4>
-          <p>Don't want to wait? Download the extension and load it in developer mode. Takes about two minutes.</p>
+        <div class="install-option-card" style="margin-top:16px;">
+          <h4>Developer / Open Source Mode</h4>
+          <p>Want to inspect the code or contribute? Clone the GitHub repository directly.</p>
           <a id="store-install-btn" href="https://github.com/rept0rix/streamsnap-ai" target="_blank" rel="noopener noreferrer" class="btn-secondary" style="width:100%; text-align:center; display:block;">
-            Download &amp; instructions ↗
+            View GitHub Repository ↗
           </a>
         </div>
       </div>

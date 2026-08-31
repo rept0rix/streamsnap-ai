@@ -8,6 +8,9 @@
 </p>
 
 <p align="center">
+  <a href="https://chromewebstore.google.com/detail/streamsnap-ai-%E2%80%94-live-stre/efbfecbochblmakpdllbnpdgkmmfmmel" target="_blank">
+    <img src="https://img.shields.io/badge/Chrome_Web_Store-Available_Now-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Chrome Web Store" />
+  </a>
   <img src="https://img.shields.io/badge/Chrome_Manifest-V3_Certified-blue?style=for-the-badge&logo=googlechrome" alt="Manifest V3" />
   <img src="https://img.shields.io/badge/Vision_AI-Gemini_2.5_Flash-orange?style=for-the-badge&logo=google" alt="Gemini Vision" />
   <img src="https://img.shields.io/badge/Amazon-1--Click_Remote_Cart-FF9900?style=for-the-badge&logo=amazon" alt="Amazon Cart" />
@@ -42,9 +45,16 @@
 
 ---
 
-## 📥 Installation Guide (Step-by-Step)
+## 📥 Installation Guide
 
-### Option A: Install from Local Source (Developer Mode)
+### Option A: Official Chrome Web Store (Recommended ⚡)
+Install StreamSnap AI directly in 1 click from the Chrome Web Store:
+
+👉 **[Install StreamSnap AI from Chrome Web Store ↗](https://chromewebstore.google.com/detail/streamsnap-ai-%E2%80%94-live-stre/efbfecbochblmakpdllbnpdgkmmfmmel)**
+
+---
+
+### Option B: Install from Local Source (Developer Mode)
 
 #### Step 1: Clone or Download the Repository
 ```bash

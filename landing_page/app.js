@@ -2,8 +2,8 @@
  * StreamSnap AI — Landing Page Interactive Engine
  */
 
-// Official Chrome Web Store URL (configured once live in developer console)
-const CHROME_STORE_URL = "https://chromewebstore.google.com/detail/streamsnap-ai";
+// Official Chrome Web Store URL
+const CHROME_STORE_URL = "https://chromewebstore.google.com/detail/streamsnap-ai-%E2%80%94-live-stre/efbfecbochblmakpdllbnpdgkmmfmmel";
 
 document.addEventListener("DOMContentLoaded", () => {
   initSimulator();
