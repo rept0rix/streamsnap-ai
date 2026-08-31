@@ -257,6 +257,119 @@
     </div>
   </section>
 
+  <!-- ===================== 3D SCROLL TRANSFORMATION STAGE ===================== -->
+  <section class="scroll-transformation-section" id="scroll-transformation-stage">
+    <div class="scroll-track-container" id="scroll-story-track">
+      
+      <!-- Sticky Viewport Window -->
+      <div class="sticky-viewport-stage">
+        <div class="container transformation-inner">
+          
+          <!-- Top Narrative Scrub Milestones -->
+          <div class="scroll-milestones-bar">
+            <div class="milestone-item active" id="ms-1">
+              <span class="ms-num">01</span>
+              <span class="ms-label">LIVE STREAM</span>
+            </div>
+            <div class="milestone-divider"></div>
+            <div class="milestone-item" id="ms-2">
+              <span class="ms-num">02</span>
+              <span class="ms-label">LASER AI LOCK (&lt;1.8S)</span>
+            </div>
+            <div class="milestone-divider"></div>
+            <div class="milestone-item" id="ms-3">
+              <span class="ms-num">03</span>
+              <span class="ms-label">3D AMAZON EXTRACTION</span>
+            </div>
+          </div>
+
+          <!-- 3D Transform Stage Box -->
+          <div class="scroll-3d-box-wrapper">
+            <div class="scroll-3d-terminal" id="scroll-transform-terminal">
+              
+              <!-- Video Frame -->
+              <div class="scroll-video-frame">
+                <div class="scroll-scanline-overlay"></div>
+                
+                <!-- Laser Sweep Beam on Scroll -->
+                <div class="scroll-laser-beam" id="scroll-laser-sweep"></div>
+                
+                <!-- Target Bounding Boxes locked to stream items -->
+                <div class="scroll-target-box box-mic" id="target-box-mic">
+                  <span class="bracket-t-l"></span>
+                  <span class="bracket-t-r"></span>
+                  <span class="bracket-b-l"></span>
+                  <span class="bracket-b-r"></span>
+                  <span class="target-tag">🎙️ SHURE_SM7B // 99.4%</span>
+                </div>
+
+                <div class="scroll-target-box box-light" id="target-box-light">
+                  <span class="bracket-t-l"></span>
+                  <span class="bracket-t-r"></span>
+                  <span class="bracket-b-l"></span>
+                  <span class="bracket-b-r"></span>
+                  <span class="target-tag">💡 KEY_LIGHT // 98.7%</span>
+                </div>
+
+                <div class="scroll-target-box box-hoodie" id="target-box-hoodie">
+                  <span class="bracket-t-l"></span>
+                  <span class="bracket-t-r"></span>
+                  <span class="bracket-b-l"></span>
+                  <span class="bracket-b-r"></span>
+                  <span class="target-tag">👕 HOODIE // 97.1%</span>
+                </div>
+              </div>
+
+              <!-- 3D Floating Glass Product Cards (Elevate out of video on Phase 3) -->
+              <div class="scroll-extracted-cards-container" id="extracted-cards-layer">
+                
+                <div class="extracted-3d-card card-1" id="card-shure">
+                  <img src="https://m.media-amazon.com/images/I/71P4q+HqKQL._AC_SL1500_.jpg" alt="Shure SM7B" class="card-thumb" />
+                  <div class="card-info">
+                    <span class="verified-tag">✓ VERIFIED ASIN</span>
+                    <h4>Shure SM7B Vocal Mic</h4>
+                    <div class="card-price">$399.00 <span class="prime-pill">prime</span></div>
+                  </div>
+                  <a href="https://www.amazon.com/dp/B0002E4Z8M?tag=streamsnap03-20" target="_blank" rel="noopener noreferrer" class="card-add-btn">🛒 Staged</a>
+                </div>
+
+                <div class="extracted-3d-card card-2" id="card-elgato">
+                  <img src="https://m.media-amazon.com/images/I/61LpX3fXQAL._AC_SL1500_.jpg" alt="Elgato Key Light" class="card-thumb" />
+                  <div class="card-info">
+                    <span class="verified-tag">✓ VERIFIED ASIN</span>
+                    <h4>Elgato Key Light LED</h4>
+                    <div class="card-price">$159.99 <span class="prime-pill">prime</span></div>
+                  </div>
+                  <a href="https://www.amazon.com/dp/B07W755322?tag=streamsnap03-20" target="_blank" rel="noopener noreferrer" class="card-add-btn">🛒 Staged</a>
+                </div>
+
+                <div class="extracted-3d-card card-3" id="card-champion">
+                  <img src="https://m.media-amazon.com/images/I/71j1n-1Pq-L._AC_SL1500_.jpg" alt="Champion Hoodie" class="card-thumb" />
+                  <div class="card-info">
+                    <span class="verified-tag text-dim">VISUAL MATCH</span>
+                    <h4>Champion Fleece Hoodie</h4>
+                    <div class="card-price">$38.50</div>
+                  </div>
+                  <a href="https://www.amazon.com/s?k=Champion+Hoodie&tag=streamsnap03-20" target="_blank" rel="noopener noreferrer" class="card-add-btn">🛒 Staged</a>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Bottom Phase Callout -->
+          <div class="scroll-phase-caption" id="scroll-phase-caption">
+            <span class="phase-badge" id="scroll-phase-badge">[ PHASE 01 // PASSIVE STREAM ]</span>
+            <span class="phase-text" id="scroll-caption-text">You are watching a broadcast — scroll down to activate AI optical telemetry</span>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </section>
+
   <!-- ===================== THE PROBLEM: BRUTALIST COMPARISON ===================== -->
   <section class="section-contrast">
     <div class="container">
@@ -693,6 +806,8 @@
     </div>
   </footer>
 
+  <!-- Lenis Smooth Scroll Physics -->
+  <script src="https://unpkg.com/lenis@1.1.20/dist/lenis.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
