@@ -1386,26 +1386,15 @@ function createProductCard(prod, { catalog = false } = {}) {
   }
 
   // --- actions ---
-  const actions = el("div", "product-actions");
+  const actionsWrap = el("div", "product-actions-wrap");
 
-  // 1. Source Frame Traceability
-  const frameBtn = el("button", "view-btn source-frame-btn");
-  frameBtn.title = "View source frame comparison";
-  frameBtn.append(createSvgIcon("camera", 11), el("span", null, "Frame"));
-  frameBtn.addEventListener("click", () => openSourceFrameModal(prod));
-  actions.appendChild(frameBtn);
+  // Row 1: Primary Action Buttons
+  const primaryRow = el("div", "product-actions-primary");
 
-  // 2. Add to Cart (Internal)
-  const addCartBtn = el("button", "add-cart-btn");
-  addCartBtn.title = "Add to StreamSnap cart";
-  addCartBtn.append(createSvgIcon("cart", 12), el("span", null, "Add"));
-  addCartBtn.addEventListener("click", () => addToCart(prod, addCartBtn));
-  actions.appendChild(addCartBtn);
-
-  // 3. 1-Click Buy Direct
-  const buyBtn = el("button", "buy-direct-btn");
-  buyBtn.title = verified ? "1-Click Buy on Amazon" : "1-Click Search on Amazon";
-  buyBtn.append(createSvgIcon("zap", 12), el("span", null, "Buy"));
+  // 1. Hero 1-Click Buy / Amazon Button (Main CTA)
+  const buyBtn = el("button", "buy-hero-btn");
+  buyBtn.title = verified ? "1-Click Buy on Amazon (Prime)" : "Search & Buy on Amazon";
+  buyBtn.append(createSvgIcon("zap", 12), el("span", null, verified ? "1-Click Buy" : "Buy on Amazon"));
   buyBtn.addEventListener("click", () => {
     handleDirectBuy(prod, buyBtn);
     setTimeout(() => {
@@ -1416,43 +1405,23 @@ function createProductCard(prod, { catalog = false } = {}) {
       }
     }, 450);
   });
-  actions.appendChild(buyBtn);
+  primaryRow.appendChild(buyBtn);
 
-  // 4. Amazon direct / search link
-  const amazonLink = el("a", "view-btn amazon-link");
-  amazonLink.href = verified && prod.asin
-    ? getAmazonProductUrl(prod.asin, title, state.affiliateTag)
-    : getAmazonSearchUrl(title, state.affiliateTag);
-  amazonLink.target = "_blank";
-  amazonLink.rel = "noopener noreferrer";
-  amazonLink.title = verified ? "Open verified Amazon listing" : "Search on Amazon";
-  amazonLink.append(el("span", null, verified ? "Amazon" : "Search"), createSvgIcon("external", 11));
-  amazonLink.addEventListener("click", () => {
-    chrome.runtime.sendMessage({ action: "TRACK_AMAZON_CLICK" });
-  });
-  actions.appendChild(amazonLink);
+  // 2. Add to Cart (StreamSnap Remote Cart)
+  const addCartBtn = el("button", "cart-secondary-btn");
+  addCartBtn.title = "Add to StreamSnap Cart";
+  addCartBtn.append(createSvgIcon("cart", 12), el("span", null, "+ Cart"));
+  addCartBtn.addEventListener("click", () => addToCart(prod, addCartBtn));
+  primaryRow.appendChild(addCartBtn);
 
-  // 5. Multi-Store Search Links
-  const multiStoreDiv = el("div", "multi-store-links");
-  multiStoreDiv.style.display = "flex";
-  multiStoreDiv.style.gap = "4px";
-  multiStoreDiv.style.alignItems = "center";
-  
-  const stores = getAllStoreSearchUrls(title);
-  stores.forEach(store => {
-    const storeLink = el("a", "view-btn store-search-link");
-    storeLink.href = store.url;
-    storeLink.target = "_blank";
-    storeLink.rel = "noopener noreferrer";
-    storeLink.title = `Search on ${store.label}`;
-    storeLink.style.padding = "4px 8px";
-    storeLink.style.minWidth = "auto";
-    storeLink.style.color = store.color;
-    storeLink.textContent = store.icon;
-    multiStoreDiv.appendChild(storeLink);
-  });
-  actions.appendChild(multiStoreDiv);
+  // 3. Inspect Live Video Crop Frame
+  const frameBtn = el("button", "view-btn source-frame-btn");
+  frameBtn.title = "Inspect video crop & visual match";
+  frameBtn.append(createSvgIcon("camera", 11), el("span", null, "Crop"));
+  frameBtn.addEventListener("click", () => openSourceFrameModal(prod));
+  primaryRow.appendChild(frameBtn);
 
+  // 4. If in Catalog / History: Delete button
   if (catalog) {
     const delBtn = el("button", "view-btn delete-btn");
     delBtn.title = "Remove from history";
@@ -1461,10 +1430,30 @@ function createProductCard(prod, { catalog = false } = {}) {
     delBtn.addEventListener("click", () => {
       chrome.runtime.sendMessage({ action: "DELETE_CATALOG_ITEM", id: prod.id });
     });
-    actions.appendChild(delBtn);
+    primaryRow.appendChild(delBtn);
   }
 
-  details.append(top, actions);
+  actionsWrap.appendChild(primaryRow);
+
+  // Row 2: Clean, Readable Store Comparison Pills
+  const compareRow = el("div", "product-compare-row");
+  const compareLabel = el("span", "compare-label", "Compare:");
+  compareRow.appendChild(compareLabel);
+
+  const stores = getAllStoreSearchUrls(title);
+  stores.forEach(store => {
+    const storeLink = el("a", `compare-pill compare-pill-${store.id}`);
+    storeLink.href = store.url;
+    storeLink.target = "_blank";
+    storeLink.rel = "noopener noreferrer";
+    storeLink.title = `Search "${title}" on ${store.label}`;
+    storeLink.textContent = store.label;
+    compareRow.appendChild(storeLink);
+  });
+
+  actionsWrap.appendChild(compareRow);
+
+  details.append(top, actionsWrap);
   card.append(thumbElement, details);
   return card;
 }

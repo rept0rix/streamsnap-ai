@@ -863,30 +863,66 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   overflow: hidden;
 }
 
-.product-card-actions, .card-actions {
+.product-actions-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.product-actions-primary {
   display: flex;
   gap: 6px;
   align-items: center;
+  width: 100%;
 }
 
-
-.add-cart-btn {
-  background: var(--primary-gold);
-  color: #090D14;
+.buy-hero-btn {
+  flex: 1;
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  color: #FFFFFF;
   border: none;
   font-weight: 800;
   font-size: 11px;
-  padding: 5px 10px;
+  padding: 6px 12px;
   border-radius: 4px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  transition: all 0.15s;
+  justify-content: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
+  white-space: nowrap;
 }
 
-.add-cart-btn:hover {
-  background: var(--primary-gold-hover);
+.buy-hero-btn:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.4);
+}
+
+.cart-secondary-btn {
+  background: rgba(255, 153, 0, 0.12);
+  color: var(--primary-gold);
+  border: 1px solid rgba(255, 153, 0, 0.35);
+  font-weight: 700;
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.cart-secondary-btn:hover {
+  background: rgba(255, 153, 0, 0.22);
+  border-color: var(--primary-gold);
 }
 
 .source-frame-btn, .view-btn {
@@ -895,14 +931,16 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   color: var(--text-primary);
   font-size: 10px;
   font-weight: 700;
-  padding: 5px 8px;
+  padding: 6px 8px;
   border-radius: 4px;
   cursor: pointer;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 3px;
   transition: all 0.15s;
+  white-space: nowrap;
 }
 
 .source-frame-btn:hover, .view-btn:hover {
@@ -910,38 +948,47 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   border-color: var(--primary-gold);
 }
 
-.web-search-link {
-  background: rgba(59, 130, 246, 0.12) !important;
-  border-color: rgba(59, 130, 246, 0.35) !important;
-  color: #60A5FA !important;
-}
-
-.web-search-link:hover {
-  background: rgba(59, 130, 246, 0.25) !important;
-  border-color: #60A5FA !important;
-}
-
-.store-badge {
-  font-size: 9px;
-  font-weight: 800;
-  padding: 1px 5px;
-  border-radius: 4px;
-  display: inline-flex;
+.product-compare-row {
+  display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
+  flex-wrap: wrap;
+  padding-top: 2px;
 }
 
-.store-badge.amazon {
-  background: rgba(255, 153, 0, 0.15);
-  color: var(--primary-gold);
-  border: 1px solid rgba(255, 153, 0, 0.3);
+.compare-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-right: 2px;
 }
 
-.store-badge.web {
-  background: rgba(59, 130, 246, 0.15);
-  color: #60A5FA;
-  border: 1px solid rgba(59, 130, 246, 0.3);
+.compare-pill {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: all 0.15s ease;
 }
+
+.compare-pill:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-0.5px);
+}
+
+.compare-pill-google:hover { border-color: #4285F4; color: #60A5FA; }
+.compare-pill-ebay:hover { border-color: #E53238; color: #F87171; }
+.compare-pill-walmart:hover { border-color: #0071CE; color: #38BDF8; }
+.compare-pill-bestbuy:hover { border-color: #0046BE; color: #60A5FA; }
+.compare-pill-aliexpress:hover { border-color: #FF5000; color: #FB923C; }
 
 
 /* Catalog Search Bar & Stats */
