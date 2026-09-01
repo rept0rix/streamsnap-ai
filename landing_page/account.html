@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account — StreamSnap AI</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/svg+xml" href="assets/logo_full.svg">
+  <style>
+    .account-container { max-width: 600px; margin: 100px auto; padding: 40px; background: #111827; border: 1px solid #334155; border-radius: 12px; }
+    .account-header { display: flex; align-items: center; gap: 20px; margin-bottom: 30px; }
+    .account-avatar { width: 64px; height: 64px; border-radius: 50%; }
+    .account-info h1 { font-size: 24px; font-weight: 700; margin: 0 0 5px 0; color: #F8FAFC; }
+    .account-info p { margin: 0; color: #94A3B8; }
+    .quota-card { background: #1E293B; border-radius: 8px; padding: 20px; margin-top: 30px; }
+    .quota-card h3 { margin: 0 0 15px 0; color: #F8FAFC; font-size: 16px; }
+    .quota-progress { width: 100%; height: 8px; background: #334155; border-radius: 4px; overflow: hidden; margin-bottom: 10px; }
+    .quota-bar { height: 100%; background: #FF9900; }
+    .quota-text { display: flex; justify-content: space-between; font-size: 14px; color: #94A3B8; }
+  </style>
+</head>
+<body class="bg-dark text-light">
+  
+  <nav class="nav-container">
+    <div class="nav-content">
+      <a href="index.html" class="nav-brand">
+        <img src="assets/logo_full.svg" alt="StreamSnap" width="32" height="32" />
+        <span class="nav-brand-text">StreamSnap</span>
+      </a>
+      <div class="nav-actions">
+        <div id="nav-user-pill" class="nav-user-pill" style="display:none;">
+          <img id="nav-avatar" src="" alt="" class="nav-avatar-img" onerror="this.style.display='none'" />
+          <span id="nav-user-name" class="nav-user-label">Account</span>
+          <div class="nav-user-dropdown" id="nav-user-dropdown">
+            <a href="#" id="nav-signout-link" class="dropdown-item">Sign out</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="account-container" id="account-wall" style="display:none;">
+    <div class="account-header">
+      <img id="acc-avatar" class="account-avatar" src="" alt="Avatar">
+      <div class="account-info">
+        <h1 id="acc-name">Loading...</h1>
+        <p id="acc-email"></p>
+        <p style="margin-top:5px;"><span class="mono-tag text-gold" id="acc-plan">FREE PLAN</span></p>
+      </div>
+    </div>
+
+    <div class="quota-card">
+      <h3>Monthly Scan Quota</h3>
+      <div class="quota-progress">
+        <div class="quota-bar" id="acc-quota-bar" style="width: 0%;"></div>
+      </div>
+      <div class="quota-text">
+        <span id="acc-quota-used">0 used</span>
+        <span id="acc-quota-limit">0 total</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="login-wall" style="display:none; text-align: center; margin-top: 150px;">
+    <h2>Please sign in to view your account.</h2>
+    <a href="#" id="login-btn" class="btn-primary" style="margin-top: 20px; display: inline-block;">Sign in with Google</a>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const workerBase = getWorkerBase();
+      const loginBtn = document.getElementById("login-btn");
+      loginBtn.href = `${workerBase}/auth/start?client=web&return_to=${encodeURIComponent(window.location.origin + '/account.html')}`;
+
+      document.getElementById("nav-signout-link").addEventListener("click", async (e) => {
+        e.preventDefault();
+        await fetch(`${workerBase}/auth/logout`, { method: "POST", credentials: "include" });
+        window.location.href = "index.html";
+      });
+
+      fetch(`${workerBase}/auth/me`, { credentials: "include" })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data?.ok && data.signedIn) {
+            document.getElementById("login-wall").style.display = "none";
+            document.getElementById("account-wall").style.display = "block";
+            
+            const user = data.user;
+            const quota = data.quota;
+            
+            document.getElementById("acc-name").textContent = user.name || "User";
+            document.getElementById("acc-email").textContent = user.email || "";
+            document.getElementById("acc-avatar").src = user.avatarUrl || "https://ui-avatars.com/api/?background=1E293B&color=FF9900&name=" + encodeURIComponent(user.name || "U");
+            document.getElementById("acc-plan").textContent = (user.plan || "FREE") + " PLAN";
+            
+            document.getElementById("acc-quota-used").textContent = `${quota.used} used`;
+            document.getElementById("acc-quota-limit").textContent = `${quota.limit} total`;
+            const pct = Math.min(100, Math.round((quota.used / quota.limit) * 100));
+            document.getElementById("acc-quota-bar").style.width = `${pct}%`;
+          } else {
+            document.getElementById("login-wall").style.display = "block";
+          }
+        })
+        .catch(() => {
+          document.getElementById("login-wall").style.display = "block";
+        });
+    });
+  </script>
+</body>
+</html>

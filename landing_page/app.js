@@ -689,7 +689,7 @@ function initFAQ() {
 
 // ===================== NAV AUTH STATE =====================
 function initNavAuth() {
-  const workerBase = "https://streamsnap-lens.na0ryank0.workers.dev";
+  const workerBase = getWorkerBase();
   const signinBtn = document.getElementById("nav-signin-btn");
   const userPill  = document.getElementById("nav-user-pill");
   const nameEl    = document.getElementById("nav-user-name");
@@ -697,6 +697,9 @@ function initNavAuth() {
   const signoutLink = document.getElementById("nav-signout-link");
 
   if (!signinBtn || !userPill) return;
+
+  const returnUrl = encodeURIComponent(window.location.origin + '/account.html');
+  signinBtn.href = `${workerBase}/auth/start?client=web&return_to=${returnUrl}`;
 
   // Wire sign-out to call POST /auth/logout then reload
   signoutLink?.addEventListener("click", async (e) => {
@@ -723,4 +726,25 @@ function initNavAuth() {
     .catch(() => { /* offline — leave sign-in button visible */ });
 }
 
-document.addEventListener("DOMContentLoaded", initNavAuth);
+function initVersion() {
+  const workerBase = getWorkerBase();
+  fetch(`${workerBase}/version`)
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (data && data.latestVersion) {
+        document.querySelectorAll('.dynamic-version').forEach(el => {
+          el.textContent = data.latestVersion;
+        });
+        // Update download links if any
+        document.querySelectorAll('a[download^="streamsnap-extension"]').forEach(a => {
+          a.setAttribute("download", `streamsnap-extension-v${data.latestVersion}.zip`);
+        });
+      }
+    })
+    .catch(() => {});
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  initNavAuth();
+  initVersion();
+});

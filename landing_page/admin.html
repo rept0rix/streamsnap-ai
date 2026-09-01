@@ -205,8 +205,8 @@
     function startAdminLogin(e) {
       if (e) e.preventDefault();
       const base = getWorkerBase();
-      const returnTo = encodeURIComponent(location.pathname + 'admin.html');
-      window.location.href = `${base}/auth/start?client=web&return_to=/admin.html`;
+      const returnTo = encodeURIComponent(`${window.location.origin}/admin.html`);
+      window.location.href = `${base}/auth/start?client=web&return_to=${returnTo}`;
     }
 
     document.getElementById('admin-signout-btn')?.addEventListener('click', async () => {

@@ -905,11 +905,6 @@ function triggerDirectScan() {
   showScanningState();
 
   chrome.storage.local.get(["geminiApiKey"], (res = {}) => {
-    if (!res.geminiApiKey) {
-      showScanError("Add your Gemini API key in the Setup tab to start scanning.");
-      return;
-    }
-
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const streamTitle = tabs?.[0]?.title || "Live Stream";
 

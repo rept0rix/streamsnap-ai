@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "StreamSnap AI — Live Stream Visual Shopping",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "Visual product discovery for live streams. Point at anything on YouTube, Twitch, TikTok or Kick and find it on Amazon.",
   "homepage_url": "https://streamsnap.online",
   "icons": {
@@ -49,19 +49,29 @@
   },
   "host_permissions": [
     "*://*.youtube.com/*",
+    "*://youtube.com/*",
     "*://*.twitch.tv/*",
+    "*://twitch.tv/*",
     "*://*.tiktok.com/*",
+    "*://tiktok.com/*",
     "*://*.facebook.com/*",
-    "*://*.kick.com/*"
+    "*://facebook.com/*",
+    "*://*.kick.com/*",
+    "*://kick.com/*"
   ],
   "content_scripts": [
     {
       "matches": [
         "*://*.youtube.com/*",
+        "*://youtube.com/*",
         "*://*.twitch.tv/*",
+        "*://twitch.tv/*",
         "*://*.tiktok.com/*",
+        "*://tiktok.com/*",
         "*://*.facebook.com/*",
-        "*://*.kick.com/*"
+        "*://facebook.com/*",
+        "*://*.kick.com/*",
+        "*://kick.com/*"
       ],
       "js": [
         "content/content.js"

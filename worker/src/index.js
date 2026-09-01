@@ -37,7 +37,7 @@ const LIMITS = {
  * not require a code deploy.
  */
 const FALLBACK_MIN_EXTENSION_VERSION = "1.6.0";
-const LATEST_EXTENSION_VERSION = "1.6.0";
+const LATEST_EXTENSION_VERSION = "1.6.1";
 
 export function minExtensionVersion(env) {
   const raw = String(env?.MIN_EXTENSION_VERSION || "").trim();
@@ -134,7 +134,7 @@ function corsHeaders(request, env) {
   // which the browser only honours when the response names one exact origin and
   // sets Allow-Credentials. A wildcard is rejected outright in that mode, and
   // echoing an *unlisted* origin would let any site read a signed-in session.
-  if (origin && allowed.includes(origin)) {
+  if (origin && (allowed.includes(origin) || origin.startsWith("chrome-extension://"))) {
     return {
       ...base,
       "Access-Control-Allow-Origin": origin,

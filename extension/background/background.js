@@ -453,6 +453,54 @@ async function publishScanError(message) {
   broadcast({ action: "SCAN_FAILED", error: message });
 }
 
+async function callServerResolve(imageDataUrl) {
+  const { installId, streamSnapSession } = await chrome.storage.local.get(["installId", "streamSnapSession"]);
+  let id = installId;
+  if (!id) {
+    id = crypto.randomUUID();
+    await chrome.storage.local.set({ installId: id });
+  }
+
+  const headers = { "Content-Type": "application/json" };
+  if (streamSnapSession) {
+    headers["Authorization"] = `Bearer ${streamSnapSession}`;
+  }
+
+  const response = await fetch("https://streamsnap-lens.na0ryank0.workers.dev/resolve", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ image: imageDataUrl, installId: id })
+  });
+
+  if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      throw new Error("Session could not be verified. Please sign in again.");
+    }
+    const text = await response.text().catch(() => "");
+    throw new Error(`Server error ${response.status}: ${text.slice(0, 100)}`);
+  }
+
+  const data = await response.json();
+  if (!data.ok) throw new Error(data.error || "Server scan failed.");
+  
+  return {
+    exactMatches: (data.products || []).map(p => ({
+      title: p.title,
+      price: p.price,
+      amazon_url: p.url,
+      thumbnail: p.thumbnail,
+      asin: p.asin
+    })),
+    lookAlikes: (data.others || []).map(p => ({
+      title: p.title,
+      price: p.price,
+      amazon_url: p.url,
+      thumbnail: p.thumbnail,
+      asin: p.asin
+    }))
+  };
+}
+
 /**
  * Shared analysis path for both full-frame and cropped scans.
  */
@@ -472,11 +520,17 @@ async function runAnalysis({ imageDataUrl, apiKey, streamContext, mode }) {
     fromCache = true;
     console.info(`[StreamSnap] frame cache hit (distance ${distance}) — no API call`);
   } else {
-    raw = await callGemini(
-      imageDataUrl,
-      apiKey,
-      isCrop ? CROP_PROMPT(streamKey || "Live Stream") : FULL_FRAME_PROMPT(streamKey || "Live Stream")
-    );
+    if (apiKey) {
+      console.info(`[StreamSnap] Using local Gemini API key.`);
+      raw = await callGemini(
+        imageDataUrl,
+        apiKey,
+        isCrop ? CROP_PROMPT(streamKey || "Live Stream") : FULL_FRAME_PROMPT(streamKey || "Live Stream")
+      );
+    } else {
+      console.info(`[StreamSnap] Using server resolve API.`);
+      raw = await callServerResolve(imageDataUrl);
+    }
     if (hash) recordFrame(hash, raw, streamKey);
   }
 
