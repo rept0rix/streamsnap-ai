@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initLenis();
   initCustomCursor();
   initHeroInteractive();
-  initScrollTransformation();
+  initMobileDock();
   initSimulator();
   initCalculator();
   initModals();
@@ -41,145 +41,24 @@ function initLenis() {
   }
 }
 
-// 3D Scroll Transformation Concept (Scroll-Experience)
-function initScrollTransformation() {
-  const track = document.getElementById("scroll-story-track");
-  const terminal = document.getElementById("scroll-transform-terminal");
-  const laser = document.getElementById("scroll-laser-sweep");
-  const boxMic = document.getElementById("target-box-mic");
-  const boxLight = document.getElementById("target-box-light");
-  const boxHoodie = document.getElementById("target-box-hoodie");
-  const cardShure = document.getElementById("card-shure");
-  const cardElgato = document.getElementById("card-elgato");
-  const cardChampion = document.getElementById("card-champion");
-  const ms1 = document.getElementById("ms-1");
-  const ms2 = document.getElementById("ms-2");
-  const ms3 = document.getElementById("ms-3");
-  const badge = document.getElementById("scroll-phase-badge");
-  const caption = document.getElementById("scroll-caption-text");
+// Floating Mobile Conversion Dock Controller
+function initMobileDock() {
+  const dock = document.getElementById("mobile-install-dock");
+  const footer = document.querySelector(".footer-studio");
+  if (!dock) return;
 
-  if (!track || !terminal) return;
-
-  function onScroll() {
-    const isMobile = window.innerWidth <= 768;
-    const rect = track.getBoundingClientRect();
-    const windowHeight = window.innerHeight;
-    const totalDistance = rect.height - windowHeight;
-
-    if (totalDistance <= 0) return;
-
-    // Progress from 0.0 to 1.0 within the sticky track
-    const progress = Math.max(0, Math.min(1, -rect.top / totalDistance));
-
-    // Milestone & Phase Updates
-    if (progress < 0.33) {
-      // Phase 1: Raw Broadcast & Perspective Tilt
-      const p = progress / 0.33;
-      if (isMobile) {
-        terminal.style.transform = "none";
-      } else {
-        const rotX = 14 * (1 - p);
-        const rotY = -4 * (1 - p);
-        const sc = 0.88 + 0.12 * p;
-        terminal.style.transform = `rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg) scale(${sc.toFixed(3)})`;
-      }
-      
-      if (laser) laser.style.opacity = "0";
-      if (boxMic) boxMic.style.opacity = "0";
-      if (boxLight) boxLight.style.opacity = "0";
-      if (boxHoodie) boxHoodie.style.opacity = "0";
-      
-      if (cardShure) { cardShure.style.opacity = "0"; cardShure.style.transform = isMobile ? "translateY(20px)" : "translateY(50px) translateZ(80px) scale(0.85)"; }
-      if (cardElgato) { cardElgato.style.opacity = "0"; cardElgato.style.transform = "translateY(50px) translateZ(100px) scale(0.85)"; }
-      if (cardChampion) { cardChampion.style.opacity = "0"; cardChampion.style.transform = "translateY(50px) translateZ(80px) scale(0.85)"; }
-
-      if (ms1) ms1.classList.add("active");
-      if (ms2) ms2.classList.remove("active");
-      if (ms3) ms3.classList.remove("active");
-      if (badge) badge.textContent = "[ PHASE 01 // PASSIVE STREAM ]";
-      if (caption) caption.textContent = "You are watching a broadcast — scroll down to activate AI optical telemetry";
-
-    } else if (progress < 0.68) {
-      // Phase 2: Laser Optical Scan & Target Bounding Boxes Lock
-      const p = (progress - 0.33) / 0.35;
-      terminal.style.transform = "none";
-
-      if (laser) {
-        laser.style.opacity = "1";
-        laser.style.top = `${(p * 92).toFixed(1)}%`;
-      }
-
-      const micVisible = p > 0.2 ? "1" : "0";
-      const lightVisible = p > 0.4 ? "1" : "0";
-      const hoodieVisible = p > 0.6 ? "1" : "0";
-
-      if (boxMic) boxMic.style.opacity = micVisible;
-      if (boxLight) boxLight.style.opacity = lightVisible;
-      if (boxHoodie) boxHoodie.style.opacity = hoodieVisible;
-
-      if (cardShure) cardShure.style.opacity = "0";
-      if (cardElgato) cardElgato.style.opacity = "0";
-      if (cardChampion) cardChampion.style.opacity = "0";
-
-      if (ms1) ms1.classList.remove("active");
-      if (ms2) ms2.classList.add("active");
-      if (ms3) ms3.classList.remove("active");
-      if (badge) badge.textContent = "[ PHASE 02 // MULTI-OBJECT AI LOCK ]";
-      if (caption) caption.textContent = "Optical recognition lock achieved in <1.8s · Catalog ASINs resolved";
-
+  function checkDockVisibility() {
+    if (!footer) return;
+    const footerRect = footer.getBoundingClientRect();
+    if (footerRect.top <= window.innerHeight - 30) {
+      dock.classList.add("hidden-dock");
     } else {
-      // Phase 3: 3D Product Extraction & 1-Click Amazon Cart
-      const p = (progress - 0.68) / 0.32;
-      const cardProgress = Math.min(1, p * 1.5);
-
-      if (isMobile) {
-        terminal.style.transform = "none";
-        if (cardShure) {
-          cardShure.style.opacity = `${cardProgress}`;
-          cardShure.style.transform = `translateY(0) scale(1)`;
-        }
-      } else {
-        terminal.style.transform = `rotateX(4deg) scale(0.98)`;
-        if (cardShure) {
-          cardShure.style.opacity = `${cardProgress}`;
-          cardShure.style.transform = `translateY(${(20 * (1 - cardProgress)).toFixed(1)}px) translateZ(90px) rotateY(-6deg) scale(${0.85 + 0.15 * cardProgress})`;
-        }
-        if (cardElgato) {
-          cardElgato.style.opacity = `${cardProgress}`;
-          cardElgato.style.transform = `translateY(${(20 * (1 - cardProgress)).toFixed(1)}px) translateZ(110px) scale(${0.85 + 0.15 * cardProgress})`;
-        }
-        if (cardChampion) {
-          cardChampion.style.opacity = `${cardProgress}`;
-          cardChampion.style.transform = `translateY(${(20 * (1 - cardProgress)).toFixed(1)}px) translateZ(90px) rotateY(6deg) scale(${0.85 + 0.15 * cardProgress})`;
-        }
-      }
-
-      if (laser) laser.style.opacity = "0";
-      if (boxMic) boxMic.style.opacity = isMobile ? "0" : "0.2";
-      if (boxLight) boxLight.style.opacity = isMobile ? "0" : "0.2";
-      if (boxHoodie) boxHoodie.style.opacity = isMobile ? "0" : "0.2";
-
-      if (ms1) ms1.classList.remove("active");
-      if (ms2) ms2.classList.remove("active");
-      if (ms3) ms3.classList.add("active");
-      if (badge) badge.textContent = "[ PHASE 03 // 1-CLICK AMAZON CART ]";
-      if (caption) caption.textContent = "3 verified products extracted and staged directly for official Amazon checkout";
+      dock.classList.remove("hidden-dock");
     }
   }
 
-  // Allow clicking milestone tabs on mobile/desktop
-  [ms1, ms2, ms3].forEach((ms, idx) => {
-    if (ms) {
-      ms.style.cursor = "pointer";
-      ms.addEventListener("click", () => {
-        const targetScroll = track.offsetTop + (idx * 0.45 * (track.offsetHeight - window.innerHeight));
-        window.scrollTo({ top: targetScroll, behavior: "smooth" });
-      });
-    }
-  });
-
-  window.addEventListener("scroll", onScroll, { passive: true });
-  onScroll();
+  window.addEventListener("scroll", checkDockVisibility, { passive: true });
+  checkDockVisibility();
 }
 
 // Custom Magnetic Cursor
