@@ -3,285 +3,995 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Account Dashboard — StreamSnap AI</title>
-  <meta name="description" content="Manage your StreamSnap AI account, scan quota, and subscription plan.">
-  
+  <title>StreamSnap AI — User & Creator Studio Hub</title>
+  <meta name="description" content="Manage your StreamSnap AI shopping history, scan quota, creator affiliate earnings, and subscription plan.">
+
+  <!-- Typography: Syne, Plus Jakarta Sans, JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Syne:wght@700;800;900&display=swap" rel="stylesheet">
-  
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Syne:wght@700;800;900&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="styles.css">
   <link rel="icon" type="image/svg+xml" href="assets/logo_full.svg">
+
   <style>
-    .account-page-wrap {
-      min-height: 80vh;
+    /* ==========================================================================
+       DASHBOARD STYLES (UI/UX PRO MAX STANDARD)
+       ========================================================================== */
+    :root {
+      --dash-bg: #04060A;
+      --dash-surface: #090D15;
+      --dash-card: #0E131E;
+      --dash-card-hover: #141A28;
+      --dash-border: rgba(255, 255, 255, 0.08);
+      --dash-border-gold: rgba(255, 153, 0, 0.4);
+      --dash-gold: #FF9900;
+      --dash-cyan: #00F0FF;
+      --dash-green: #10B981;
+      --dash-red: #FF334B;
+    }
+
+    body.dash-body {
+      background-color: var(--dash-bg);
+      color: #E2E8F0;
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 120px 20px 60px;
+      overflow-x: hidden;
     }
-    .account-card {
+
+    /* Top Telemetry Bar */
+    .dash-telemetry {
+      background: rgba(4, 6, 10, 0.95);
+      border-bottom: 1px solid var(--dash-border);
+      padding: 8px 24px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    .telemetry-left, .telemetry-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    /* Dashboard Layout */
+    .dash-layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: calc(100vh - 40px);
+      max-width: 1440px;
       width: 100%;
-      max-width: 680px;
-      background: var(--bg-card, #0E131E);
-      border: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
-      border-radius: var(--radius-lg, 18px);
-      padding: 36px;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+      margin: 0 auto;
+    }
+
+    /* Sidebar Navigation */
+    .dash-sidebar {
+      background: var(--dash-surface);
+      border-right: 1px solid var(--dash-border);
+      padding: 28px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .sidebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      margin-bottom: 32px;
+      padding-left: 8px;
+    }
+    .sidebar-brand-text {
+      font-family: 'Syne', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      color: #FFF;
+      letter-spacing: -0.5px;
+    }
+    .sidebar-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      list-style: none;
+    }
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      color: #94A3B8;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+    .sidebar-link:hover {
+      color: #FFF;
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .sidebar-link.active {
+      color: var(--dash-gold);
+      background: rgba(255, 153, 0, 0.08);
+      border-color: var(--dash-border-gold);
+    }
+    .sidebar-link svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 2;
+    }
+
+    .sidebar-footer {
+      padding-top: 20px;
+      border-top: 1px solid var(--dash-border);
+    }
+    .user-profile-badge {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      background: var(--dash-card);
+      border: 1px solid var(--dash-border);
+      border-radius: 10px;
+    }
+    .user-profile-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1.5px solid var(--dash-gold);
+      background: #1e293b;
+    }
+    .user-profile-meta {
+      flex: 1;
+      min-width: 0;
+    }
+    .user-profile-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #FFF;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .user-profile-plan {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--dash-gold);
+      text-transform: uppercase;
+    }
+
+    /* Main Content Area */
+    .dash-main {
+      padding: 40px;
+      background: var(--dash-bg);
+      overflow-y: auto;
+    }
+    .tab-pane {
+      display: none;
+      animation: fadeIn 0.25s ease forwards;
+    }
+    .tab-pane.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Page Titles */
+    .pane-header {
+      margin-bottom: 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .pane-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 28px;
+      font-weight: 800;
+      color: #FFF;
+      margin-bottom: 6px;
+    }
+    .pane-desc {
+      color: #94A3B8;
+      font-size: 14px;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 18px;
+      margin-bottom: 32px;
+    }
+    .stat-card {
+      background: var(--dash-card);
+      border: 1px solid var(--dash-border);
+      border-radius: 12px;
+      padding: 22px;
       position: relative;
       overflow: hidden;
     }
-    .account-card::before {
+    .stat-card::after {
       content: "";
       position: absolute;
       top: 0;
       left: 0;
       right: 0;
       height: 2px;
-      background: linear-gradient(90deg, transparent, var(--primary-gold, #FF9900), transparent);
+      background: linear-gradient(90deg, transparent, var(--dash-gold), transparent);
+      opacity: 0.5;
     }
-    .account-header-row {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      padding-bottom: 28px;
-      border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
-    }
-    .account-avatar-lg {
-      width: 72px;
-      height: 72px;
-      border-radius: 50%;
-      border: 2px solid var(--primary-gold, #FF9900);
-      object-fit: cover;
-      background: #1e293b;
-    }
-    .account-user-details h1 {
-      font-family: var(--font-display, 'Syne', sans-serif);
-      font-size: 24px;
-      font-weight: 800;
-      color: var(--text-white, #FFFFFF);
-      margin-bottom: 4px;
-    }
-    .account-user-details p {
-      font-family: var(--font-mono, monospace);
-      font-size: 13px;
-      color: var(--text-dim, #94A3B8);
-      margin-bottom: 8px;
-    }
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 10px;
-      background: var(--gold-tint, rgba(255,153,0,0.12));
-      border: 1px solid var(--border-active, rgba(255,153,0,0.45));
-      border-radius: var(--radius-sm, 4px);
-      font-family: var(--font-mono, monospace);
+    .stat-label {
+      font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
-      font-weight: 700;
-      color: var(--primary-gold, #FF9900);
-      letter-spacing: 0.5px;
-    }
-    .account-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-top: 24px;
-    }
-    @media (max-width: 600px) {
-      .account-grid { grid-template-columns: 1fr; }
-      .account-header-row { flex-direction: column; text-align: center; }
-    }
-    .quota-box {
-      background: var(--bg-surface, #090D15);
-      border: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
-      border-radius: var(--radius-md, 10px);
-      padding: 20px;
-    }
-    .quota-label {
-      font-family: var(--font-mono, monospace);
-      font-size: 11px;
-      color: var(--text-muted, #64748B);
       text-transform: uppercase;
+      color: #64748B;
       letter-spacing: 1px;
       margin-bottom: 8px;
       display: flex;
       justify-content: space-between;
+      align-items: center;
     }
-    .quota-num {
-      font-family: var(--font-display, 'Syne', sans-serif);
-      font-size: 26px;
+    .stat-value {
+      font-family: 'Syne', sans-serif;
+      font-size: 32px;
       font-weight: 800;
-      color: var(--text-white, #FFFFFF);
-      margin-bottom: 12px;
+      color: #FFF;
+      margin-bottom: 8px;
     }
-    .quota-progress-track {
+    .stat-sub {
+      font-size: 12px;
+      color: #94A3B8;
+    }
+
+    /* Progress bar */
+    .dash-progress-track {
       width: 100%;
       height: 6px;
-      background: rgba(255,255,255,0.06);
+      background: rgba(255, 255, 255, 0.06);
       border-radius: 3px;
       overflow: hidden;
+      margin-top: 10px;
     }
-    .quota-progress-fill {
+    .dash-progress-fill {
       height: 100%;
-      background: linear-gradient(90deg, var(--laser-cyan, #00F0FF), var(--primary-gold, #FF9900));
+      background: linear-gradient(90deg, var(--dash-cyan), var(--dash-gold));
       border-radius: 3px;
-      transition: width 0.6s ease;
+      transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .account-actions {
+
+    /* Product Grid */
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 20px;
+    }
+    .product-card {
+      background: var(--dash-card);
+      border: 1px solid var(--dash-border);
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.25s ease;
+      position: relative;
+    }
+    .product-card:hover {
+      border-color: var(--dash-border-gold);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+    }
+    .product-thumb-wrap {
+      width: 100%;
+      height: 180px;
+      background: #000;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .product-thumb {
+      max-width: 85%;
+      max-height: 85%;
+      object-fit: contain;
+      transition: transform 0.3s ease;
+    }
+    .product-card:hover .product-thumb {
+      transform: scale(1.05);
+    }
+    .product-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.75);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--dash-gold);
+    }
+    .product-source-tag {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid var(--dash-green);
+      border-radius: 4px;
+      padding: 3px 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--dash-green);
+    }
+    .product-body {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+    .product-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #F8FAFC;
+      line-height: 1.4;
+      margin-bottom: 8px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .product-meta-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-top: 28px;
-      padding-top: 20px;
-      border-top: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
+      margin-top: auto;
+      padding-top: 12px;
+      border-top: 1px solid var(--dash-border);
     }
-    .btn-action-primary {
+    .product-price {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--dash-gold);
+    }
+    .product-actions {
+      display: flex;
+      gap: 6px;
+    }
+    .btn-icon-action {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--dash-border);
+      color: #94A3B8;
+      border-radius: 6px;
+      width: 32px;
+      height: 32px;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      background: var(--primary-gold, #FF9900);
-      color: #000;
-      font-weight: 700;
-      font-size: 13px;
-      font-family: var(--font-mono, monospace);
-      padding: 10px 20px;
-      border-radius: 6px;
-      text-decoration: none;
-      transition: opacity 0.2s;
-    }
-    .btn-action-primary:hover { opacity: 0.9; }
-    .btn-action-ghost {
-      background: none;
-      border: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
-      color: var(--text-dim, #94A3B8);
-      font-family: var(--font-mono, monospace);
-      font-size: 12px;
-      padding: 8px 16px;
-      border-radius: 6px;
+      justify-content: center;
       cursor: pointer;
+      transition: all 0.2s ease;
       text-decoration: none;
+    }
+    .btn-icon-action:hover {
+      background: var(--dash-gold);
+      color: #000;
+      border-color: var(--dash-gold);
+    }
+    .btn-icon-action.btn-del:hover {
+      background: var(--dash-red);
+      color: #FFF;
+      border-color: var(--dash-red);
+    }
+
+    /* Creator Studio Tab */
+    .creator-banner-box {
+      background: linear-gradient(135deg, rgba(255, 153, 0, 0.1), rgba(0, 240, 255, 0.05));
+      border: 1px solid var(--dash-border-gold);
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 32px;
+      position: relative;
+    }
+    .creator-banner-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 24px;
+      font-weight: 800;
+      color: #FFF;
+      margin-bottom: 8px;
+    }
+    .creator-form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 24px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .form-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      text-transform: uppercase;
+      color: #94A3B8;
+    }
+    .form-input {
+      background: var(--dash-card);
+      border: 1px solid var(--dash-border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: #FFF;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
       transition: all 0.2s;
     }
-    .btn-action-ghost:hover {
-      border-color: var(--live-red, #FF334B);
-      color: var(--live-red, #FF334B);
+    .form-input:focus {
+      outline: none;
+      border-color: var(--dash-gold);
+      box-shadow: 0 0 12px rgba(255, 153, 0, 0.2);
     }
-    .login-box {
+
+    /* Billing Tier Cards */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-top: 24px;
+    }
+    .pricing-card {
+      background: var(--dash-card);
+      border: 1px solid var(--dash-border);
+      border-radius: 16px;
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+    .pricing-card.featured {
+      border-color: var(--dash-gold);
+      background: linear-gradient(180deg, rgba(255, 153, 0, 0.06), var(--dash-card));
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    }
+    .pricing-badge-popular {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--dash-gold);
+      color: #000;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 4px 12px;
+      border-radius: 20px;
+      text-transform: uppercase;
+    }
+    .plan-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      color: #FFF;
+      margin-bottom: 8px;
+    }
+    .plan-price {
+      font-family: 'Syne', sans-serif;
+      font-size: 36px;
+      font-weight: 800;
+      color: #FFF;
+      margin-bottom: 20px;
+    }
+    .plan-price span {
+      font-size: 14px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: #94A3B8;
+      font-weight: 500;
+    }
+    .plan-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 32px;
+      flex: 1;
+    }
+    .plan-features li {
+      font-size: 13px;
+      color: #CBD5E1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .plan-features li svg {
+      width: 16px;
+      height: 16px;
+      color: var(--dash-green);
+      flex-shrink: 0;
+    }
+    .btn-plan {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      border: 1px solid var(--dash-border);
+      background: rgba(255,255,255,0.05);
+      color: #FFF;
+    }
+    .btn-plan:hover {
+      background: rgba(255,255,255,0.1);
+    }
+    .btn-plan.btn-plan-active {
+      background: var(--dash-gold);
+      color: #000;
+      border-color: var(--dash-gold);
+    }
+    .btn-plan.btn-plan-active:hover {
+      opacity: 0.9;
+    }
+
+    /* Toast Notification */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .dash-toast {
+      background: #0E131E;
+      border: 1px solid var(--dash-border-gold);
+      color: #FFF;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: 'JetBrains Mono', monospace;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: slideIn 0.3s ease;
+    }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* Auth Wall for Unauthenticated Viewers */
+    .auth-wall-container {
+      min-height: 80vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .auth-wall-card {
       max-width: 440px;
       width: 100%;
-      background: var(--bg-card, #0E131E);
-      border: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
-      border-radius: var(--radius-lg, 18px);
+      background: var(--dash-card);
+      border: 1px solid var(--dash-border);
+      border-radius: 18px;
       padding: 44px 32px;
       text-align: center;
       box-shadow: 0 20px 50px rgba(0,0,0,0.6);
     }
+
+    @media (max-width: 900px) {
+      .dash-layout { grid-template-columns: 1fr; }
+      .dash-sidebar { border-right: none; border-bottom: 1px solid var(--dash-border); }
+      .creator-form-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
-<body class="studio-dark">
+<body class="dash-body">
 
   <!-- Micro-Noise Film Grain Overlay -->
   <div class="grain-overlay" aria-hidden="true"></div>
 
-  <!-- Studio Navbar -->
-  <header class="navbar-studio">
-    <div class="container nav-inner">
-      <a href="index.html" class="brand-link">
-        <img src="assets/logo_full.svg" alt="StreamSnap AI" class="brand-vector-logo" />
-      </a>
-      <div class="nav-actions">
-        <a href="index.html" class="btn-ghost-mono" style="font-size:12px; padding:6px 14px;">
-          ← Back to Site
-        </a>
+  <!-- Top Telemetry Strip -->
+  <header class="dash-telemetry">
+    <div class="telemetry-left">
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span class="telemetry-dot pulse-red" style="display:inline-block;"></span>
+        <span style="color:#FFF; font-weight:700;">STREAMSNAP HUB</span>
       </div>
+      <span style="color:#64748B;">//</span>
+      <span style="color:var(--dash-gold);">SYSTEM_STATUS: ACTIVE</span>
+    </div>
+    <div class="telemetry-right">
+      <span style="color:#64748B;">CHROME BUILD: <span class="dynamic-version" style="color:#FFF;">1.6.1</span></span>
+      <a href="index.html" style="color:#94A3B8; text-decoration:none; transition:color 0.2s;" onmouseover="this.style.color='#FFF'" onmouseout="this.style.color='#94A3B8'">
+        Exit to Website ↗
+      </a>
     </div>
   </header>
 
-  <main class="account-page-wrap">
-    
-    <!-- State: Loading -->
-    <div id="loading-state" style="font-family: var(--font-mono, monospace); color: var(--text-dim, #94A3B8); font-size: 14px;">
-      <span class="telemetry-dot pulse-red" style="display:inline-block; margin-right:8px;"></span>
-      AUTHENTICATING_SESSION...
-    </div>
-
-    <!-- State: Signed In Dashboard -->
-    <div id="account-dashboard" class="account-card" style="display: none;">
-      <div class="account-header-row">
-        <img id="acc-avatar" class="account-avatar-lg" src="" alt="User Avatar">
-        <div class="account-user-details">
-          <h1 id="acc-name">Loading...</h1>
-          <p id="acc-email">user@example.com</p>
-          <span class="status-badge" id="acc-plan">FREE CREATOR PLAN</span>
-        </div>
-      </div>
-
-      <div class="account-grid">
-        <div class="quota-box">
-          <div class="quota-label">
-            <span>Monthly Scans</span>
-            <span id="quota-pct">0%</span>
-          </div>
-          <div class="quota-num" id="quota-num">0 / 100</div>
-          <div class="quota-progress-track">
-            <div class="quota-progress-fill" id="quota-fill" style="width: 0%;"></div>
-          </div>
-        </div>
-
-        <div class="quota-box">
-          <div class="quota-label">
-            <span>Extension Status</span>
-          </div>
-          <div class="quota-num" style="font-size: 20px; color: var(--verified-green, #10B981);">
-            ● SYNCED
-          </div>
-          <div style="font-family: var(--font-mono, monospace); font-size: 11px; color: var(--text-dim, #94A3B8);">
-            Version: <span class="dynamic-version">1.6.1</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="account-actions">
-        <a href="https://chromewebstore.google.com/detail/streamsnap-ai-%E2%80%94-live-stre/efbfecbochblmakpdllbnpdgkmmfmmel" target="_blank" class="btn-action-primary">
-          Open Extension in Chrome ↗
-        </a>
-        <button id="btn-logout" class="btn-action-ghost">
-          Sign Out
-        </button>
-      </div>
-    </div>
-
-    <!-- State: Not Signed In Login Box -->
-    <div id="login-required-box" class="login-box" style="display: none;">
-      <img src="assets/logo_full.svg" alt="StreamSnap" width="48" style="margin-bottom: 20px;">
-      <h2 style="font-family: var(--font-display, 'Syne', sans-serif); font-size: 22px; color: #fff; margin-bottom: 8px;">Sign In to StreamSnap</h2>
-      <p style="font-size: 13px; color: var(--text-dim, #94A3B8); margin-bottom: 28px; line-height: 1.5;">
-        Connect your Google Account to view your active scan quota, account tier, and extension settings.
+  <!-- Login Wall (Shown when not authenticated) -->
+  <div id="auth-wall" class="auth-wall-container" style="display: none;">
+    <div class="auth-wall-card">
+      <img src="assets/logo_full.svg" alt="StreamSnap" width="56" style="margin-bottom: 20px;">
+      <h2 style="font-family: 'Syne', sans-serif; font-size: 24px; color: #FFF; margin-bottom: 8px;">Sign In to StreamSnap</h2>
+      <p style="font-size: 13px; color: #94A3B8; margin-bottom: 28px; line-height: 1.6;">
+        Connect with your Google Account to access your live shopping history, wishlist, affiliate tracking, and monthly scan quotas.
       </p>
-      <a id="btn-google-login" href="#" class="btn-action-primary" style="width:100%; justify-content:center; padding: 12px;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="margin-right:8px;"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-        Sign in with Google
+      <a id="auth-wall-login-btn" href="#" class="btn-laser" style="width:100%; justify-content:center; text-decoration:none;">
+        <span class="btn-laser-bg"></span>
+        <span class="btn-laser-text" style="display:flex; align-items:center; gap:8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Sign in with Google
+        </span>
       </a>
     </div>
+  </div>
 
-  </main>
+  <!-- Main Dashboard App (Shown when authenticated) -->
+  <div id="dash-app" class="dash-layout" style="display: none;">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="dash-sidebar">
+      <div>
+        <a href="index.html" class="sidebar-brand">
+          <img src="assets/logo_full.svg" alt="StreamSnap" width="32" height="32">
+          <span class="sidebar-brand-text">StreamSnap</span>
+        </a>
+
+        <ul class="sidebar-menu">
+          <li>
+            <a class="sidebar-link active" data-tab="overview">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+              <span>Overview</span>
+            </a>
+          </li>
+          <li>
+            <a class="sidebar-link" data-tab="products">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+              <span>Scans & Saved</span>
+            </a>
+          </li>
+          <li>
+            <a class="sidebar-link" data-tab="creator">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+              <span>Creator Studio</span>
+            </a>
+          </li>
+          <li>
+            <a class="sidebar-link" data-tab="billing">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+              <span>Billing & Plans</span>
+            </a>
+          </li>
+          <li>
+            <a class="sidebar-link" data-tab="settings">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+              <span>Settings</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="user-profile-badge">
+          <img id="side-user-avatar" src="" class="user-profile-avatar" alt="Avatar">
+          <div class="user-profile-meta">
+            <div id="side-user-name" class="user-profile-name">Loading...</div>
+            <div id="side-user-plan" class="user-profile-plan">FREE PLAN</div>
+          </div>
+          <button id="btn-side-logout" title="Sign Out" style="background:none; border:none; color:#64748B; cursor:pointer; padding:4px;" onmouseover="this.style.color='#FF334B'" onmouseout="this.style.color='#64748B'">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Content Panes -->
+    <main class="dash-main">
+      
+      <!-- TAB 1: OVERVIEW -->
+      <section id="tab-overview" class="tab-pane active">
+        <div class="pane-header">
+          <div>
+            <h1 class="pane-title">Dashboard Overview</h1>
+            <p class="pane-desc">Real-time status of your StreamSnap AI visual commerce engine.</p>
+          </div>
+          <a href="https://chromewebstore.google.com/detail/streamsnap-ai-%E2%80%94-live-stre/efbfecbochblmakpdllbnpdgkmmfmmel" target="_blank" class="btn-laser" style="padding:10px 20px;">
+            <span class="btn-laser-bg"></span>
+            <span class="btn-laser-text">OPEN CHROME EXTENSION ↗</span>
+          </a>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">
+              <span>Monthly AI Scans</span>
+              <span id="stat-quota-pct" style="color:var(--dash-gold);">0%</span>
+            </div>
+            <div class="stat-value" id="stat-quota-val">0 / 100</div>
+            <div class="dash-progress-track">
+              <div class="dash-progress-fill" id="stat-quota-bar" style="width: 0%;"></div>
+            </div>
+            <div class="stat-sub" style="margin-top:10px;">Resets at the 1st of next month</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-label">
+              <span>Saved Wishlist</span>
+              <span style="color:var(--dash-cyan);">ITEMS</span>
+            </div>
+            <div class="stat-value" id="stat-saved-count">0</div>
+            <div class="stat-sub">Products synced across devices</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-label">
+              <span>Extension Status</span>
+              <span style="color:var(--dash-green);">● ONLINE</span>
+            </div>
+            <div class="stat-value" style="font-size:22px; color:var(--dash-green); margin-top:6px;">CONNECTED</div>
+            <div class="stat-sub">Version <span class="dynamic-version">1.6.1</span> active</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-label">
+              <span>Active Plan</span>
+              <span id="stat-plan-badge" style="color:var(--dash-gold);">FREE</span>
+            </div>
+            <div class="stat-value" id="stat-plan-title" style="font-size:24px;">Starter</div>
+            <div class="stat-sub"><a href="#billing" onclick="switchTab('billing')" style="color:var(--dash-gold); text-decoration:none;">Upgrade to Pro ↗</a></div>
+          </div>
+        </div>
+
+        <!-- Recent Products Section in Overview -->
+        <div style="margin-top: 40px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+            <h2 style="font-family:'Syne',sans-serif; font-size:20px; color:#FFF;">Recently Detected Products</h2>
+            <a href="#products" onclick="switchTab('products')" style="color:var(--dash-gold); font-size:13px; text-decoration:none; font-family:'JetBrains Mono',monospace;">View All (History) →</a>
+          </div>
+          <div id="overview-products-grid" class="product-grid">
+            <!-- Dynamic products injected here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: PRODUCTS & SAVED -->
+      <section id="tab-products" class="tab-pane">
+        <div class="pane-header">
+          <div>
+            <h1 class="pane-title">Saved Products & Scan History</h1>
+            <p class="pane-desc">All products detected during your live streams on YouTube, Twitch, TikTok & Kick.</p>
+          </div>
+        </div>
+
+        <div id="products-empty-state" style="display:none; text-align:center; padding:80px 20px; background:var(--dash-card); border-radius:16px; border:1px solid var(--dash-border);">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="1.5" style="margin-bottom:16px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <h3 style="font-size:18px; color:#FFF; margin-bottom:8px;">No saved products yet</h3>
+          <p style="color:#94A3B8; font-size:13px; max-width:400px; margin:0 auto 24px;">Scan any live stream in YouTube or Twitch with the extension to automatically detect products.</p>
+          <a href="https://www.youtube.com" target="_blank" class="btn-laser" style="padding:10px 24px; text-decoration:none;">
+            <span class="btn-laser-bg"></span>
+            <span class="btn-laser-text">OPEN YOUTUBE TO SCAN ↗</span>
+          </a>
+        </div>
+
+        <div id="products-main-grid" class="product-grid">
+          <!-- Dynamically populated -->
+        </div>
+      </section>
+
+      <!-- TAB 3: CREATOR STUDIO -->
+      <section id="tab-creator" class="tab-pane">
+        <div class="pane-header">
+          <div>
+            <h1 class="pane-title">Creator & Streamer Affiliate Hub</h1>
+            <p class="pane-desc">Monetize every product appearing on your live streams with custom Amazon affiliate tracking.</p>
+          </div>
+        </div>
+
+        <div class="creator-banner-box">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+            <div>
+              <div class="creator-banner-title">Turn Your Live Streams into an Instant Storefront</div>
+              <p style="color:#CBD5E1; font-size:14px; max-width:640px; line-height:1.6;">
+                When viewers use StreamSnap AI on your Twitch, YouTube, TikTok or Kick streams, all recognized product purchases will automatically route through your Amazon Associate ID.
+              </p>
+            </div>
+            <div style="background:rgba(0,0,0,0.4); border:1px solid var(--dash-border-gold); padding:12px 20px; border-radius:10px; text-align:center;">
+              <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#94A3B8;">ESTIMATED COMMISSION</div>
+              <div id="creator-est-earnings" style="font-family:'Syne',sans-serif; font-size:28px; font-weight:800; color:var(--dash-gold);">$0.00</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats-grid" style="margin-bottom:32px;">
+          <div class="stat-card">
+            <div class="stat-label"><span>Viewer Stream Scans</span></div>
+            <div class="stat-value" id="creator-scans-stat">0</div>
+            <div class="stat-sub">Scans triggered on your channels</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label"><span>Products Identified</span></div>
+            <div class="stat-value" id="creator-prods-stat">0</div>
+            <div class="stat-sub">Matched to real Amazon ASINs</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label"><span>Product Link Clicks</span></div>
+            <div class="stat-value" id="creator-clicks-stat">0</div>
+            <div class="stat-sub">Routed through your Associate Tag</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label"><span>Est. Conversion Rate</span></div>
+            <div class="stat-value" id="creator-conv-stat" style="color:var(--dash-green);">3.8%</div>
+            <div class="stat-sub">Above e-commerce average</div>
+          </div>
+        </div>
+
+        <div style="background:var(--dash-card); border:1px solid var(--dash-border); border-radius:16px; padding:28px;">
+          <h3 style="font-family:'Syne',sans-serif; font-size:18px; color:#FFF; margin-bottom:16px;">Affiliate & Channel Configuration</h3>
+          
+          <form id="creator-config-form">
+            <div class="creator-form-grid">
+              <div class="form-group">
+                <label class="form-label">Amazon Associate Tracking ID (Tag)</label>
+                <input type="text" id="cfg-affiliate-tag" class="form-input" placeholder="e.g. yourname-20" required>
+                <span style="font-size:11px; color:#64748B;">Earn up to 10% commission on Amazon purchases made through your streams.</span>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Twitch Channel URL or Username</label>
+                <input type="text" id="cfg-twitch" class="form-input" placeholder="twitch.tv/username">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">YouTube Channel Handle</label>
+                <input type="text" id="cfg-youtube" class="form-input" placeholder="@yourchannel">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">TikTok / Kick Handle</label>
+                <input type="text" id="cfg-tiktok" class="form-input" placeholder="@username">
+              </div>
+            </div>
+
+            <div style="margin-top:24px; display:flex; justify-content:flex-end;">
+              <button type="submit" class="btn-laser" style="padding:10px 28px;">
+                <span class="btn-laser-bg"></span>
+                <span class="btn-laser-text">SAVE CREATOR PROFILE</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- TAB 4: BILLING & PLANS -->
+      <section id="tab-billing" class="tab-pane">
+        <div class="pane-header">
+          <div>
+            <h1 class="pane-title">Subscription & Usage Plans</h1>
+            <p class="pane-desc">Upgrade your monthly AI vision scanning quota and unlock creator monetization tools.</p>
+          </div>
+        </div>
+
+        <div class="pricing-grid">
+          <!-- Free Plan -->
+          <div class="pricing-card" id="card-plan-free">
+            <div class="plan-name">Free Starter</div>
+            <div class="plan-price">$0 <span>/ month</span></div>
+            <ul class="plan-features">
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> 100 AI Visual Scans / Month</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> YouTube, Twitch, TikTok, Kick Support</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> 1-Click Amazon Cart Sync</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Cloud Wishlist Sync</li>
+            </ul>
+            <button class="btn-plan" id="btn-select-free" onclick="upgradePlan('free')">CURRENT PLAN</button>
+          </div>
+
+          <!-- Pro Plan -->
+          <div class="pricing-card featured" id="card-plan-pro">
+            <span class="pricing-badge-popular">MOST POPULAR</span>
+            <div class="plan-name">Pro Shopper</div>
+            <div class="plan-price">$9 <span>/ month</span></div>
+            <ul class="plan-features">
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong>Unlimited AI Visual Scans</strong></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Priority Low-Latency Optical Server</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Automated Price Drop Alerts</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> High-Precision Gemini Flash 2.0 AI</li>
+            </ul>
+            <button class="btn-plan btn-plan-active" id="btn-select-pro" onclick="upgradePlan('pro')">UPGRADE TO PRO</button>
+          </div>
+
+          <!-- Creator Studio -->
+          <div class="pricing-card" id="card-plan-creator">
+            <div class="plan-name">Creator Studio</div>
+            <div class="plan-price">$29 <span>/ month</span></div>
+            <ul class="plan-features">
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Everything in Pro Shopper</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong>Custom Amazon Affiliate Revenue Share</strong></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> OBS Stream Overlay QR & Banner Widget</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Real-Time Viewer Analytics Dashboard</li>
+            </ul>
+            <button class="btn-plan" id="btn-select-creator" onclick="upgradePlan('pro')">ACTIVATE CREATOR</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: SETTINGS -->
+      <section id="tab-settings" class="tab-pane">
+        <div class="pane-header">
+          <div>
+            <h1 class="pane-title">Account & Plugin Settings</h1>
+            <p class="pane-desc">Manage preferences, security, and profile metadata.</p>
+          </div>
+        </div>
+
+        <div style="background:var(--dash-card); border:1px solid var(--dash-border); border-radius:16px; padding:28px; max-width:680px;">
+          <h3 style="font-family:'Syne',sans-serif; font-size:18px; color:#FFF; margin-bottom:20px;">Profile Information</h3>
+          
+          <div style="display:flex; align-items:center; gap:20px; margin-bottom:28px; padding-bottom:24px; border-bottom:1px solid var(--dash-border);">
+            <img id="settings-avatar" src="" class="account-avatar-lg" alt="Avatar" style="width:64px; height:64px; border-radius:50%; border:2px solid var(--dash-gold);">
+            <div>
+              <div id="settings-name" style="font-size:18px; font-weight:700; color:#FFF;">Loading...</div>
+              <div id="settings-email" style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#94A3B8;">user@example.com</div>
+            </div>
+          </div>
+
+          <h3 style="font-family:'Syne',sans-serif; font-size:18px; color:#FFF; margin-bottom:16px;">Danger Zone</h3>
+          <p style="font-size:13px; color:#94A3B8; margin-bottom:16px; line-height:1.5;">
+            Deleting your account will permanently wipe all your saved scan history, affiliate tags, and settings in compliance with privacy guidelines.
+          </p>
+          <button id="btn-delete-account" style="background:rgba(255,51,75,0.1); border:1px solid var(--dash-red); color:var(--dash-red); padding:10px 18px; border-radius:8px; font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='var(--dash-red)'; this.style.color='#FFF'" onmouseout="this.style.background='rgba(255,51,75,0.1)'; this.style.color='var(--dash-red)'">
+            DELETE ACCOUNT PERMANENTLY
+          </button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
 
   <script src="app.js"></script>
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
+    // ==========================================================================
+    // DASHBOARD APPLICATION CORE CONTROLLER
+    // ==========================================================================
+    let currentUser = null;
+    let currentQuota = null;
+
+    document.addEventListener("DOMContentLoaded", async () => {
       const workerBase = typeof getWorkerBase === 'function' ? getWorkerBase() : "https://streamsnap-lens.na0ryank0.workers.dev";
-      const loadingEl = document.getElementById("loading-state");
-      const dashboardEl = document.getElementById("account-dashboard");
-      const loginBoxEl = document.getElementById("login-required-box");
-      const loginBtn = document.getElementById("btn-google-login");
-      const logoutBtn = document.getElementById("btn-logout");
+      const authWall = document.getElementById("auth-wall");
+      const dashApp = document.getElementById("dash-app");
+      const loginBtn = document.getElementById("auth-wall-login-btn");
+      const sideLogoutBtn = document.getElementById("btn-side-logout");
 
       const returnUrl = encodeURIComponent(window.location.origin + '/account.html');
       loginBtn.href = `${workerBase}/auth/start?client=web&return_to=${returnUrl}`;
 
-      logoutBtn?.addEventListener("click", async () => {
+      sideLogoutBtn.addEventListener("click", async () => {
         try {
           await authFetch(`${workerBase}/auth/logout`, { method: "POST" });
         } catch (_) {}
@@ -289,37 +999,279 @@
         window.location.href = "index.html";
       });
 
-      authFetch(`${workerBase}/auth/me`)
-        .then(r => r.ok ? r.json() : null)
-        .then(data => {
-          loadingEl.style.display = "none";
-          if (data && data.ok && data.signedIn) {
-            const user = data.user || {};
-            const quota = data.quota || { used: 0, limit: 100 };
-
-            document.getElementById("acc-name").textContent = user.name || "User";
-            document.getElementById("acc-email").textContent = user.email || "";
-            document.getElementById("acc-avatar").src = user.avatarUrl || `https://ui-avatars.com/api/?background=1E293B&color=FF9900&name=${encodeURIComponent(user.name || "U")}`;
-            document.getElementById("acc-plan").textContent = `${(user.plan || "FREE").toUpperCase()} PLAN`;
-
-            const used = quota.used || 0;
-            const limit = quota.limit || 100;
-            const pct = Math.min(100, Math.round((used / limit) * 100));
-
-            document.getElementById("quota-num").textContent = `${used} / ${limit}`;
-            document.getElementById("quota-pct").textContent = `${pct}%`;
-            document.getElementById("quota-fill").style.width = `${pct}%`;
-
-            dashboardEl.style.display = "block";
-          } else {
-            loginBoxEl.style.display = "block";
-          }
-        })
-        .catch(() => {
-          loadingEl.style.display = "none";
-          loginBoxEl.style.display = "block";
+      // Tab Routing
+      document.querySelectorAll(".sidebar-link").forEach(link => {
+        link.addEventListener("click", (e) => {
+          e.preventDefault();
+          const tabId = link.getAttribute("data-tab");
+          switchTab(tabId);
         });
+      });
+
+      // Handle direct hash navigation (#creator, #billing, etc.)
+      const initialHash = window.location.hash.replace("#", "");
+      if (["overview", "products", "creator", "billing", "settings"].includes(initialHash)) {
+        switchTab(initialHash);
+      }
+
+      // Check Authentication
+      try {
+        const res = await authFetch(`${workerBase}/auth/me`);
+        const data = res.ok ? await res.json() : null;
+
+        if (data && data.ok && data.signedIn) {
+          currentUser = data.user;
+          currentQuota = data.quota;
+          
+          authWall.style.display = "none";
+          dashApp.style.display = "grid";
+          
+          renderProfile();
+          loadProducts();
+          loadCreatorStats();
+        } else {
+          authWall.style.display = "flex";
+          dashApp.style.display = "none";
+        }
+      } catch (err) {
+        authWall.style.display = "flex";
+        dashApp.style.display = "none";
+      }
+
+      // Handle Creator Config Form Submit
+      document.getElementById("creator-config-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const tag = document.getElementById("cfg-affiliate-tag").value.trim();
+        const channels = {
+          twitch: document.getElementById("cfg-twitch").value.trim(),
+          youtube: document.getElementById("cfg-youtube").value.trim(),
+          tiktok: document.getElementById("cfg-tiktok").value.trim()
+        };
+
+        try {
+          const r = await authFetch(`${workerBase}/creator/profile`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ affiliateTag: tag, channels })
+          });
+          const resData = await r.json();
+          if (resData.ok) {
+            showToast("Creator profile & Amazon tag saved successfully!");
+          } else {
+            showToast(resData.error || "Failed to save profile", true);
+          }
+        } catch (_) {
+          showToast("Network error saving profile", true);
+        }
+      });
+
+      // Handle Delete Account
+      document.getElementById("btn-delete-account").addEventListener("click", async () => {
+        if (confirm("Are you ABSOLUTELY sure you want to permanently delete your StreamSnap account? This cannot be undone.")) {
+          try {
+            await authFetch(`${workerBase}/account`, { method: "DELETE" });
+            localStorage.removeItem("streamSnapSession");
+            window.location.href = "index.html";
+          } catch (_) {
+            showToast("Failed to delete account", true);
+          }
+        }
+      });
     });
+
+    function switchTab(tabId) {
+      document.querySelectorAll(".sidebar-link").forEach(l => {
+        l.classList.toggle("active", l.getAttribute("data-tab") === tabId);
+      });
+      document.querySelectorAll(".tab-pane").forEach(p => {
+        p.classList.toggle("active", p.id === `tab-${tabId}`);
+      });
+      history.replaceState(null, "", `#${tabId}`);
+    }
+
+    function renderProfile() {
+      if (!currentUser) return;
+      const avatarUrl = currentUser.avatarUrl || `https://ui-avatars.com/api/?background=1E293B&color=FF9900&name=${encodeURIComponent(currentUser.name || "U")}`;
+      
+      document.getElementById("side-user-name").textContent = currentUser.name || "StreamSnap User";
+      document.getElementById("side-user-avatar").src = avatarUrl;
+      document.getElementById("side-user-plan").textContent = `${(currentUser.plan || "FREE").toUpperCase()} PLAN`;
+      
+      document.getElementById("settings-name").textContent = currentUser.name || "StreamSnap User";
+      document.getElementById("settings-email").textContent = currentUser.email || "";
+      document.getElementById("settings-avatar").src = avatarUrl;
+
+      // Quotas in Overview
+      if (currentQuota) {
+        const used = currentQuota.used || 0;
+        const limit = currentQuota.limit || 100;
+        const pct = Math.min(100, Math.round((used / limit) * 100));
+
+        document.getElementById("stat-quota-val").textContent = `${used} / ${limit}`;
+        document.getElementById("stat-quota-pct").textContent = `${pct}%`;
+        document.getElementById("stat-quota-bar").style.width = `${pct}%`;
+      }
+
+      // Plan Highlight in Billing
+      const plan = currentUser.plan || "free";
+      document.getElementById("stat-plan-badge").textContent = plan.toUpperCase();
+      document.getElementById("stat-plan-title").textContent = plan === "pro" ? "Pro Shopper" : "Starter";
+
+      if (plan === "pro") {
+        document.getElementById("btn-select-free").textContent = "DOWNGRADE TO FREE";
+        document.getElementById("btn-select-pro").textContent = "CURRENT ACTIVE PLAN";
+      }
+    }
+
+    async function loadProducts() {
+      const workerBase = typeof getWorkerBase === 'function' ? getWorkerBase() : "https://streamsnap-lens.na0ryank0.workers.dev";
+      try {
+        const r = await authFetch(`${workerBase}/user/products`);
+        const data = r.ok ? await r.json() : null;
+        const products = data?.products || [];
+
+        document.getElementById("stat-saved-count").textContent = products.length;
+
+        const mainGrid = document.getElementById("products-main-grid");
+        const overviewGrid = document.getElementById("overview-products-grid");
+        const emptyState = document.getElementById("products-empty-state");
+
+        if (products.length === 0) {
+          emptyState.style.display = "block";
+          mainGrid.style.display = "none";
+          overviewGrid.innerHTML = `
+            <div style="grid-column: 1 / -1; padding: 32px; text-align: center; background: var(--dash-card); border-radius: 12px; border: 1px solid var(--dash-border); color: #94A3B8; font-size: 13px;">
+              No stream products detected yet. Run the StreamSnap extension on YouTube or Twitch to start building your wishlist!
+            </div>
+          `;
+          return;
+        }
+
+        emptyState.style.display = "none";
+        mainGrid.style.display = "grid";
+
+        const cardsHtml = products.map(p => `
+          <div class="product-card">
+            <div class="product-thumb-wrap">
+              <span class="product-badge">${p.category || 'General'}</span>
+              <span class="product-source-tag">${(p.source || 'amazon').toUpperCase()}</span>
+              <img src="${p.image_url || 'assets/branding/promo_small_440x280.svg'}" alt="${p.title}" class="product-thumb" onerror="this.src='assets/branding/promo_small_440x280.svg'">
+            </div>
+            <div class="product-body">
+              <h4 class="product-title" title="${p.title}">${p.title}</h4>
+              <div class="product-meta-row">
+                <div class="product-price">$${p.price ? p.price.toFixed(2) : 'Check'}</div>
+                <div class="product-actions">
+                  <a href="${p.product_url || '#'}" target="_blank" class="btn-icon-action" title="Buy on Amazon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line></svg>
+                  </a>
+                  <button class="btn-icon-action btn-del" onclick="deleteProduct('${p.id}')" title="Remove">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `).join("");
+
+        mainGrid.innerHTML = cardsHtml;
+        overviewGrid.innerHTML = products.slice(0, 4).map(p => `
+          <div class="product-card">
+            <div class="product-thumb-wrap" style="height:140px;">
+              <span class="product-badge">${p.category || 'General'}</span>
+              <img src="${p.image_url || 'assets/branding/promo_small_440x280.svg'}" alt="${p.title}" class="product-thumb">
+            </div>
+            <div class="product-body">
+              <h4 class="product-title">${p.title}</h4>
+              <div class="product-meta-row">
+                <div class="product-price">$${p.price ? p.price.toFixed(2) : 'Check'}</div>
+                <a href="${p.product_url || '#'}" target="_blank" class="btn-icon-action">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                </a>
+              </div>
+            </div>
+          </div>
+        `).join("");
+
+      } catch (err) {
+        console.error("Failed to load products:", err);
+      }
+    }
+
+    async function deleteProduct(id) {
+      const workerBase = typeof getWorkerBase === 'function' ? getWorkerBase() : "https://streamsnap-lens.na0ryank0.workers.dev";
+      try {
+        const r = await authFetch(`${workerBase}/user/products/${id}`, { method: "DELETE" });
+        if (r.ok) {
+          showToast("Product removed from wishlist.");
+          loadProducts();
+        }
+      } catch (_) {
+        showToast("Failed to remove product", true);
+      }
+    }
+
+    async function loadCreatorStats() {
+      const workerBase = typeof getWorkerBase === 'function' ? getWorkerBase() : "https://streamsnap-lens.na0ryank0.workers.dev";
+      try {
+        const r = await authFetch(`${workerBase}/creator/stats`);
+        const data = r.ok ? await r.json() : null;
+        if (data && data.ok) {
+          const c = data.creator;
+          document.getElementById("cfg-affiliate-tag").value = c.affiliateTag || "";
+          document.getElementById("cfg-twitch").value = c.channels?.twitch || "";
+          document.getElementById("cfg-youtube").value = c.channels?.youtube || "";
+          document.getElementById("cfg-tiktok").value = c.channels?.tiktok || "";
+
+          document.getElementById("creator-est-earnings").textContent = `$${c.metrics.estEarningsUSD}`;
+          document.getElementById("creator-scans-stat").textContent = c.metrics.scansTracked;
+          document.getElementById("creator-prods-stat").textContent = c.metrics.productsIdentified;
+          document.getElementById("creator-clicks-stat").textContent = c.metrics.clicks;
+          document.getElementById("creator-conv-stat").textContent = c.metrics.conversionRate;
+        }
+      } catch (err) {
+        console.error("Failed to load creator stats:", err);
+      }
+    }
+
+    async function upgradePlan(plan) {
+      const workerBase = typeof getWorkerBase === 'function' ? getWorkerBase() : "https://streamsnap-lens.na0ryank0.workers.dev";
+      try {
+        const r = await authFetch(`${workerBase}/billing/upgrade`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan })
+        });
+        const data = await r.json();
+        if (data.ok) {
+          currentUser.plan = plan;
+          renderProfile();
+          showToast(data.message || `Switched to ${plan.toUpperCase()} plan!`);
+        } else {
+          showToast("Failed to update subscription", true);
+        }
+      } catch (_) {
+        showToast("Error updating subscription", true);
+      }
+    }
+
+    function showToast(msg, isError = false) {
+      const container = document.getElementById("toast-container");
+      const toast = document.createElement("div");
+      toast.className = "dash-toast";
+      if (isError) toast.style.borderColor = "var(--dash-red)";
+      toast.innerHTML = `
+        <span style="color:${isError ? 'var(--dash-red)' : 'var(--dash-gold)'};">●</span>
+        <span>${msg}</span>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateX(50px)";
+        toast.style.transition = "all 0.3s ease";
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
   </script>
 </body>
 </html>

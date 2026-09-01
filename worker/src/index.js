@@ -20,6 +20,7 @@
 import { parseLensResponse, collectRawShape } from "./parser.js";
 import { handleAuthRoute } from "./routes_auth.js";
 import { handleAdminRoute } from "./routes_admin.js";
+import { getCurrentUser } from "./auth.js";
 
 const LIMITS = {
   MAX_IMAGE_BYTES: 3 * 1024 * 1024,
@@ -86,7 +87,13 @@ export default {
       }, 200, request, env);
     }
 
-    if (url.pathname.startsWith("/auth/") || url.pathname.startsWith("/account")) {
+    if (
+      url.pathname.startsWith("/auth/") ||
+      url.pathname.startsWith("/account") ||
+      url.pathname.startsWith("/user/") ||
+      url.pathname.startsWith("/creator/") ||
+      url.pathname.startsWith("/billing/")
+    ) {
       const response = await handleAuthRoute(request, env, url, json);
       if (response) return response;
     }
@@ -360,6 +367,36 @@ async function handleResolve(request, env, ctx) {
         expirationTtl: LIMITS.CACHE_TTL_SECONDS
       })
     );
+  }
+
+  // Auto-sync products into user's cloud wishlist if authenticated
+  const user = await getCurrentUser(env, request).catch(() => null);
+  if (user && amazon.length > 0 && env.DB) {
+    ctx.waitUntil((async () => {
+      for (const p of amazon.slice(0, 5)) {
+        const id = `prod_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+        await env.DB.prepare(`
+          INSERT INTO saved_products (id, user_id, asin, title, price, image_url, product_url, category, source, verified, sighting_count, last_seen_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, datetime('now'))
+          ON CONFLICT(user_id, COALESCE(asin, title)) DO UPDATE SET
+            sighting_count = sighting_count + 1,
+            last_seen_at = datetime('now'),
+            price = excluded.price,
+            image_url = COALESCE(excluded.image_url, saved_products.image_url)
+        `).bind(
+          id,
+          user.id,
+          p.asin || null,
+          p.title || "Detected Product",
+          typeof p.price === "number" ? p.price : null,
+          p.thumbnail || null,
+          p.url || null,
+          p.category || "General",
+          "amazon",
+          1
+        ).run().catch(() => {});
+      }
+    })());
   }
 
   // Until the upstream schema is confirmed against live traffic, log the shape
