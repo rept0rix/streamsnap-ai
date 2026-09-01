@@ -12,7 +12,7 @@
   "use strict";
 
   console.log(
-    "%c⚡ [StreamSnap AI] Active Build: v1.6.0 (2026-09-01 12:20 IDT) | Platform: " +
+    "%c⚡ [StreamSnap AI] Active Build: v1.6.1 (2026-09-01 13:15 IDT) | Platform: " +
       window.location.hostname,
     "background: #131921; color: #FF9900; font-weight: bold; padding: 4px 8px; border: 1px solid #FF9900; border-radius: 4px;"
   );
@@ -657,17 +657,20 @@
         height: cropH
       });
 
-      const { geminiApiKey } = await chrome.storage.local.get(["geminiApiKey"]);
-      if (!geminiApiKey) {
+      const { geminiApiKey, sessionToken } = await chrome.storage.local.get([
+        "geminiApiKey",
+        "sessionToken"
+      ]);
+      if (!geminiApiKey && !sessionToken) {
         chrome.storage.local.set({ isScanning: false });
-        showToast(container, "Add your Gemini API key in the Setup tab first.");
+        showToast(container, "Sign in from the StreamSnap panel (or add a Gemini key in Setup) to scan.");
         return;
       }
 
       const res = await sendMessage({
         action: "ANALYZE_CROPPED_IMAGE",
         croppedImage: cropped,
-        apiKey: geminiApiKey,
+        apiKey: geminiApiKey || null,
         streamContext: { title: getStreamTitle() }
       });
 
@@ -766,9 +769,17 @@
         sendMessage({ action: "OPEN_SIDEPANEL" });
       }
 
-      const { geminiApiKey } = await chrome.storage.local.get(["geminiApiKey"]);
-      if (!geminiApiKey) {
-        if (!isSilent) showToast(container, "Add your Gemini API key in the Setup tab first.");
+      // Either credential works: a personal Gemini key runs the scan locally, a
+      // sign-in session runs it on our servers. Only block when there is neither.
+      const { geminiApiKey, sessionToken } = await chrome.storage.local.get([
+        "geminiApiKey",
+        "sessionToken"
+      ]);
+      if (!geminiApiKey && !sessionToken) {
+        if (!isSilent) {
+          showToast(container, "Sign in from the StreamSnap panel (or add a Gemini key in Setup) to scan.");
+          sendMessage({ action: "OPEN_SIDEPANEL" });
+        }
         return;
       }
 
@@ -786,7 +797,7 @@
       const res = await sendMessage({
         action: "ANALYZE_WITH_AI",
         imageBase64: image,
-        apiKey: geminiApiKey,
+        apiKey: geminiApiKey || null,
         streamContext: { title: streamTitle, channel: getChannelName() }
       });
 

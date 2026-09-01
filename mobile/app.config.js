@@ -1,4 +1,3 @@
-import "expo-share-intent/build/useSharingIntent";
 
 module.exports = ({ config }) => ({
   ...config,

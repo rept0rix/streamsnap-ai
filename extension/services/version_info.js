@@ -4,22 +4,33 @@
  */
 
 export const CURRENT_BUILD = {
-  version: "1.6.0",
+  version: "1.6.1",
   buildDate: "2026-09-01",
-  buildTime: "12:20",
-  buildTimestamp: "2026-09-01 12:20:00 IDT",
-  title: "Forced Updates, Account Header & Master On/Off",
+  buildTime: "13:15",
+  buildTimestamp: "2026-09-01 13:15:00 IDT",
+  title: "Scanning Fix — Server Scan Works Without a Key",
   highlights: [
-    "🔒 Forced Update Gate: The panel now checks the server for a required minimum version and hard-blocks with an 'Update required' screen when this build is too old — no bypass.",
-    "👤 Account in Header: Your signed-in Google account (name, email, avatar) now shows at the top of every tab, with a one-click Sign out button.",
-    "⚡ Master On/Off Switch: A power toggle in the header turns the whole extension on or off. While off, nothing runs in the background.",
-    "🛡️ OFF Guard: When disabled, the side panel shows a clear guard screen and the video page shows an 'OFF' pill, so you always know its state.",
-    "🚫 Background Safety: Auto-scan alarms and scans are refused whenever the extension is off."
+    "🐛 Fixed 'nothing found / stuck scanning': the on-video Scan and Snip buttons no longer require a personal Gemini key. If you're signed in, scans now run on our servers as intended.",
+    "🔑 Fixed signed-in scans being sent anonymously (wrong session-token key), so your account quota is attributed correctly.",
+    "⏳ Fixed the loading spinner hanging forever when a scan ended without a result — it now returns to the ready state.",
+    "📡 Works on YouTube, Twitch, TikTok, Facebook and Kick via server-side visual search when no key is set."
   ]
 };
 
 export const VERSION_HISTORY = [
   CURRENT_BUILD,
+  {
+    version: "1.6.0",
+    buildDate: "2026-09-01",
+    buildTime: "12:20",
+    buildTimestamp: "2026-09-01 12:20:00 IDT",
+    title: "Forced Updates, Account Header & Master On/Off",
+    highlights: [
+      "🔒 Forced Update Gate: server-driven minimum version with a hard 'Update required' block.",
+      "👤 Account in Header: signed-in Google account and Sign out on every tab.",
+      "⚡ Master On/Off Switch with OFF guard on the panel and video page."
+    ]
+  },
   {
     version: "1.5.2",
     buildDate: "2026-08-31",

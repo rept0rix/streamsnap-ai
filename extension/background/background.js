@@ -454,16 +454,25 @@ async function publishScanError(message) {
 }
 
 async function callServerResolve(imageDataUrl) {
-  const { installId, streamSnapSession } = await chrome.storage.local.get(["installId", "streamSnapSession"]);
+  // The session token is stored by the account service under "sessionToken".
+  // (An earlier build looked for "streamSnapSession", which never existed, so
+  // signed-in scans were sent anonymously.) Fall back to the old name just in
+  // case an older install still has it.
+  const { installId, sessionToken, streamSnapSession } = await chrome.storage.local.get([
+    "installId",
+    "sessionToken",
+    "streamSnapSession"
+  ]);
   let id = installId;
   if (!id) {
     id = crypto.randomUUID();
     await chrome.storage.local.set({ installId: id });
   }
 
+  const token = sessionToken || streamSnapSession;
   const headers = { "Content-Type": "application/json" };
-  if (streamSnapSession) {
-    headers["Authorization"] = `Bearer ${streamSnapSession}`;
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
   }
 
   const response = await fetch("https://streamsnap-lens.na0ryank0.workers.dev/resolve", {

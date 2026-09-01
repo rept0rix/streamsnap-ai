@@ -133,17 +133,26 @@ function initScrollTransformation() {
       if (boxHoodie) boxHoodie.style.opacity = "0.2";
 
       const cardProgress = Math.min(1, p * 1.5);
-      if (cardShure) {
-        cardShure.style.opacity = `${cardProgress}`;
-        cardShure.style.transform = `translateY(${(20 * (1 - cardProgress)).toFixed(1)}px) translateZ(90px) rotateY(-6deg) scale(${0.85 + 0.15 * cardProgress})`;
-      }
-      if (cardElgato) {
-        cardElgato.style.opacity = `${cardProgress}`;
-        cardElgato.style.transform = `translateY(${(20 * (1 - cardProgress)).toFixed(1)}px) translateZ(110px) scale(${0.85 + 0.15 * cardProgress})`;
-      }
-      if (cardChampion) {
-        cardChampion.style.opacity = `${cardProgress}`;
-        cardChampion.style.transform = `translateY(${(20 * (1 - cardProgress)).toFixed(1)}px) translateZ(90px) rotateY(6deg) scale(${0.85 + 0.15 * cardProgress})`;
+      const isMobile = window.innerWidth <= 768;
+
+      if (isMobile) {
+        if (cardShure) {
+          cardShure.style.opacity = `${cardProgress}`;
+          cardShure.style.transform = `translateY(${(10 * (1 - cardProgress)).toFixed(1)}px) scale(${0.92 + 0.08 * cardProgress})`;
+        }
+      } else {
+        if (cardShure) {
+          cardShure.style.opacity = `${cardProgress}`;
+          cardShure.style.transform = `translateY(${(20 * (1 - cardProgress)).toFixed(1)}px) translateZ(90px) rotateY(-6deg) scale(${0.85 + 0.15 * cardProgress})`;
+        }
+        if (cardElgato) {
+          cardElgato.style.opacity = `${cardProgress}`;
+          cardElgato.style.transform = `translateY(${(20 * (1 - cardProgress)).toFixed(1)}px) translateZ(110px) scale(${0.85 + 0.15 * cardProgress})`;
+        }
+        if (cardChampion) {
+          cardChampion.style.opacity = `${cardProgress}`;
+          cardChampion.style.transform = `translateY(${(20 * (1 - cardProgress)).toFixed(1)}px) translateZ(90px) rotateY(6deg) scale(${0.85 + 0.15 * cardProgress})`;
+        }
       }
 
       if (ms1) ms1.classList.remove("active");

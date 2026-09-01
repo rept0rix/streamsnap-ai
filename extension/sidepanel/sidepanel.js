@@ -653,6 +653,11 @@ function initListeners() {
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== "local") return;
     if (changes.isScanning?.newValue) showScanningState();
+    // A scan that ends without a result (aborted capture, no credential on a
+    // page-initiated scan) flips isScanning back to false. Without this the
+    // loading spinner would hang forever — the classic "stuck, not searching".
+    if (changes.isScanning && changes.isScanning.newValue === false) clearScanningIfIdle();
+    if (changes.lastScanError?.newValue) showScanError(changes.lastScanError.newValue);
     if (changes.latestScanResults?.newValue) renderScanResults(changes.latestScanResults.newValue);
     if (changes.discoveredCatalog) {
       state.catalog = changes.discoveredCatalog.newValue || [];
@@ -872,6 +877,31 @@ function showScanningState() {
   }
 }
 
+/**
+ * Called when a scan ends (isScanning → false) but no result or error arrived.
+ * Drops the loading spinner back to the last sensible state so the panel never
+ * hangs on "AI Vision Scanning…".
+ */
+function clearScanningIfIdle() {
+  const loading = byId("scan-loading-state");
+  if (!loading || loading.style.display === "none") return; // not spinning
+
+  const liveProgressBar = byId("scan-live-progress");
+  if (liveProgressBar) liveProgressBar.style.display = "none";
+
+  const hasResults =
+    liveSessionFeed.exactMatches.length > 0 || liveSessionFeed.lookAlikes.length > 0;
+
+  show("scan-loading-state", false);
+  if (hasResults) {
+    show("scan-results-container", true);
+  } else {
+    show("scan-error-state", false);
+    show("scan-results-container", false);
+    show("scan-empty-state", true);
+  }
+}
+
 function showScanError(message) {
   const liveProgressBar = byId("scan-live-progress");
   if (liveProgressBar) liveProgressBar.style.display = "none";
@@ -919,9 +949,10 @@ function triggerDirectScan() {
 
         chrome.runtime.sendMessage(
           {
+            // No key → the service worker scans on our servers instead.
             action: "ANALYZE_WITH_AI",
             imageBase64: capture.dataUrl,
-            apiKey: res.geminiApiKey,
+            apiKey: res.geminiApiKey || null,
             streamContext: { title: streamTitle }
           },
           (aiRes) => {

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.6.1] - 2026-09-01 (13:15 IDT)
+
+### Fixed
+- **Scanning found nothing / appeared stuck**: The on-video **Scan** and **Snip** buttons (content script) hard-required a personal Gemini API key and returned early when none was set — so a signed-in user could never scan, and the server-side `/resolve` path was unreachable dead code. All scan entry points now proceed when **either** a Gemini key **or** a sign-in session is present, and pass `apiKey: null` so the service worker falls back to server-side visual search.
+- **Signed-in scans sent anonymously**: `callServerResolve` read the session token from `streamSnapSession`, but the account service stores it as `sessionToken`. Corrected (with a fallback), so signed-in scans authenticate and attribute to the account's quota.
+- **Loading spinner could hang forever**: When a scan ended without a result (aborted capture, missing credential on a page-initiated scan), `isScanning` flipped to `false` but the side panel never cleared the "AI Vision Scanning…" state. The panel now returns to the ready/results state and surfaces `lastScanError`.
+
+---
+
 ## [1.6.0] - 2026-09-01 (12:20 IDT)
 
 ### Added
