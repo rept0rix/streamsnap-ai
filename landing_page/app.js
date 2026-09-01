@@ -5,6 +5,11 @@
 
 // Official Chrome Web Store URL
 const CHROME_STORE_URL = "https://chromewebstore.google.com/detail/streamsnap-ai-%E2%80%94-live-stre/efbfecbochblmakpdllbnpdgkmmfmmel";
+const WORKER_BASE = "https://streamsnap-lens.na0ryank0.workers.dev";
+
+function getWorkerBase() {
+  return WORKER_BASE;
+}
 
 let lenisInstance = null;
 
