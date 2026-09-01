@@ -61,6 +61,7 @@ function initScrollTransformation() {
   if (!track || !terminal) return;
 
   function onScroll() {
+    const isMobile = window.innerWidth <= 768;
     const rect = track.getBoundingClientRect();
     const windowHeight = window.innerHeight;
     const totalDistance = rect.height - windowHeight;
@@ -74,17 +75,21 @@ function initScrollTransformation() {
     if (progress < 0.33) {
       // Phase 1: Raw Broadcast & Perspective Tilt
       const p = progress / 0.33;
-      const rotX = 14 * (1 - p);
-      const rotY = -4 * (1 - p);
-      const sc = 0.88 + 0.12 * p;
-      terminal.style.transform = `rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg) scale(${sc.toFixed(3)})`;
+      if (isMobile) {
+        terminal.style.transform = "none";
+      } else {
+        const rotX = 14 * (1 - p);
+        const rotY = -4 * (1 - p);
+        const sc = 0.88 + 0.12 * p;
+        terminal.style.transform = `rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg) scale(${sc.toFixed(3)})`;
+      }
       
       if (laser) laser.style.opacity = "0";
       if (boxMic) boxMic.style.opacity = "0";
       if (boxLight) boxLight.style.opacity = "0";
       if (boxHoodie) boxHoodie.style.opacity = "0";
       
-      if (cardShure) { cardShure.style.opacity = "0"; cardShure.style.transform = "translateY(50px) translateZ(80px) scale(0.85)"; }
+      if (cardShure) { cardShure.style.opacity = "0"; cardShure.style.transform = isMobile ? "translateY(20px)" : "translateY(50px) translateZ(80px) scale(0.85)"; }
       if (cardElgato) { cardElgato.style.opacity = "0"; cardElgato.style.transform = "translateY(50px) translateZ(100px) scale(0.85)"; }
       if (cardChampion) { cardChampion.style.opacity = "0"; cardChampion.style.transform = "translateY(50px) translateZ(80px) scale(0.85)"; }
 
@@ -97,7 +102,7 @@ function initScrollTransformation() {
     } else if (progress < 0.68) {
       // Phase 2: Laser Optical Scan & Target Bounding Boxes Lock
       const p = (progress - 0.33) / 0.35;
-      terminal.style.transform = `rotateX(0deg) rotateY(0deg) scale(1.0)`;
+      terminal.style.transform = "none";
 
       if (laser) {
         laser.style.opacity = "1";
@@ -125,22 +130,16 @@ function initScrollTransformation() {
     } else {
       // Phase 3: 3D Product Extraction & 1-Click Amazon Cart
       const p = (progress - 0.68) / 0.32;
-      terminal.style.transform = `rotateX(4deg) scale(0.98)`;
-
-      if (laser) laser.style.opacity = "0";
-      if (boxMic) boxMic.style.opacity = "0.2";
-      if (boxLight) boxLight.style.opacity = "0.2";
-      if (boxHoodie) boxHoodie.style.opacity = "0.2";
-
       const cardProgress = Math.min(1, p * 1.5);
-      const isMobile = window.innerWidth <= 768;
 
       if (isMobile) {
+        terminal.style.transform = "none";
         if (cardShure) {
           cardShure.style.opacity = `${cardProgress}`;
-          cardShure.style.transform = `translateY(${(10 * (1 - cardProgress)).toFixed(1)}px) scale(${0.92 + 0.08 * cardProgress})`;
+          cardShure.style.transform = `translateY(0) scale(1)`;
         }
       } else {
+        terminal.style.transform = `rotateX(4deg) scale(0.98)`;
         if (cardShure) {
           cardShure.style.opacity = `${cardProgress}`;
           cardShure.style.transform = `translateY(${(20 * (1 - cardProgress)).toFixed(1)}px) translateZ(90px) rotateY(-6deg) scale(${0.85 + 0.15 * cardProgress})`;
@@ -155,6 +154,11 @@ function initScrollTransformation() {
         }
       }
 
+      if (laser) laser.style.opacity = "0";
+      if (boxMic) boxMic.style.opacity = isMobile ? "0" : "0.2";
+      if (boxLight) boxLight.style.opacity = isMobile ? "0" : "0.2";
+      if (boxHoodie) boxHoodie.style.opacity = isMobile ? "0" : "0.2";
+
       if (ms1) ms1.classList.remove("active");
       if (ms2) ms2.classList.remove("active");
       if (ms3) ms3.classList.add("active");
@@ -162,6 +166,17 @@ function initScrollTransformation() {
       if (caption) caption.textContent = "3 verified products extracted and staged directly for official Amazon checkout";
     }
   }
+
+  // Allow clicking milestone tabs on mobile/desktop
+  [ms1, ms2, ms3].forEach((ms, idx) => {
+    if (ms) {
+      ms.style.cursor = "pointer";
+      ms.addEventListener("click", () => {
+        const targetScroll = track.offsetTop + (idx * 0.45 * (track.offsetHeight - window.innerHeight));
+        window.scrollTo({ top: targetScroll, behavior: "smooth" });
+      });
+    }
+  });
 
   window.addEventListener("scroll", onScroll, { passive: true });
   onScroll();
