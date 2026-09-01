@@ -4,22 +4,34 @@
  */
 
 export const CURRENT_BUILD = {
-  version: "1.5.2",
-  buildDate: "2026-08-31",
-  buildTime: "14:45",
-  buildTimestamp: "2026-08-31 14:45:00 IDT",
-  title: "TikTok Left Dock & Direct Click Shielding",
+  version: "1.6.0",
+  buildDate: "2026-09-01",
+  buildTime: "12:20",
+  buildTimestamp: "2026-09-01 12:20:00 IDT",
+  title: "Forced Updates, Account Header & Master On/Off",
   highlights: [
-    "🚀 TikTok Left Dock: Relocated in-video toolbar to a sleek vertical sidebar dock on the left side (left: 16px, top: 100px) — 100% clear of creator profile, '+ Follow' button and gift overlays.",
-    "🛡️ Event Shielding: Intercepts all mouse/pointer/touch events with stopImmediatePropagation so video players (TikTok/Twitch/YouTube) cannot intercept or block button clicks.",
-    "🖐️ Draggable Floating Dock: Move the toolbar freely anywhere on the video screen by dragging the ⋮⋮ handle.",
-    "📱 Vertical Icon Stacking: Compact 54px dock with vertically aligned icons (Scan ⚡, Snip 🎯, Live 🟢).",
-    "🔍 Built-in Version Tracker: Full in-app release date, time, and changelog history viewer."
+    "🔒 Forced Update Gate: The panel now checks the server for a required minimum version and hard-blocks with an 'Update required' screen when this build is too old — no bypass.",
+    "👤 Account in Header: Your signed-in Google account (name, email, avatar) now shows at the top of every tab, with a one-click Sign out button.",
+    "⚡ Master On/Off Switch: A power toggle in the header turns the whole extension on or off. While off, nothing runs in the background.",
+    "🛡️ OFF Guard: When disabled, the side panel shows a clear guard screen and the video page shows an 'OFF' pill, so you always know its state.",
+    "🚫 Background Safety: Auto-scan alarms and scans are refused whenever the extension is off."
   ]
 };
 
 export const VERSION_HISTORY = [
   CURRENT_BUILD,
+  {
+    version: "1.5.2",
+    buildDate: "2026-08-31",
+    buildTime: "14:45",
+    buildTimestamp: "2026-08-31 14:45:00 IDT",
+    title: "TikTok Left Dock & Direct Click Shielding",
+    highlights: [
+      "🚀 TikTok Left Dock: Relocated in-video toolbar to a vertical sidebar dock clear of creator profile and gift overlays.",
+      "🛡️ Event Shielding: stopImmediatePropagation so video players cannot block button clicks.",
+      "🖐️ Draggable Floating Dock and built-in version tracker."
+    ]
+  },
   {
     version: "1.5.1",
     buildDate: "2026-08-31",

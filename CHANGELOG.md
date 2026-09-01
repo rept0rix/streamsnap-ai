@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.6.0] - 2026-09-01 (12:20 IDT)
+
+### Added
+- **Forced Update Gate**: The side panel now polls the server's `/version` endpoint on open and hard-blocks with a full-screen "Update required" screen when the installed build is older than the server's `minVersion`. The gate fails open on network errors (a worker outage never bricks the extension) but stays blocked once a build is positively known to be outdated. Controlled server-side via `MIN_EXTENSION_VERSION` in `wrangler.toml` and returned in both `/version` and `/auth/me`.
+- **Account in Header**: The signed-in Google account (avatar, name, email) now appears at the top of every tab, alongside a one-click **Sign out** button and a **Sign in with Google** prompt when signed out.
+- **Master On/Off Switch**: A power toggle in the header enables or disables the whole extension. State is stored in `extensionEnabled`.
+- **OFF Guard State**: While disabled, the side panel shows a full guard screen with a "Turn StreamSnap on" button, and the video page shows a fixed "⚡ StreamSnap is OFF" pill so the state is unmistakable on-page.
+
+### Changed
+- **Background Safety**: When the extension is off, auto-scan `chrome.alarms` are cleared, the keyboard shortcut is ignored, and the service worker refuses `ANALYZE_WITH_AI` / `ANALYZE_CROPPED_IMAGE`. On-video controls are stripped and scans refused in the content script too.
+
+---
+
 ## [1.5.2] - 2026-08-31 (14:45 IDT)
 
 ### Added

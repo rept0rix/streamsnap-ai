@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "StreamSnap AI — Live Stream Visual Shopping",
-  "version": "1.5.2",
+  "version": "1.6.0",
   "description": "Visual product discovery for live streams. Point at anything on YouTube, Twitch, TikTok or Kick and find it on Amazon.",
   "homepage_url": "https://streamsnap.online",
   "icons": {

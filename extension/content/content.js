@@ -12,7 +12,7 @@
   "use strict";
 
   console.log(
-    "%c⚡ [StreamSnap AI] Active Build: v1.5.2 (2026-08-31 14:45 IDT) | Platform: " +
+    "%c⚡ [StreamSnap AI] Active Build: v1.6.0 (2026-09-01 12:20 IDT) | Platform: " +
       window.location.hostname,
     "background: #131921; color: #FF9900; font-weight: bold; padding: 4px 8px; border: 1px solid #FF9900; border-radius: 4px;"
   );
@@ -20,6 +20,9 @@
   const hookedVideos = new WeakSet();
   let isLiveClickModeActive = false;
   let scanInFlight = false;
+  // Master on/off. Mirrors chrome.storage.local.extensionEnabled. When false,
+  // the on-video controls are removed and scans are refused on the page too.
+  let extensionEnabled = true;
 
   // -------------------------------------------------------------------------
   // Safe DOM helpers — never interpolate page or model text into innerHTML.
@@ -370,9 +373,9 @@
 
     // Check stored display preferences
     chrome.storage.local.get(
-      ["showFloatingControls", "floatingControlsMinimized", "floatingControlsHidden"],
+      ["showFloatingControls", "floatingControlsMinimized", "floatingControlsHidden", "extensionEnabled"],
       (prefs = {}) => {
-        if (prefs.showFloatingControls === false) {
+        if (prefs.extensionEnabled === false || prefs.showFloatingControls === false) {
           btnGroup.style.display = "none";
           hiddenDot.style.display = "none";
           return;
@@ -750,6 +753,10 @@
   }
 
   async function triggerStreamScan(video, container, isSilent = false) {
+    if (!extensionEnabled) {
+      if (!isSilent) showToast(container, "StreamSnap is OFF. Turn it on from the side panel to scan.");
+      return;
+    }
     if (scanInFlight) return;
     scanInFlight = true;
 
@@ -897,6 +904,7 @@
   );
 
   chrome.runtime.onMessage.addListener((message) => {
+    if (!extensionEnabled) return; // off means off, whatever asks
     if (message.action === "TRIGGER_SCAN") {
       const player = getActivePlayer();
       if (player) triggerStreamScan(player.video, player.container, false);
@@ -907,6 +915,68 @@
       if (player && !player.video.paused && document.visibilityState === "visible") {
         triggerStreamScan(player.video, player.container, true);
       }
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // Master on/off guard
+  //
+  // When the extension is switched off, strip every injected control from the
+  // page and drop a small, unobtrusive "OFF" pill so the state is visible on
+  // the video itself — not just in the side panel. Switching back on re-injects.
+  // -------------------------------------------------------------------------
+
+  function showGuardPill() {
+    if (document.querySelector(".streamsnap-guard-pill")) return;
+    const pill = el("div", "streamsnap-guard-pill");
+    pill.textContent = "⚡ StreamSnap is OFF";
+    pill.title = "StreamSnap is disabled. Open the side panel to turn it back on.";
+    Object.assign(pill.style, {
+      position: "fixed",
+      bottom: "18px",
+      left: "18px",
+      zIndex: "2147483646",
+      background: "rgba(9,13,20,0.92)",
+      color: "#F59E0B",
+      border: "1px solid rgba(245,158,11,0.5)",
+      borderRadius: "999px",
+      padding: "7px 14px",
+      fontSize: "12px",
+      fontWeight: "700",
+      fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif",
+      boxShadow: "0 6px 20px rgba(0,0,0,0.45)",
+      pointerEvents: "none",
+      backdropFilter: "blur(4px)"
+    });
+    document.body.appendChild(pill);
+  }
+
+  function removeGuardPill() {
+    document.querySelector(".streamsnap-guard-pill")?.remove();
+  }
+
+  function applyEnabledState(enabled) {
+    extensionEnabled = enabled;
+    if (enabled) {
+      removeGuardPill();
+      // Re-inject controls that were stripped while off.
+      initUniversalVideoHook();
+    } else {
+      // Remove all injected controls and restore dots.
+      document
+        .querySelectorAll(".streamsnap-btn-group, .streamsnap-hidden-dot")
+        .forEach((node) => node.remove());
+      showGuardPill();
+    }
+  }
+
+  chrome.storage.local.get(["extensionEnabled"], (res = {}) => {
+    if (res.extensionEnabled === false) applyEnabledState(false);
+  });
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === "local" && changes.extensionEnabled) {
+      applyEnabledState(changes.extensionEnabled.newValue !== false);
     }
   });
 

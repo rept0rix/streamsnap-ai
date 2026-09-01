@@ -23,6 +23,7 @@ import {
   saveAffiliateTag
 } from "../services/account.js";
 import { CURRENT_BUILD, VERSION_HISTORY } from "../services/version_info.js";
+import { checkVersionGate } from "../services/version_gate.js";
 
 const state = {
   scan: null,
@@ -51,8 +52,107 @@ document.addEventListener("DOMContentLoaded", () => {
   initCatalogFilters();
   initModal();
   initOnboarding();
+  initMasterToggle();
   loadInitialData();
+  initVersionGate();
 });
+
+// ---------------------------------------------------------------------------
+// Version gate — hard-blocks the panel when this build is too old.
+// ---------------------------------------------------------------------------
+
+async function initVersionGate() {
+  const overlay = byId("update-required-overlay");
+  const recheckBtn = byId("update-recheck-btn");
+
+  async function run() {
+    let result;
+    try {
+      result = await checkVersionGate();
+    } catch {
+      return; // never brick the panel on an unexpected error
+    }
+
+    if (!result.blocked) {
+      if (overlay) overlay.style.display = "none";
+      return;
+    }
+
+    const cur = byId("update-current-version");
+    const min = byId("update-min-version");
+    const text = byId("update-required-text");
+    const link = byId("update-site-link");
+    if (cur) cur.textContent = `v${result.currentVersion}`;
+    if (min) min.textContent = `v${result.minVersion || "?"}`;
+    if (text) {
+      text.textContent = `This copy of StreamSnap (v${result.currentVersion}) is no longer supported. Update to v${result.minVersion} or newer to keep scanning.`;
+    }
+    if (link && result.updateUrl) link.href = result.updateUrl;
+    if (overlay) overlay.style.display = "flex";
+  }
+
+  recheckBtn?.addEventListener("click", async () => {
+    recheckBtn.disabled = true;
+    const original = recheckBtn.textContent;
+    recheckBtn.textContent = "Checking…";
+    await run();
+    recheckBtn.disabled = false;
+    recheckBtn.textContent = original;
+  });
+
+  await run();
+}
+
+// ---------------------------------------------------------------------------
+// Master on/off switch
+//
+// A single flag, extensionEnabled, gates the whole product. When off: scanning
+// is refused here and in the service worker, the on-video controls are removed,
+// and a full guard screen makes the state unmistakable.
+// ---------------------------------------------------------------------------
+
+let appEnabled = true;
+
+function paintMasterToggle(enabled) {
+  appEnabled = enabled;
+  const toggle = byId("master-power-toggle");
+  const label = byId("power-toggle-lbl");
+  const guard = byId("disabled-guard-overlay");
+  const container = document.querySelector(".panel-container");
+
+  if (toggle) {
+    toggle.classList.toggle("is-on", enabled);
+    toggle.setAttribute("aria-checked", String(enabled));
+  }
+  if (label) label.textContent = enabled ? "ON" : "OFF";
+  if (container) container.classList.toggle("app-disabled", !enabled);
+  // The update gate outranks the OFF guard; don't cover an update screen.
+  const updateShowing = byId("update-required-overlay")?.style.display === "flex";
+  if (guard) guard.style.display = enabled || updateShowing ? "none" : "flex";
+}
+
+function initMasterToggle() {
+  chrome.storage.local.get(["extensionEnabled"], (res = {}) => {
+    paintMasterToggle(res.extensionEnabled !== false);
+  });
+
+  byId("master-power-toggle")?.addEventListener("click", () => {
+    const next = !appEnabled;
+    chrome.storage.local.set({ extensionEnabled: next });
+    paintMasterToggle(next);
+  });
+
+  byId("guard-enable-btn")?.addEventListener("click", () => {
+    chrome.storage.local.set({ extensionEnabled: true });
+    paintMasterToggle(true);
+  });
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === "local" && changes.extensionEnabled) {
+      paintMasterToggle(changes.extensionEnabled.newValue !== false);
+    }
+  });
+}
 
 // ---------------------------------------------------------------------------
 // DOM helpers
@@ -270,10 +370,36 @@ function initSettings() {
 // Account
 // ---------------------------------------------------------------------------
 
+function renderHeaderAccount(profile) {
+  const signedIn = Boolean(profile?.signedIn);
+  const user = profile?.user || {};
+
+  show("header-account-in", signedIn, "flex");
+  show("header-account-out", !signedIn, "flex");
+  if (!signedIn) return;
+
+  const nameEl = byId("header-account-name");
+  const emailEl = byId("header-account-email");
+  const avatar = byId("header-avatar");
+
+  if (nameEl) nameEl.textContent = user.name || "Signed in";
+  if (emailEl) emailEl.textContent = user.email || "";
+  if (avatar) {
+    if (user.avatarUrl) {
+      avatar.src = user.avatarUrl;
+      avatar.style.display = "block";
+      avatar.addEventListener("error", () => { avatar.style.display = "none"; }, { once: true });
+    } else {
+      avatar.style.display = "none";
+    }
+  }
+}
+
 function renderAccount(profile) {
   const signedIn = Boolean(profile?.signedIn);
   show("account-signed-out", !signedIn);
   show("account-signed-in", signedIn);
+  renderHeaderAccount(profile);
   if (!signedIn) return;
 
   const user = profile.user || {};
@@ -328,30 +454,42 @@ function showSignInError(message) {
   box.style.display = message ? "block" : "none";
 }
 
+async function runSignIn(btn, restoreText) {
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Opening Google…";
+  }
+  showSignInError("");
+  try {
+    const profile = await signIn();
+    renderAccount(profile);
+  } catch (err) {
+    showSignInError(err.message || "Sign-in failed.");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = restoreText;
+    }
+  }
+}
+
+async function runSignOut() {
+  await signOut();
+  renderAccount({ signedIn: false });
+}
+
 function initAccount() {
   fetchProfile().then(renderAccount);
 
-  byId("signin-btn")?.addEventListener("click", async (e) => {
-    const btn = e.currentTarget;
-    btn.disabled = true;
-    btn.textContent = "Opening Google…";
-    showSignInError("");
+  byId("signin-btn")?.addEventListener("click", (e) =>
+    runSignIn(e.currentTarget, "Continue with Google")
+  );
+  byId("header-signin-btn")?.addEventListener("click", (e) =>
+    runSignIn(e.currentTarget, "Sign in with Google")
+  );
 
-    try {
-      const profile = await signIn();
-      renderAccount(profile);
-    } catch (err) {
-      showSignInError(err.message || "Sign-in failed.");
-    } finally {
-      btn.disabled = false;
-      btn.textContent = "Continue with Google";
-    }
-  });
-
-  byId("signout-btn")?.addEventListener("click", async () => {
-    await signOut();
-    renderAccount({ signedIn: false });
-  });
+  byId("signout-btn")?.addEventListener("click", runSignOut);
+  byId("header-signout-btn")?.addEventListener("click", runSignOut);
 
   byId("delete-account-btn")?.addEventListener("click", async () => {
     const warning =
@@ -759,6 +897,11 @@ function showScanError(message) {
 }
 
 function triggerDirectScan() {
+  if (!appEnabled) {
+    const guard = byId("disabled-guard-overlay");
+    if (guard) guard.style.display = "flex";
+    return;
+  }
   showScanningState();
 
   chrome.storage.local.get(["geminiApiKey"], (res = {}) => {

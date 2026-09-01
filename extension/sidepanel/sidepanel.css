@@ -1920,3 +1920,228 @@ details[open] .advanced-summary::before { content: "▾ "; }
 }
 
 
+
+/* ==========================================================================
+   v1.6.0 — Master on/off toggle, header account chip, blocking overlays
+   ========================================================================== */
+
+/* Overlays anchor to the panel container. */
+.panel-container { position: relative; }
+
+/* --- Master power toggle (header) --- */
+.power-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  font-family: inherit;
+}
+.power-toggle-track {
+  position: relative;
+  width: 34px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  transition: background 0.18s ease;
+  flex-shrink: 0;
+}
+.power-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.18s ease;
+}
+.power-toggle-lbl {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+.power-toggle.is-on .power-toggle-track { background: var(--exact-green); }
+.power-toggle.is-on .power-toggle-thumb { transform: translateX(16px); }
+.power-toggle.is-on .power-toggle-lbl { color: var(--exact-green); }
+.power-toggle:not(.is-on) .power-toggle-lbl { color: var(--danger-red); }
+.power-toggle:focus-visible { outline: 2px solid var(--primary-gold); border-radius: 8px; }
+
+/* --- Header account bar --- */
+.header-account-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.header-account-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 4px 6px 4px 4px;
+}
+.header-account-chip.signed-out { padding: 6px 8px 6px 12px; }
+.header-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--bg-card-hover);
+  flex-shrink: 0;
+}
+.header-account-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  line-height: 1.2;
+}
+.header-account-name {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.header-account-email {
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.header-signout-btn,
+.header-signin-btn {
+  flex-shrink: 0;
+  border: 1px solid var(--border-color);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.header-signout-btn:hover { color: var(--danger-red); border-color: var(--danger-red); }
+.header-signin-btn {
+  margin-left: auto;
+  background: var(--primary-gold);
+  color: #10151f;
+  border-color: transparent;
+}
+.header-signin-btn:hover { background: var(--primary-gold-hover); }
+
+/* Dim the shell (minus header) while OFF, so the switch stays reachable. */
+.panel-container.app-disabled .panel-body { filter: grayscale(0.6) opacity(0.5); pointer-events: none; }
+
+/* --- Blocking overlays (update gate + OFF guard) --- */
+.blocking-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(9, 13, 20, 0.92);
+  backdrop-filter: blur(4px);
+}
+.update-overlay { z-index: 1000; background: rgba(9, 13, 20, 0.97); }
+.blocking-card {
+  max-width: 320px;
+  text-align: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 26px 22px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+}
+.blocking-icon {
+  width: 68px;
+  height: 68px;
+  margin: 0 auto 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 153, 0, 0.1);
+}
+.guard-icon { background: rgba(245, 158, 11, 0.12); }
+.blocking-card h2 {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+.blocking-card p {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+.blocking-btn {
+  display: inline-block;
+  border: none;
+  background: var(--primary-gold);
+  color: #10151f;
+  font-weight: 800;
+  font-size: 13px;
+  border-radius: var(--radius-md);
+  padding: 10px 18px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+.blocking-btn:hover { background: var(--primary-gold-hover); }
+.blocking-btn.secondary {
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+.blocking-btn.secondary:hover { color: var(--primary-gold); }
+.update-version-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.update-version-badge {
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+.update-version-badge strong { color: var(--text-primary); }
+.update-version-badge.required { border-color: var(--primary-gold); }
+.update-version-badge.required strong { color: var(--primary-gold); }
+.update-version-arrow { color: var(--text-muted); font-weight: 700; }
+.update-steps {
+  text-align: left;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0 0 16px;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.update-steps code {
+  background: var(--bg-surface);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--primary-gold);
+}
+.update-actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }

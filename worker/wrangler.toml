@@ -16,6 +16,12 @@ PUBLIC_BASE_URL = "https://streamsnap-lens.na0ryank0.workers.dev"
 # no trailing slash, no wildcards. Add the www host too if the site answers on it.
 ALLOWED_ORIGINS = "https://streamsnap.online,https://www.streamsnap.online"
 
+# Oldest extension build allowed to run. The extension polls /version and hard-
+# blocks itself with an "update required" screen when its installed version is
+# older than this. Bump it to force everyone below onto the new build without a
+# code deploy. Must be a bare semver (e.g. "1.6.0").
+MIN_EXTENSION_VERSION = "1.6.0"
+
 # Cached Lens results and rate-limit counters.
 [[kv_namespaces]]
 binding = "CACHE"

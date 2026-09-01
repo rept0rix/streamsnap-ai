@@ -32,8 +32,25 @@ const DEFAULTS = {
   minConfidence: 50,
   affiliateTag: "streamsnap03-20",
   showFloatingControls: true,
-  onboardingCompleted: false
+  onboardingCompleted: false,
+  extensionEnabled: true // master on/off switch
 };
+
+async function isExtensionEnabled() {
+  const { extensionEnabled } = await chrome.storage.local.get(["extensionEnabled"]);
+  return extensionEnabled !== false;
+}
+
+/**
+ * True when the panel has positively determined this build is older than the
+ * server's required minimum. Refusing scans here means an outdated build cannot
+ * keep working through the on-video controls either. Fails open: if the gate has
+ * never run (no cached verdict), scanning is allowed.
+ */
+async function isUpdateRequired() {
+  const { versionGate } = await chrome.storage.local.get(["versionGate"]);
+  return Boolean(versionGate?.blocked);
+}
 
 const AUTO_SCAN_ALARM = "streamsnap-auto-scan";
 const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-flash-latest"];
@@ -81,6 +98,8 @@ chrome.sidePanel
 
 async function syncAutoScanAlarm(intervalSeconds) {
   await chrome.alarms.clear(AUTO_SCAN_ALARM);
+  // A disabled extension must never wake itself to scan in the background.
+  if (!(await isExtensionEnabled())) return;
   const seconds = Number(intervalSeconds);
   if (!Number.isFinite(seconds) || seconds <= 0) return;
 
@@ -91,6 +110,7 @@ async function syncAutoScanAlarm(intervalSeconds) {
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name !== AUTO_SCAN_ALARM) return;
+  if (!(await isExtensionEnabled())) return;
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) return;
   chrome.tabs.sendMessage(tab.id, { action: "TRIGGER_AUTO_SCAN" }).catch(() => {
@@ -98,9 +118,16 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   });
 });
 
-chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === "local" && changes.autoScanIntervalSec) {
-    syncAutoScanAlarm(changes.autoScanIntervalSec.newValue);
+chrome.storage.onChanged.addListener(async (changes, area) => {
+  if (area !== "local") return;
+  if (changes.autoScanIntervalSec) {
+    const { autoScanIntervalSec } = await chrome.storage.local.get(["autoScanIntervalSec"]);
+    syncAutoScanAlarm(autoScanIntervalSec);
+  }
+  // Toggling the master switch re-evaluates whether the alarm should exist.
+  if (changes.extensionEnabled) {
+    const { autoScanIntervalSec } = await chrome.storage.local.get(["autoScanIntervalSec"]);
+    syncAutoScanAlarm(autoScanIntervalSec);
   }
 });
 
@@ -511,6 +538,16 @@ const handlers = {
   },
 
   async ANALYZE_WITH_AI(message) {
+    if (await isUpdateRequired()) {
+      const reason = "StreamSnap must be updated before you can scan.";
+      await publishScanError(reason);
+      return { success: false, error: reason, updateRequired: true };
+    }
+    if (!(await isExtensionEnabled())) {
+      const reason = "StreamSnap is turned off. Turn it on to scan.";
+      await publishScanError(reason);
+      return { success: false, error: reason, disabled: true };
+    }
     try {
       const data = await runAnalysis({
         imageDataUrl: message.imageBase64,
@@ -527,6 +564,16 @@ const handlers = {
   },
 
   async ANALYZE_CROPPED_IMAGE(message) {
+    if (await isUpdateRequired()) {
+      const reason = "StreamSnap must be updated before you can scan.";
+      await publishScanError(reason);
+      return { success: false, error: reason, updateRequired: true };
+    }
+    if (!(await isExtensionEnabled())) {
+      const reason = "StreamSnap is turned off. Turn it on to scan.";
+      await publishScanError(reason);
+      return { success: false, error: reason, disabled: true };
+    }
     try {
       const data = await runAnalysis({
         imageDataUrl: message.croppedImage,
@@ -706,6 +753,7 @@ const handlers = {
 // because setPanelBehavior({ openPanelOnActionClick: true }) consumes the click.
 chrome.commands?.onCommand.addListener(async (command) => {
   if (command !== "scan-active-stream") return;
+  if (!(await isExtensionEnabled())) return;
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) return;
   await chrome.sidePanel.open({ tabId: tab.id }).catch(() => {});

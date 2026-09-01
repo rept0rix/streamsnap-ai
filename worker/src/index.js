@@ -30,6 +30,20 @@ const LIMITS = {
   UPSTREAM_TIMEOUT_MS: 20000
 };
 
+/**
+ * The oldest extension build still allowed to run. Bump this to force every
+ * client below it into a hard "update required" gate. Overridable at runtime
+ * via the MIN_EXTENSION_VERSION var in wrangler.toml so a forced update does
+ * not require a code deploy.
+ */
+const FALLBACK_MIN_EXTENSION_VERSION = "1.6.0";
+const LATEST_EXTENSION_VERSION = "1.6.0";
+
+export function minExtensionVersion(env) {
+  const raw = String(env?.MIN_EXTENSION_VERSION || "").trim();
+  return /^\d+\.\d+\.\d+$/.test(raw) ? raw : FALLBACK_MIN_EXTENSION_VERSION;
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -37,14 +51,33 @@ export default {
     if (request.method === "OPTIONS") return preflight(request, env);
     if (url.pathname === "/health") return json({ ok: true }, 200, request, env);
 
+    // Version gate feed. The extension polls this on open and hard-blocks itself
+    // when its installed version is older than minVersion. Kept public and
+    // unauthenticated so the gate works even before sign-in.
+    if (url.pathname === "/version") {
+      return json(
+        {
+          ok: true,
+          minVersion: minExtensionVersion(env),
+          latestVersion: LATEST_EXTENSION_VERSION,
+          updateUrl: "https://streamsnap.online"
+        },
+        200,
+        request,
+        env
+      );
+    }
+
     if (url.pathname === "/") {
       return json({
         name: "StreamSnap AI — Lens Resolution Worker & Platform API",
         status: "Operational",
-        version: "1.5.0",
+        version: LATEST_EXTENSION_VERSION,
+        minVersion: minExtensionVersion(env),
         website: "https://streamsnap.online",
         endpoints: {
           health: "/health",
+          version: "/version",
           auth: "/auth/start",
           me: "/auth/me",
           resolve: "POST /resolve",

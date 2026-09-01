@@ -23,19 +23,40 @@
           </div>
         </a>
         <div class="header-status-group">
-          <a href="https://streamsnap.online" target="_blank" rel="noopener noreferrer" class="website-header-btn" title="Open StreamSnap AI Website">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="2" y1="12" x2="22" y2="12"></line>
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-            </svg>
-            <span>Website ↗</span>
-          </a>
+          <!-- Master on/off switch — reachable from every tab. -->
+          <button id="master-power-toggle" class="power-toggle is-on" role="switch" aria-checked="true" title="Turn StreamSnap on or off">
+            <span class="power-toggle-track"><span class="power-toggle-thumb"></span></span>
+            <span class="power-toggle-lbl" id="power-toggle-lbl">ON</span>
+          </button>
           <div class="amazon-badge" title="Amazon 1-Click Remote Cart Active">
             <span class="prime-text">prime</span>
             <span class="status-dot"></span>
           </div>
         </div>
+      </div>
+
+      <!-- Account bar: who is signed in, and a way out. Visible on every tab. -->
+      <div class="header-account-bar">
+        <div id="header-account-in" class="header-account-chip" style="display:none;">
+          <img id="header-avatar" class="header-avatar" alt="" />
+          <span class="header-account-meta">
+            <span id="header-account-name" class="header-account-name">Signed in</span>
+            <span id="header-account-email" class="header-account-email"></span>
+          </span>
+          <button id="header-signout-btn" class="header-signout-btn" title="Sign out of StreamSnap">Sign out</button>
+        </div>
+        <div id="header-account-out" class="header-account-chip signed-out" style="display:none;">
+          <span class="header-account-name">Not signed in</span>
+          <button id="header-signin-btn" class="header-signin-btn">Sign in with Google</button>
+        </div>
+        <a href="https://streamsnap.online" target="_blank" rel="noopener noreferrer" class="website-header-btn" title="Open StreamSnap AI Website">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+          <span>Website ↗</span>
+        </a>
       </div>
 
       <!-- Navigation Tabs -->
@@ -604,8 +625,8 @@
             
             <div id="version-info-container" class="version-card">
               <div class="version-badge-header">
-                <span class="version-pill-tag" id="panel-version-tag">v1.5.2</span>
-                <span class="version-timestamp-tag" id="panel-version-time">31/08/2026 14:45 IDT</span>
+                <span class="version-pill-tag" id="panel-version-tag">v1.6.0</span>
+                <span class="version-timestamp-tag" id="panel-version-time">01/09/2026 12:20 IDT</span>
               </div>
               <div class="version-title-text" id="panel-version-title">TikTok Left Dock & Direct Click Shielding</div>
               <ul class="version-changelog-list" id="panel-changelog-list">
@@ -710,11 +731,56 @@
       <div class="footer-info">
         <a href="https://streamsnap.online" target="_blank" rel="noopener noreferrer" class="footer-link">streamsnap.online ↗</a>
         <span>•</span>
-        <span id="footer-version-tag" class="footer-version-badge" title="StreamSnap AI v1.5.2 Built 2026-08-31 14:45 IDT">v1.5.2 (31/08 14:45)</span>
+        <span id="footer-version-tag" class="footer-version-badge" title="StreamSnap AI v1.6.0 Built 2026-09-01 12:20 IDT">v1.6.0 (01/09 12:20)</span>
         <span>•</span>
         <span id="footer-storage-note">Data stored locally</span>
       </div>
     </footer>
+
+    <!-- OFF guard — shown whenever the master switch is off. -->
+    <div id="disabled-guard-overlay" class="blocking-overlay guard-overlay" style="display:none;">
+      <div class="blocking-card">
+        <div class="blocking-icon guard-icon" aria-hidden="true">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+            <line x1="12" y1="2" x2="12" y2="12"></line>
+          </svg>
+        </div>
+        <h2>StreamSnap is turned OFF</h2>
+        <p>Scanning and the on-video buttons are paused. Nothing runs in the background while it's off.</p>
+        <button id="guard-enable-btn" class="blocking-btn">Turn StreamSnap on</button>
+      </div>
+    </div>
+
+    <!-- Update gate — blocks everything until the user updates. Highest layer. -->
+    <div id="update-required-overlay" class="blocking-overlay update-overlay" style="display:none;">
+      <div class="blocking-card">
+        <div class="blocking-icon update-icon" aria-hidden="true">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+            <path d="M3 3v5h5"></path>
+            <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+            <path d="M16 21h5v-5"></path>
+          </svg>
+        </div>
+        <h2>Update required</h2>
+        <p id="update-required-text">A newer version of StreamSnap is required to continue.</p>
+        <div class="update-version-row">
+          <span class="update-version-badge">Installed <strong id="update-current-version">—</strong></span>
+          <span class="update-version-arrow">→</span>
+          <span class="update-version-badge required">Required <strong id="update-min-version">—</strong></span>
+        </div>
+        <ol class="update-steps">
+          <li>Open <code>chrome://extensions</code></li>
+          <li>Enable <strong>Developer mode</strong>, then click <strong>Update</strong>.</li>
+          <li>Reopen this panel.</li>
+        </ol>
+        <div class="update-actions">
+          <button id="update-recheck-btn" class="blocking-btn">Check again</button>
+          <a id="update-site-link" href="https://streamsnap.online" target="_blank" rel="noopener noreferrer" class="blocking-btn secondary">Open website ↗</a>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="sidepanel.js" type="module"></script>

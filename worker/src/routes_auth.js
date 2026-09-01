@@ -27,6 +27,7 @@ import {
   audit
 } from "./auth.js";
 import { quotaFor, getUsage } from "./quota.js";
+import { minExtensionVersion } from "./index.js";
 
 /** Only these return targets may ever receive a session token. */
 function isAllowedReturnUrl(url, env) {
@@ -176,7 +177,8 @@ export async function handleAuthRoute(request, env, url, json) {
           affiliateTag: user.affiliate_tag,
           blocked: Boolean(user.blocked_at)
         },
-        quota: { used, limit, remaining: Math.max(0, limit - used) }
+        quota: { used, limit, remaining: Math.max(0, limit - used) },
+        minVersion: minExtensionVersion(env)
       },
       200,
       request,

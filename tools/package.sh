@@ -23,3 +23,9 @@ rm -f "$OUT"
 
 SIZE="$(du -h "$OUT" | cut -f1)"
 echo "✓ built $OUT ($SIZE)"
+
+mkdir -p landing_page/assets
+rm -f landing_page/assets/streamsnap-extension-*.zip
+cp "$OUT" "landing_page/assets/streamsnap-extension-v${VERSION}.zip"
+cp "$OUT" "landing_page/assets/streamsnap-extension-latest.zip"
+echo "✓ synced to landing_page/assets/streamsnap-extension-latest.zip"
