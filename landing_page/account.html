@@ -283,12 +283,13 @@
 
       logoutBtn?.addEventListener("click", async () => {
         try {
-          await fetch(`${workerBase}/auth/logout`, { method: "POST", credentials: "include" });
+          await authFetch(`${workerBase}/auth/logout`, { method: "POST" });
         } catch (_) {}
+        localStorage.removeItem("streamSnapSession");
         window.location.href = "index.html";
       });
 
-      fetch(`${workerBase}/auth/me`, { credentials: "include" })
+      authFetch(`${workerBase}/auth/me`)
         .then(r => r.ok ? r.json() : null)
         .then(data => {
           loadingEl.style.display = "none";

@@ -692,6 +692,33 @@ function initFAQ() {
   });
 }
 
+// ===================== AUTH TOKEN & FETCH =====================
+function getAuthToken() {
+  if (window.location.hash) {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const token = hashParams.get("token");
+    if (token) {
+      localStorage.setItem("streamSnapSession", token);
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+      return token;
+    }
+  }
+  return localStorage.getItem("streamSnapSession") || "";
+}
+
+function authFetch(url, options = {}) {
+  const token = getAuthToken();
+  const headers = new Headers(options.headers || {});
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+  return fetch(url, {
+    ...options,
+    headers,
+    credentials: "include"
+  });
+}
+
 // ===================== NAV AUTH STATE =====================
 function initNavAuth() {
   const workerBase = getWorkerBase();
@@ -710,14 +737,15 @@ function initNavAuth() {
   signoutLink?.addEventListener("click", async (e) => {
     e.preventDefault();
     try {
-      await fetch(`${workerBase}/auth/logout`, { method: "POST", credentials: "include" });
+      await authFetch(`${workerBase}/auth/logout`, { method: "POST" });
     } catch (_) {}
+    localStorage.removeItem("streamSnapSession");
     signinBtn.style.display = "";
     userPill.style.display = "none";
   });
 
   // Check auth state
-  fetch(`${workerBase}/auth/me`, { credentials: "include" })
+  authFetch(`${workerBase}/auth/me`)
     .then((r) => r.ok ? r.json() : null)
     .then((data) => {
       if (data?.ok && data.signedIn) {

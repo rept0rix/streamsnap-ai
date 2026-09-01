@@ -147,12 +147,17 @@ export async function handleAuthRoute(request, env, url, json) {
       return redirect(`${stored.returnTo}#token=${encodeURIComponent(token)}`);
     }
 
-    const target =
+    let target =
       stored.returnTo && isAllowedReturnUrl(stored.returnTo, env)
         ? stored.returnTo
         : `${env.PUBLIC_BASE_URL.replace(/\/$/, "")}/`;
 
-    return redirect(target, { "Set-Cookie": sessionCookie(token) });
+    const hasHash = target.includes("#");
+    const redirectUrl = hasHash
+      ? `${target}&token=${encodeURIComponent(token)}`
+      : `${target}#token=${encodeURIComponent(token)}`;
+
+    return redirect(redirectUrl, { "Set-Cookie": sessionCookie(token) });
   }
 
   // --- Who am I ------------------------------------------------------------
