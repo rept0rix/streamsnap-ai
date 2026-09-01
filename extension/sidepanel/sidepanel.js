@@ -9,7 +9,10 @@
 import {
   getAmazonCartUrl,
   getAmazonProductUrl,
+  getAmazonSearchUrl,
   getWebSearchUrl,
+  getAllStoreSearchUrls,
+  SUPPORTED_STORES,
   isVerifiedAsin
 } from "../services/amazon_service.js";
 import {
@@ -1223,14 +1226,26 @@ function createProductCard(prod, { catalog = false } = {}) {
   });
   actions.appendChild(amazonLink);
 
-  // 5. Google Shopping link
-  const webLink = el("a", "view-btn web-search-link");
-  webLink.href = getWebSearchUrl(title);
-  webLink.target = "_blank";
-  webLink.rel = "noopener noreferrer";
-  webLink.title = "Compare prices on Google Shopping";
-  webLink.append(createSvgIcon("globe", 12), el("span", null, "Web"));
-  actions.appendChild(webLink);
+  // 5. Multi-Store Search Links
+  const multiStoreDiv = el("div", "multi-store-links");
+  multiStoreDiv.style.display = "flex";
+  multiStoreDiv.style.gap = "4px";
+  multiStoreDiv.style.alignItems = "center";
+  
+  const stores = getAllStoreSearchUrls(title);
+  stores.forEach(store => {
+    const storeLink = el("a", "view-btn store-search-link");
+    storeLink.href = store.url;
+    storeLink.target = "_blank";
+    storeLink.rel = "noopener noreferrer";
+    storeLink.title = `Search on ${store.label}`;
+    storeLink.style.padding = "4px 8px";
+    storeLink.style.minWidth = "auto";
+    storeLink.style.color = store.color;
+    storeLink.textContent = store.icon;
+    multiStoreDiv.appendChild(storeLink);
+  });
+  actions.appendChild(multiStoreDiv);
 
   if (catalog) {
     const delBtn = el("button", "view-btn delete-btn");

@@ -240,12 +240,24 @@ export async function getCurrentUser(env, request) {
   return user;
 }
 
+/**
+ * Session cookie.
+ *
+ * SameSite=None is required, not preferred. The site and the API live on
+ * different registrable domains (streamsnap.online vs workers.dev), so a Lax
+ * cookie would simply not be attached to the site's fetch('/auth/me') call and
+ * every visitor would appear signed out. None demands Secure, which is fine
+ * since everything here is HTTPS.
+ *
+ * CSRF is not a concern for the routes this protects: /auth/me is a read, and
+ * every mutating route requires the bearer token instead.
+ */
 export function sessionCookie(token, { secure = true } = {}) {
   const attrs = [
     `${SESSION_COOKIE}=${token}`,
     "Path=/",
     "HttpOnly",
-    "SameSite=Lax",
+    "SameSite=None",
     `Max-Age=${SESSION_TTL_SECONDS}`
   ];
   if (secure) attrs.push("Secure");
@@ -253,7 +265,8 @@ export function sessionCookie(token, { secure = true } = {}) {
 }
 
 export function clearCookie() {
-  return `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+  // Must mirror the attributes above, or the browser will not match and clear it.
+  return `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=None; Secure; Max-Age=0`;
 }
 
 // ---------------------------------------------------------------------------

@@ -191,10 +191,10 @@ export async function handleAuthRoute(request, env, url, json) {
     const cookie = (request.headers.get("Cookie") || "").match(/ss_session=([^;]+)/);
 
     await destroySession(env, bearer || cookie?.[1]);
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: { "Content-Type": "application/json", "Set-Cookie": clearCookie() }
-    });
+    // Must carry CORS headers: the website calls this cross-origin with
+    // credentials, and without them the browser blocks the response and the
+    // cookie is never cleared.
+    return json({ ok: true }, 200, request, env, { "Set-Cookie": clearCookie() });
   }
 
   // --- Save the affiliate tag ---------------------------------------------
@@ -250,10 +250,7 @@ export async function handleAuthRoute(request, env, url, json) {
     // Drop the quota counter too, so a deleted account leaves nothing behind.
     await env.CACHE.delete(`q:${user.id}:${new Date().toISOString().slice(0, 7)}`).catch(() => {});
 
-    return new Response(JSON.stringify({ ok: true, deleted: true }), {
-      status: 200,
-      headers: { "Content-Type": "application/json", "Set-Cookie": clearCookie() }
-    });
+    return json({ ok: true, deleted: true }, 200, request, env, { "Set-Cookie": clearCookie() });
   }
 
   return null; // not an auth route

@@ -8,9 +8,13 @@ compatibility_date = "2026-08-01"
 [vars]
 PUBLIC_BASE_URL = "https://streamsnap-lens.na0ryank0.workers.dev"
 
-# Leave empty while developing to accept any origin. Once the extension is
-# published, set this to its chrome-extension:// origin.
-ALLOWED_ORIGINS = ""
+# Every origin allowed to (a) receive a session token as an OAuth return target
+# and (b) make credentialed cross-origin calls to /auth/me and /auth/logout.
+#
+# The site MUST be listed here or sign-in fails closed: /auth/start rejects the
+# return address, and the browser blocks the credentialed fetch. Exact origins,
+# no trailing slash, no wildcards. Add the www host too if the site answers on it.
+ALLOWED_ORIGINS = "https://streamsnap.online,https://www.streamsnap.online"
 
 # Cached Lens results and rate-limit counters.
 [[kv_namespaces]]

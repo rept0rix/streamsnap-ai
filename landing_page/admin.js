@@ -118,34 +118,71 @@
   }
 
   async function checkAuth() {
+    // Determine worker base (same as admin.html inline script)
+    const host = location.hostname;
+    const workerBase = (host === 'streamsnap.online' || host === 'www.streamsnap.online')
+      ? ''
+      : 'https://streamsnap-lens.na0ryank0.workers.dev';
+
     try {
-      const res = await fetch("/auth/me");
+      const res = await fetch(`${workerBase}/auth/me`, { credentials: 'include' });
       if (res.ok) {
         const data = await res.json();
-        if (data.ok && data.signedIn && data.user.role === "admin") {
+        if (data.ok && data.signedIn && data.user.role === 'admin') {
           currentUser = data.user;
+          showMainContent(false);
           renderAdminProfile(currentUser);
           await loadLiveStats();
           await loadLiveUsers();
           await loadLiveAudit();
           return;
         }
+        // Signed in but not admin
+        if (data.ok && data.signedIn) {
+          showLoginWall('Your account does not have admin permissions.');
+          return;
+        }
       }
     } catch (e) {
-      console.log("Not logged into live worker or local dev, falling back to interactive demo mode.");
+      console.log('Auth check failed — worker may be offline or credentials missing.');
     }
 
-    // Fallback: Enable interactive demo mode
+    // No live worker with Google credentials: offer demo mode
+    showDemoMode();
+  }
+
+  function showLoginWall(errorMessage) {
+    const wall = el('login-wall');
+    if (wall) { wall.style.display = 'flex'; }
+    if (errorMessage) {
+      const errEl = el('login-wall-error');
+      if (errEl) { errEl.textContent = errorMessage; errEl.style.display = 'block'; }
+    }
+  }
+
+  function showMainContent(isDemo) {
+    const main = el('admin-main-content');
+    if (main) main.style.display = '';
+    const pill = el('admin-user-pill');
+    if (pill) pill.style.display = '';
+    const signoutBtn = el('admin-signout-btn');
+    if (signoutBtn && !isDemo) signoutBtn.style.display = '';
+    const wall = el('login-wall');
+    if (wall) wall.style.display = 'none';
+  }
+
+  function showDemoMode() {
     isDemoMode = true;
     currentUser = DEMO_USERS[0];
     usersData = [...DEMO_USERS];
     auditLogsData = [...DEMO_AUDIT_LOGS];
+    showMainContent(true);
     renderAdminProfile(currentUser);
     renderDemoNotice();
     renderStats({
       totalUsers: usersData.length,
-      proUsers: usersData.filter((u) => u.plan === "pro").length,
-      adminUsers: usersData.filter((u) => u.role === "admin").length,
+      proUsers: usersData.filter((u) => u.plan === 'pro').length,
+      adminUsers: usersData.filter((u) => u.role === 'admin').length,
       blockedUsers: usersData.filter((u) => u.blocked_at).length,
       scansToday: 842,
       scansTotal: 2256,
@@ -157,15 +194,15 @@
   }
 
   function renderAdminProfile(user) {
-    el("admin-name").textContent = user.name || user.email;
+    el('admin-name').textContent = user.name || user.email;
     if (user.avatar_url || user.avatarUrl) {
-      el("admin-avatar").src = user.avatar_url || user.avatarUrl;
+      el('admin-avatar').src = user.avatar_url || user.avatarUrl;
     }
   }
 
   function renderDemoNotice() {
-    const banner = el("demo-banner");
-    if (banner) banner.style.display = "flex";
+    const banner = el('demo-banner');
+    if (banner) banner.style.display = 'flex';
   }
 
   function setupTabNavigation() {

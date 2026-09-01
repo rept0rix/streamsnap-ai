@@ -686,3 +686,41 @@ function initFAQ() {
     });
   });
 }
+
+// ===================== NAV AUTH STATE =====================
+function initNavAuth() {
+  const workerBase = "https://streamsnap-lens.na0ryank0.workers.dev";
+  const signinBtn = document.getElementById("nav-signin-btn");
+  const userPill  = document.getElementById("nav-user-pill");
+  const nameEl    = document.getElementById("nav-user-name");
+  const avatarEl  = document.getElementById("nav-avatar");
+  const signoutLink = document.getElementById("nav-signout-link");
+
+  if (!signinBtn || !userPill) return;
+
+  // Wire sign-out to call POST /auth/logout then reload
+  signoutLink?.addEventListener("click", async (e) => {
+    e.preventDefault();
+    try {
+      await fetch(`${workerBase}/auth/logout`, { method: "POST", credentials: "include" });
+    } catch (_) {}
+    signinBtn.style.display = "";
+    userPill.style.display = "none";
+  });
+
+  // Check auth state
+  fetch(`${workerBase}/auth/me`, { credentials: "include" })
+    .then((r) => r.ok ? r.json() : null)
+    .then((data) => {
+      if (data?.ok && data.signedIn) {
+        const user = data.user || {};
+        if (nameEl) nameEl.textContent = (user.name || user.email || "Account").split(" ")[0].toUpperCase();
+        if (avatarEl && user.avatarUrl) { avatarEl.src = user.avatarUrl; avatarEl.style.display = "block"; }
+        signinBtn.style.display = "none";
+        userPill.style.display = "flex";
+      }
+    })
+    .catch(() => { /* offline — leave sign-in button visible */ });
+}
+
+document.addEventListener("DOMContentLoaded", initNavAuth);

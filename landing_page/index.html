@@ -61,6 +61,22 @@
         <button id="nav-connect-btn" class="btn-ghost-mono">
           <span>CREATOR TAG</span>
         </button>
+
+        <!-- Auth state: signed-out -->
+        <a id="nav-signin-btn" href="https://streamsnap-lens.na0ryank0.workers.dev/auth/start?client=web&return_to=https://streamsnap.online/" class="btn-ghost-mono nav-auth-btn" title="Sign in with Google">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px;vertical-align:middle;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>SIGN IN</span>
+        </a>
+
+        <!-- Auth state: signed-in (hidden until JS confirms) -->
+        <div id="nav-user-pill" class="nav-user-pill" style="display:none;" title="Account">
+          <img id="nav-avatar" src="" alt="" class="nav-avatar-img" onerror="this.style.display='none'" />
+          <span id="nav-user-name" class="nav-user-label">Account</span>
+          <div class="nav-user-dropdown" id="nav-user-dropdown">
+            <a href="https://streamsnap-lens.na0ryank0.workers.dev/auth/logout" id="nav-signout-link" class="dropdown-item">Sign out</a>
+          </div>
+        </div>
+
         <button class="btn-laser btn-install-trigger">
           <span class="btn-laser-bg"></span>
           <span class="btn-laser-text">INSTALL EXTENSION</span>

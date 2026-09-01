@@ -400,3 +400,46 @@ export function getAmazonCartUrl(items, affiliateTag = DEFAULT_AFFILIATE_TAG) {
 export function getWebSearchUrl(query) {
   return `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(String(query || "").trim())}`;
 }
+
+// ===================== MULTI-STORE SEARCH =====================
+
+/** Supported alternative stores for product search. */
+export const SUPPORTED_STORES = [
+  { id: "google",   label: "Google",   icon: "🔍", color: "#4285F4" },
+  { id: "ebay",     label: "eBay",     icon: "🛒", color: "#E53238" },
+  { id: "walmart",  label: "Walmart",  icon: "🟡", color: "#0071CE" },
+  { id: "bestbuy",  label: "Best Buy", icon: "🔵", color: "#0046BE" },
+  { id: "aliexpress", label: "AliExpress", icon: "🛍️", color: "#E62B1E" }
+];
+
+/**
+ * Build a search URL for a given store.
+ * Supports: google, ebay, walmart, bestbuy, aliexpress.
+ */
+export function getStoreSearchUrl(query, storeId = "google") {
+  const q = encodeURIComponent(String(query || "").trim() || "product");
+  switch (storeId) {
+    case "ebay":
+      return `https://www.ebay.com/sch/i.html?_nkw=${q}&_sop=12`;
+    case "walmart":
+      return `https://www.walmart.com/search?q=${q}`;
+    case "bestbuy":
+      return `https://www.bestbuy.com/site/searchpage.jsp?st=${q}`;
+    case "aliexpress":
+      return `https://www.aliexpress.com/w/wholesale-${q.replace(/%20/g, "-")}.html`;
+    case "google":
+    default:
+      return `https://www.google.com/search?tbm=shop&q=${q}`;
+  }
+}
+
+/**
+ * Build search URLs for ALL supported stores at once.
+ * Returns an array of { id, label, icon, color, url }.
+ */
+export function getAllStoreSearchUrls(query) {
+  return SUPPORTED_STORES.map((store) => ({
+    ...store,
+    url: getStoreSearchUrl(query, store.id)
+  }));
+}

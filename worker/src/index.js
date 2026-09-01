@@ -90,33 +90,48 @@ function corsHeaders(request, env) {
     .map((s) => s.trim())
     .filter(Boolean);
 
-  const allow =
-    allowed.length === 0 || allowed.includes("*")
-      ? origin || "*"
-      : allowed.includes(origin)
-        ? origin
-        : allowed[0];
-
-  return {
-    "Access-Control-Allow-Origin": allow,
-    "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+  const base = {
+    "Access-Control-Allow-Methods": "POST, GET, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Access-Control-Max-Age": "86400",
     Vary: "Origin"
   };
+
+  // The website calls /auth/me and /auth/logout with credentials: "include",
+  // which the browser only honours when the response names one exact origin and
+  // sets Allow-Credentials. A wildcard is rejected outright in that mode, and
+  // echoing an *unlisted* origin would let any site read a signed-in session.
+  if (origin && allowed.includes(origin)) {
+    return {
+      ...base,
+      "Access-Control-Allow-Origin": origin,
+      "Access-Control-Allow-Credentials": "true"
+    };
+  }
+
+  // No allowlist configured yet: permit anonymous cross-origin reads for local
+  // development, but never with credentials attached.
+  if (allowed.length === 0) {
+    return { ...base, "Access-Control-Allow-Origin": origin || "*" };
+  }
+
+  // Unlisted origin: omit the header entirely so the browser blocks it, rather
+  // than quietly answering some other origin's name.
+  return base;
 }
 
 function preflight(request, env) {
   return new Response(null, { status: 204, headers: corsHeaders(request, env) });
 }
 
-function json(body, status, request, env) {
+function json(body, status, request, env, extraHeaders = {}) {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
       "Content-Type": "application/json",
       "Cache-Control": "no-store",
-      ...corsHeaders(request, env)
+      ...corsHeaders(request, env),
+      ...extraHeaders
     }
   });
 }
