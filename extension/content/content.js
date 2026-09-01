@@ -603,7 +603,10 @@
           canvas.width = sw;
           canvas.height = sh;
           canvas.getContext("2d").drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
-          resolve(canvas.toDataURL("image/jpeg", 0.92));
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+          canvas.width = 0;
+          canvas.height = 0;
+          resolve(dataUrl);
         } catch (err) {
           console.warn("[StreamSnap] crop failed:", err);
           resolve(screenshotDataUrl);
@@ -731,8 +734,12 @@
 
           if (isNonBlankCanvas(canvas)) {
             const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+            canvas.width = 0;
+            canvas.height = 0;
             if (dataUrl && dataUrl.length > 1000) return dataUrl;
           }
+          canvas.width = 0;
+          canvas.height = 0;
         } catch {
           // Tainted canvas (CORS/DRM protected video) — exit burst loop and fall through to screenshot
           break;

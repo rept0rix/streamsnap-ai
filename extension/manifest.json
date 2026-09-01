@@ -32,8 +32,7 @@
     "activeTab",
     "identity",
     "storage",
-    "alarms",
-    "tabs"
+    "alarms"
   ],
   "optional_permissions": [
     "scripting"

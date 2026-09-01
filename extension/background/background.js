@@ -357,7 +357,11 @@ async function callGemini(imageDataUrl, apiKey, prompt) {
     }
 
     try {
-      return JSON.parse(text.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim());
+      const cleanText = text
+        .replace(/^```(?:json)?\s*/i, "")
+        .replace(/\s*```$/i, "")
+        .trim();
+      return JSON.parse(cleanText);
     } catch {
       lastError = `${model} returned malformed JSON`;
     }
