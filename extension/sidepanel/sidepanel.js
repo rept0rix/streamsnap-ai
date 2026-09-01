@@ -395,11 +395,40 @@ function renderHeaderAccount(profile) {
   }
 }
 
+function updateAuthGates(signedIn) {
+  state.signedIn = Boolean(signedIn);
+
+  // 1. Catalog / History Gate
+  const catalogGate = byId("catalog-auth-gate");
+  const catalogAuthView = byId("catalog-authenticated-view");
+  if (catalogGate) catalogGate.style.display = signedIn ? "none" : "flex";
+  if (catalogAuthView) catalogAuthView.style.display = signedIn ? "block" : "none";
+
+  // 2. Cart Gate
+  const cartGate = byId("cart-auth-gate");
+  const cartAuthView = byId("cart-authenticated-view");
+  if (cartGate) cartGate.style.display = signedIn ? "none" : "flex";
+  if (cartAuthView) cartAuthView.style.display = signedIn ? "block" : "none";
+
+  // 3. Analytics / Stats Gate
+  const analyticsGate = byId("analytics-auth-gate");
+  const analyticsAuthView = byId("analytics-authenticated-view");
+  if (analyticsGate) analyticsGate.style.display = signedIn ? "none" : "flex";
+  if (analyticsAuthView) analyticsAuthView.style.display = signedIn ? "block" : "none";
+
+  // 4. Update Tab Badge Counts: when signed out, show 0 instead of stale local counts
+  const catalogCount = byId("catalog-count");
+  if (catalogCount) catalogCount.textContent = signedIn ? String(state.catalog.length) : "0";
+  const cartCount = byId("cart-count");
+  if (cartCount) cartCount.textContent = signedIn ? String(state.cart.reduce((sum, i) => sum + (i.quantity || 1), 0)) : "0";
+}
+
 function renderAccount(profile) {
   const signedIn = Boolean(profile?.signedIn);
   show("account-signed-out", !signedIn);
   show("account-signed-in", signedIn);
   renderHeaderAccount(profile);
+  updateAuthGates(signedIn);
   if (!signedIn) return;
 
   const user = profile.user || {};
@@ -487,6 +516,13 @@ function initAccount() {
   byId("header-signin-btn")?.addEventListener("click", (e) =>
     runSignIn(e.currentTarget, "Sign in with Google")
   );
+
+  // Wire gate buttons across all tabs
+  document.querySelectorAll(".gate-signin-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) =>
+      runSignIn(e.currentTarget, "Continue with Google")
+    );
+  });
 
   byId("signout-btn")?.addEventListener("click", runSignOut);
   byId("header-signout-btn")?.addEventListener("click", runSignOut);
@@ -1111,7 +1147,8 @@ function renderList(containerId, items, emptyMessage) {
 
 function renderCatalog() {
   const countBadge = byId("catalog-count");
-  if (countBadge) countBadge.textContent = state.catalog.length;
+  if (countBadge) countBadge.textContent = state.signedIn ? String(state.catalog.length) : "0";
+  if (!state.signedIn) return;
 
   let filtered = state.catalog;
 
@@ -1498,8 +1535,9 @@ function renderCart(items) {
 
   const countBadge = byId("cart-count");
   if (countBadge) {
-    countBadge.textContent = state.cart.reduce((sum, i) => sum + (i.quantity || 1), 0);
+    countBadge.textContent = state.signedIn ? String(state.cart.reduce((sum, i) => sum + (i.quantity || 1), 0)) : "0";
   }
+  if (!state.signedIn) return;
 
   if (!state.cart.length) {
     show("cart-empty-state", true);
@@ -1584,6 +1622,18 @@ function renderCart(items) {
 // ---------------------------------------------------------------------------
 
 function renderAnalytics(data) {
+  if (!state.signedIn) {
+    const set = (id, value) => {
+      const node = byId(id);
+      if (node) node.textContent = value;
+    };
+    set("metric-scans", 0);
+    set("metric-clicks", 0);
+    set("metric-cart", 0);
+    set("metric-earnings", "$0.00");
+    return;
+  }
+
   chrome.storage.local.get(["analytics", "affiliateTag"], (res = {}) => {
     const analytics = data ||
       res.analytics || { totalScans: 0, amazonClicks: 0, cartAdds: 0, estimatedEarnings: 0 };

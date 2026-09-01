@@ -12,7 +12,7 @@
   "use strict";
 
   console.log(
-    "%c⚡ [StreamSnap AI] Active Build: v1.6.1 (2026-09-01 13:15 IDT) | Platform: " +
+    "%c⚡ [StreamSnap AI] Active Build: v1.6.2 (2026-09-01 19:40 IDT) | Platform: " +
       window.location.hostname,
     "background: #131921; color: #FF9900; font-weight: bold; padding: 4px 8px; border: 1px solid #FF9900; border-radius: 4px;"
   );

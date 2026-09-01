@@ -4,16 +4,15 @@
  */
 
 export const CURRENT_BUILD = {
-  version: "1.6.1",
+  version: "1.6.2",
   buildDate: "2026-09-01",
-  buildTime: "13:15",
-  buildTimestamp: "2026-09-01 13:15:00 IDT",
-  title: "Scanning Fix — Server Scan Works Without a Key",
+  buildTime: "19:40",
+  buildTimestamp: "2026-09-01 19:40:00 IDT",
+  title: "Setup Reordering & Guest Auth Gates for History/Cart",
   highlights: [
-    "🐛 Fixed 'nothing found / stuck scanning': the on-video Scan and Snip buttons no longer require a personal Gemini key. If you're signed in, scans now run on our servers as intended.",
-    "🔑 Fixed signed-in scans being sent anonymously (wrong session-token key), so your account quota is attributed correctly.",
-    "⏳ Fixed the loading spinner hanging forever when a scan ended without a result — it now returns to the ready state.",
-    "📡 Works on YouTube, Twitch, TikTok, Facebook and Kick via server-side visual search when no key is set."
+    "🔒 Auth Gate for History & Cart: History, Cart, and Stats now require Google sign-in to prevent unauthorized access to local device traces.",
+    "⚙️ Setup Tab Reorganization: Placed Google Sign-in / Account & Quota as the primary #1 top card.",
+    "🔢 Clean Badge Counts: History & Cart badge counters show 0 when signed out instead of leaking stale counts."
   ]
 };
 
