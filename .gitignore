@@ -10,3 +10,9 @@ dist/
 worker/node_modules/
 worker/.wrangler/
 .dev.vars
+
+# Mobile app
+mobile/node_modules/
+mobile/.expo/
+mobile/ios/
+mobile/android/
