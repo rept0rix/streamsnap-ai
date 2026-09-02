@@ -14,9 +14,11 @@ import {
   Linking
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import { useStore } from "../store/useStore";
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { settings, patchSettings, sessionToken } = useStore();
 
@@ -90,11 +92,30 @@ export default function SettingsScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account</Text>
         {sessionToken ? (
-          <Text style={styles.signedIn}>✅ Signed in</Text>
+          <View>
+            <Text style={styles.signedIn}>✅ Signed in and syncing</Text>
+            <TouchableOpacity 
+              style={{ marginTop: 16 }}
+              onPress={() => {
+                useStore.getState().setSessionToken(null);
+                Alert.alert("Signed Out", "You have been signed out.");
+              }}
+            >
+              <Text style={{ color: "#EF4444", fontSize: 14, fontWeight: "600" }}>Sign Out</Text>
+            </TouchableOpacity>
+          </View>
         ) : (
-          <Text style={styles.hint}>
-            Sign in to unlock higher scan quotas and sync across devices.
-          </Text>
+          <View>
+            <Text style={styles.hint}>
+              Sign in to unlock higher scan quotas and sync across devices.
+            </Text>
+            <TouchableOpacity 
+              style={{ marginTop: 16 }}
+              onPress={() => router.push("/login")}
+            >
+              <Text style={{ color: "#6366F1", fontSize: 14, fontWeight: "600" }}>Sign In with Google</Text>
+            </TouchableOpacity>
+          </View>
         )}
       </View>
 

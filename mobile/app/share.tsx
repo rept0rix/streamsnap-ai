@@ -63,6 +63,7 @@ export default function ShareScreen() {
       setStatus("loading");
 
       let imageUri: string | null = null;
+      let sharedUrl: string | null = null;
 
       // Case 1: User shared an image directly (screenshot from TikTok etc.)
       if (isImageShareIntent(shareIntent)) {
@@ -70,39 +71,46 @@ export default function ShareScreen() {
         if (files && files.length > 0) {
           imageUri = files[0].path;
         }
+      } else if (shareIntent.text) {
+        // Case 2: User shared a text or URL
+        const text = shareIntent.text;
+        // Simple regex to extract URL
+        const match = text.match(/(https?:\/\/[^\s]+)/);
+        if (match) {
+          sharedUrl = match[1];
+        }
+      } else if (shareIntent.webUrl) {
+        sharedUrl = shareIntent.webUrl;
       }
 
-      // Case 2: User shared a URL (video link) — we take a screenshot note
-      // In this version we alert the user; a future version can fetch a thumbnail.
-      if (!imageUri && shareIntent.text) {
-        Alert.alert(
-          "Share a screenshot instead",
-          "For best results, take a screenshot of the item and share that image with StreamSnap.",
-          [{ text: "OK", onPress: () => router.dismiss() }]
-        );
+      if (!imageUri && !sharedUrl) {
         setStatus("noContent");
         return;
       }
 
-      if (!imageUri) {
-        setStatus("noContent");
-        return;
+      let data;
+      let frameBase64: string | undefined = undefined;
+
+      const installId = await getInstallId();
+
+      if (imageUri) {
+        const base64 = await compressToBase64(imageUri);
+        frameBase64 = base64;
+        const { resolve } = require("../services/api");
+        data = await resolve(base64, installId, sessionToken);
+      } else if (sharedUrl) {
+        const { resolveUrl } = require("../services/api");
+        data = await resolveUrl(sharedUrl, installId, sessionToken);
       }
 
-      const [base64, installId] = await Promise.all([
-        compressToBase64(imageUri),
-        getInstallId()
-      ]);
-
-      const data = await resolve(base64, installId, sessionToken);
-      if (!data.ok) throw new Error(data.error ?? "Scan failed");
+      if (!data || !data.ok) throw new Error(data?.error ?? "Scan failed");
 
       setProducts(data.products);
       setOthers(data.others);
       setStatus("success");
 
       for (const p of data.products) {
-        await saveProduct(p, base64);
+        await saveProduct(p, frameBase64);
       }
 
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

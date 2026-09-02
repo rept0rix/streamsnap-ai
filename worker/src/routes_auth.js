@@ -40,7 +40,11 @@ function isAllowedReturnUrl(url, env) {
     return false;
   }
 
-  if (parsed.protocol !== "https:") return false;
+  if (parsed.protocol !== "https:") {
+    // Allow custom schemes for mobile apps (Expo / Standalone)
+    if (parsed.protocol === "exp:" || parsed.protocol === "streamsnap:") return true;
+    return false;
+  }
 
   // Chrome's extension redirect target.
   if (/^[a-p]{32}\.chromiumapp\.org$/.test(parsed.hostname)) return true;

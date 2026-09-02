@@ -70,6 +70,30 @@ export async function resolve(
   return response.json() as Promise<ResolveResult>;
 }
 
+export async function resolveUrl(
+  url: string,
+  installId: string,
+  token?: string | null
+): Promise<ResolveResult> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json"
+  };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const response = await fetch(`${WORKER_URL}/resolve-url`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ url, installId })
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`Worker error ${response.status}: ${text.slice(0, 200)}`);
+  }
+
+  return response.json() as Promise<ResolveResult>;
+}
+
 // ---------------------------------------------------------------------------
 // Auth: who am I
 // ---------------------------------------------------------------------------
@@ -110,6 +134,20 @@ export async function updateAffiliateTag(
       Authorization: `Bearer ${token}`
     },
     body: JSON.stringify({ affiliateTag })
+  });
+  return response.json();
+}
+
+// ---------------------------------------------------------------------------
+// Products: get saved history from cloud
+// ---------------------------------------------------------------------------
+
+export async function getUserProducts(token: string): Promise<{ ok: boolean; products?: any[]; error?: string }> {
+  const response = await fetch(`${WORKER_URL}/user/products`, {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${token}`
+    }
   });
   return response.json();
 }

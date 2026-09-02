@@ -87,7 +87,45 @@ export const useStore = create<StreamSnapState>((set, get) => ({
     }),
 
   loadCatalog: async () => {
-    const catalog = await getCatalog();
+    let catalog = await getCatalog();
+    const token = get().sessionToken;
+    
+    // If authenticated, sync with cloud
+    if (token) {
+      try {
+        const { getUserProducts } = require("../services/api");
+        const cloudData = await getUserProducts(token);
+        
+        if (cloudData.ok && cloudData.products) {
+          // Merge cloud products into local catalog
+          const cloudCatalog = cloudData.products.map(p => ({
+            id: p.id,
+            asin: p.asin,
+            title: p.title,
+            price: p.price ? `$${p.price}` : undefined,
+            imageUrl: p.image_url,
+            url: p.product_url || (p.asin ? `https://www.amazon.com/dp/${p.asin}` : ""),
+            source: p.source || "amazon",
+            seenCount: p.sighting_count || 1,
+            firstSeenAt: new Date(p.last_seen_at).getTime(),
+            lastSeenAt: new Date(p.last_seen_at).getTime(),
+          }));
+          
+          // Simple merge keeping newest based on ASIN/URL
+          const merged = [...cloudCatalog];
+          for (const localItem of catalog) {
+            const key = localItem.asin || localItem.url;
+            if (!merged.find(c => (c.asin || c.url) === key)) {
+              merged.push(localItem);
+            }
+          }
+          catalog = merged.sort((a, b) => b.lastSeenAt - a.lastSeenAt);
+        }
+      } catch (err) {
+        console.warn("Cloud catalog sync failed:", err);
+      }
+    }
+    
     set({ catalog });
   },
 
@@ -144,7 +182,15 @@ export const useStore = create<StreamSnapState>((set, get) => ({
     set({ settings });
   },
 
-  setSessionToken: (token) => set({ sessionToken: token }),
+  setSessionToken: (token) => {
+    const { setSessionToken: persistToken, clearSessionToken } = require("../services/storage");
+    if (token) {
+      persistToken(token);
+    } else {
+      clearSessionToken();
+    }
+    set({ sessionToken: token });
+  },
 
   reset: () =>
     set({

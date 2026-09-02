@@ -33,6 +33,12 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>StreamSnap uses your camera to scan items in live streams and find them on Amazon.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>StreamSnap reads screenshots from your photo library to identify products.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>StreamSnap saves scan results to your photo library.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>SplashScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>

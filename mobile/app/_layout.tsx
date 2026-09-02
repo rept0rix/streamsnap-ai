@@ -11,8 +11,13 @@ export default function RootLayout() {
 
   useEffect(() => {
     // Bootstrap on app start
-    Promise.all([loadSettings(), loadCatalog(), loadCart()]);
-    getSessionToken().then((t) => setSessionToken(t));
+    async function init() {
+      const t = await getSessionToken();
+      setSessionToken(t);
+      // Wait for token to be set before loading catalog to ensure cloud sync runs
+      await Promise.all([loadSettings(), loadCatalog(), loadCart()]);
+    }
+    init();
   }, []);
 
   return (

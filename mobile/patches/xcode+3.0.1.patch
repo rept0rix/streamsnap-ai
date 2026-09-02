@@ -1,0 +1,18 @@
+diff --git a/node_modules/xcode/.DS_Store b/node_modules/xcode/.DS_Store
+new file mode 100644
+index 0000000..54c268e
+Binary files /dev/null and b/node_modules/xcode/.DS_Store differ
+diff --git a/node_modules/xcode/lib/pbxProject.js b/node_modules/xcode/lib/pbxProject.js
+index 068548a..660009b 100644
+--- a/node_modules/xcode/lib/pbxProject.js
++++ b/node_modules/xcode/lib/pbxProject.js
+@@ -1679,7 +1679,8 @@ function correctForFrameworksPath(file, project) {
+ function correctForPath(file, project, group) {
+     var r_group_dir = new RegExp('^' + group + '[\\\\/]');
+ 
+-    if (project.pbxGroupByName(group).path)
++    var pbxGroup = project.pbxGroupByName(group);
++    if (pbxGroup && pbxGroup.path)
+         file.path = file.path.replace(r_group_dir, '');
+ 
+     return file;

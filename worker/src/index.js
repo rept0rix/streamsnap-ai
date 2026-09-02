@@ -111,6 +111,10 @@ export default {
       return handleResolve(request, env, ctx);
     }
 
+    if (url.pathname === "/resolve-url" && request.method === "POST") {
+      return handleResolveUrl(request, env, ctx);
+    }
+
     return json({ ok: false, error: "Not found" }, 404, request, env);
   }
 };
@@ -406,4 +410,110 @@ async function handleResolve(request, env, ctx) {
   }
 
   return json({ ok: true, cached: false, ...result }, 200, request, env);
+}
+
+// ---------------------------------------------------------------------------
+// /resolve-url
+// ---------------------------------------------------------------------------
+
+async function handleResolveUrl(request, env, ctx) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ ok: false, error: "Invalid JSON body." }, 400, request, env);
+  }
+
+  const targetUrl = body.url;
+  if (!targetUrl || !/^https?:\/\//.test(targetUrl)) {
+    return json({ ok: false, error: "Valid URL is required." }, 400, request, env);
+  }
+
+  try {
+    // 1. Fetch the target URL to extract og:image
+    const response = await fetch(targetUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5"
+      },
+      redirect: "follow"
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch target URL: ${response.status}`);
+    }
+
+    const html = await response.text();
+    
+    // Quick regex to find og:image or twitter:image
+    let imageUrl = null;
+    const ogMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["'][^>]*>/i) || 
+                    html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:image["'][^>]*>/i);
+    if (ogMatch && ogMatch[1]) {
+      imageUrl = ogMatch[1];
+    } else {
+      const twMatch = html.match(/<meta[^>]*name=["']twitter:image["'][^>]*content=["']([^"']+)["'][^>]*>/i);
+      if (twMatch && twMatch[1]) imageUrl = twMatch[1];
+    }
+
+    // Special case for TikTok if regex fails: they sometimes use dynamic hydration
+    if (!imageUrl && targetUrl.includes("tiktok.com")) {
+      const coverMatch = html.match(/"cover(?:Url)?":\s*\[?"([^"\\]+)"/i);
+      if (coverMatch && coverMatch[1]) {
+        imageUrl = coverMatch[1].replace(/\\u002F/g, '/');
+      }
+    }
+
+    if (!imageUrl) {
+      return json({ ok: false, error: "Could not find a thumbnail or image in the provided URL." }, 400, request, env);
+    }
+    
+    // Fix relative URLs
+    if (imageUrl.startsWith("/")) {
+      const parsedTarget = new URL(targetUrl);
+      imageUrl = `${parsedTarget.protocol}//${parsedTarget.host}${imageUrl}`;
+    }
+
+    // Decode HTML entities
+    imageUrl = imageUrl.replace(/&amp;/g, '&');
+
+    // 2. Fetch the image itself
+    const imgRes = await fetch(imageUrl, {
+      headers: { "User-Agent": "StreamSnap Bot" }
+    });
+    
+    if (!imgRes.ok) {
+      throw new Error(`Failed to download thumbnail image from ${imageUrl}`);
+    }
+    
+    const arrayBuffer = await imgRes.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuffer);
+    
+    if (bytes.length > LIMITS.MAX_IMAGE_BYTES) {
+      return json({ ok: false, error: "Extracted image is too large." }, 400, request, env);
+    }
+
+    // Encode to base64
+    let binary = "";
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64 = btoa(binary);
+    
+    // 3. Mutate the request body to simulate a normal /resolve call and pass it along
+    const simulatedRequest = new Request(request.url.replace("/resolve-url", "/resolve"), {
+      method: "POST",
+      headers: request.headers,
+      body: JSON.stringify({
+        installId: body.installId,
+        image: `data:image/jpeg;base64,${base64}`
+      })
+    });
+    
+    return handleResolve(simulatedRequest, env, ctx);
+
+  } catch (err) {
+    return json({ ok: false, error: err.message }, 500, request, env);
+  }
 }
