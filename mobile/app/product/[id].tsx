@@ -92,16 +92,16 @@ export default function ProductScreen() {
       </View>
 
       {/* Source Frame (Traceability) */}
-      {product.sourceFrameBase64 && (
+      {(product.sourceFrameBase64 || (product as any).frameImage || product.imageUrl) && (
         <View style={styles.sourceSection}>
-          <Text style={styles.sectionTitle}>Source Frame</Text>
+          <Text style={styles.sectionTitle}>Captured Video Snapshot</Text>
           <Text style={styles.sectionSubtitle}>
-            This is the image snippet that StreamSnap used to identify the product.
+            This is the exact frame from TikTok / Live Video that StreamSnap used to spot this product.
           </Text>
           <Image
-            source={{ uri: product.sourceFrameBase64 }}
+            source={{ uri: (product as any).frameImage || product.sourceFrameBase64 || product.imageUrl }}
             style={styles.sourceImage}
-            resizeMode="contain"
+            resizeMode="cover"
           />
         </View>
       )}

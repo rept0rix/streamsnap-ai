@@ -88,6 +88,13 @@ export function ProductCard({ product, item, seenCount, onPress, onAddToCart }: 
             </View>
           )}
 
+          {((p as any).frameImage || p.source?.includes("Video") || p.source?.includes("TikTok")) && (
+            <View style={styles.sourcePill}>
+              <Ionicons name="videocam" size={10} color="#38BDF8" style={{ marginRight: 3 }} />
+              <Text style={styles.sourcePillText}>Video Snap</Text>
+            </View>
+          )}
+
           {count && count > 1 ? (
             <View style={styles.seenBadge}>
               <Text style={styles.seenText}>Seen {count}×</Text>
@@ -194,6 +201,21 @@ const styles = StyleSheet.create({
   },
   amazonPillText: {
     color: "#FF9900",
+    fontSize: 10,
+    fontWeight: "700"
+  },
+  sourcePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(56, 189, 248, 0.12)",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "rgba(56, 189, 248, 0.3)"
+  },
+  sourcePillText: {
+    color: "#38BDF8",
     fontSize: 10,
     fontWeight: "700"
   },

@@ -129,8 +129,38 @@ final class SampleHandler: RPBroadcastSampleHandler {
         return
       }
 
-      let products = (parsed?["products"] as? [[String: Any]] ?? [])
+      var products = (parsed?["products"] as? [[String: Any]] ?? [])
         + (parsed?["others"] as? [[String: Any]] ?? [])
+
+      // Save the captured video frame screenshot so the user sees exactly where it came from!
+      if !products.isEmpty {
+        let snapName = "snap-\(Int(Date().timeIntervalSince1970 * 1000)).jpg"
+        var frameImageUrl: String?
+
+        if let groupUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: LiveScanStore.appGroupId) {
+          let fileUrl = groupUrl.appendingPathComponent(snapName)
+          if (try? jpeg.write(to: fileUrl)) != nil {
+            frameImageUrl = fileUrl.absoluteString
+          }
+        }
+        if frameImageUrl == nil {
+          let tempUrl = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(snapName)
+          if (try? jpeg.write(to: tempUrl)) != nil {
+            frameImageUrl = tempUrl.absoluteString
+          }
+        }
+
+        products = products.map { item in
+          var updated = item
+          if updated["imageUrl"] == nil || (updated["imageUrl"] as? String)?.isEmpty == true {
+            updated["imageUrl"] = frameImageUrl
+          }
+          updated["frameImage"] = frameImageUrl
+          updated["source"] = "TikTok / Live Video"
+          return updated
+        }
+      }
+
       LiveScanStore.recordEvent(
         phase: products.isEmpty ? "ok_empty" : "ok_finds",
         status: status,
@@ -174,8 +204,25 @@ final class SampleHandler: RPBroadcastSampleHandler {
       "title": title
     ]
 
-    // Download image for rich notification attachment if available
+    // Attach image for rich notification attachment if available
     if let imageUrlString, let imgUrl = URL(string: imageUrlString) {
+      if imgUrl.isFileURL {
+        if let attachment = try? UNNotificationAttachment(
+          identifier: "product-image",
+          url: imgUrl,
+          options: [UNNotificationAttachmentOptionsTypeHintKey: "public.jpeg"]
+        ) {
+          content.attachments = [attachment]
+        }
+        let request = UNNotificationRequest(
+          identifier: "ss-live-\(Int(Date().timeIntervalSince1970))",
+          content: content,
+          trigger: nil
+        )
+        UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
+        return
+      }
+
       URLSession.shared.dataTask(with: imgUrl) { data, _, _ in
         if let data {
           let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
