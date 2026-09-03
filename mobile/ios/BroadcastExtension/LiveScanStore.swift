@@ -126,31 +126,32 @@ enum LiveScanStore {
 
     for raw in incoming {
       guard let title = raw["title"] as? String, !title.isEmpty else { continue }
-      let asin = raw["asin"] as? String
-      let url = raw["url"] as? String ?? ""
-      let key = (asin?.isEmpty == false ? asin! : url)
-      guard !key.isEmpty else { continue }
+      let cleanTitle = title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+      let asin = (raw["asin"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
 
-      if let idx = existing.firstIndex(where: { item in
-        let existingKey = (item["asin"] as? String).flatMap { $0.isEmpty ? nil : $0 }
-          ?? (item["url"] as? String ?? "")
-        return existingKey == key
-      }) {
-        var item = existing[idx]
-        item["seenCount"] = (item["seenCount"] as? Int ?? 1) + 1
-        item["lastSeenAt"] = now
-        if let price = raw["price"] as? String { item["price"] = price }
-        if let imageUrl = raw["imageUrl"] as? String { item["imageUrl"] = imageUrl }
-        existing[idx] = item
-      } else {
-        var item = raw
-        item["id"] = item["id"] as? String ?? "live-\(Int(now))-\(added)"
-        item["seenCount"] = 1
-        item["firstSeenAt"] = now
-        item["lastSeenAt"] = now
-        existing.insert(item, at: 0)
-        added += 1
+      // STRICT DEDUPLICATION: Check if already detected
+      let alreadyExists = existing.contains { item in
+        let existingAsin = (item["asin"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let existingTitle = (item["title"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? ""
+        if let asin, !asin.isEmpty, let existingAsin, !existingAsin.isEmpty {
+          return asin == existingAsin
+        }
+        return existingTitle == cleanTitle ||
+               (cleanTitle.count > 5 && existingTitle.contains(cleanTitle)) ||
+               (existingTitle.count > 5 && cleanTitle.contains(existingTitle))
       }
+
+      if alreadyExists {
+        // Skip duplicate! No duplicate cards, no duplicate notifications!
+        continue
+      }
+
+      var item = raw
+      item["id"] = item["id"] as? String ?? "live-\(Int(now))-\(added)"
+      item["firstSeenAt"] = now
+      item["lastSeenAt"] = now
+      existing.insert(item, at: 0)
+      added += 1
     }
 
     if existing.count > 80 {

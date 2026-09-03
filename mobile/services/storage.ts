@@ -94,9 +94,14 @@ export async function upsertCatalogItem(
   const catalog = await getCatalog();
   const now = Date.now();
 
-  // Key by ASIN if we have one, otherwise by URL
-  const key = item.asin || item.url;
-  const existing = catalog.find((c) => (c.asin || c.url) === key);
+  // Key by ASIN, URL, or normalized title to prevent duplicates
+  const cleanTitle = item.title?.trim().toLowerCase();
+  const existing = catalog.find(
+    (c) =>
+      (item.asin && c.asin === item.asin) ||
+      (item.url && c.url === item.url) ||
+      (cleanTitle && c.title?.trim().toLowerCase() === cleanTitle)
+  );
 
   let updated: CatalogItem;
   if (existing) {

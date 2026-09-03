@@ -101,7 +101,6 @@ export default function HistoryScreen() {
         renderItem={({ item }) => (
           <ProductCard
             item={item}
-            seenCount={item.seenCount}
             onPress={() =>
               router.push({ pathname: "/product/[id]", params: { id: item.id } })
             }
