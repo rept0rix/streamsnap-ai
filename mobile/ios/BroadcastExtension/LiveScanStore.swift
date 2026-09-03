@@ -13,7 +13,14 @@ enum LiveScanStore {
     static let lastFrameAt = "ss.live.lastFrameAt"
     static let scanCount = "ss.live.scanCount"
     static let findCount = "ss.live.findCount"
+    static let okCount = "ss.live.okCount"
+    static let failCount = "ss.live.failCount"
+    static let skipCount = "ss.live.skipCount"
     static let lastError = "ss.live.lastError"
+    static let lastPhase = "ss.live.lastPhase"
+    static let lastStatus = "ss.live.lastStatus"
+    static let lastBody = "ss.live.lastBody"
+    static let lastJpegBytes = "ss.live.lastJpegBytes"
     static let products = "ss.live.products"
     static let sessionToken = "ss.live.sessionToken"
     static let installId = "ss.live.installId"
@@ -30,7 +37,14 @@ enum LiveScanStore {
     defaults.set(Date().timeIntervalSince1970, forKey: Key.startedAt)
     defaults.set(0, forKey: Key.scanCount)
     defaults.set(0, forKey: Key.findCount)
+    defaults.set(0, forKey: Key.okCount)
+    defaults.set(0, forKey: Key.failCount)
+    defaults.set(0, forKey: Key.skipCount)
+    defaults.set("started", forKey: Key.lastPhase)
+    defaults.set(0, forKey: Key.lastStatus)
+    defaults.set(0, forKey: Key.lastJpegBytes)
     defaults.removeObject(forKey: Key.lastError)
+    defaults.removeObject(forKey: Key.lastBody)
     defaults.removeObject(forKey: Key.lastFrameAt)
     defaults.set(Data("[]".utf8), forKey: Key.products)
     defaults.synchronize()
@@ -39,6 +53,7 @@ enum LiveScanStore {
 
   static func endSession() {
     defaults?.set(false, forKey: Key.broadcasting)
+    defaults?.set("stopped", forKey: Key.lastPhase)
     defaults?.synchronize()
     ping()
   }
@@ -65,12 +80,37 @@ enum LiveScanStore {
   }
 
   static func recordScan(error: String? = nil) {
+    recordEvent(phase: error == nil ? "ok" : "fail", error: error, incrementScan: true, incrementOk: error == nil, incrementFail: error != nil)
+  }
+
+  static func recordEvent(
+    phase: String,
+    error: String? = nil,
+    status: Int? = nil,
+    body: String? = nil,
+    jpegBytes: Int? = nil,
+    incrementScan: Bool = false,
+    incrementSkip: Bool = false,
+    incrementOk: Bool = false,
+    incrementFail: Bool = false
+  ) {
     guard let defaults else { return }
-    defaults.set(defaults.integer(forKey: Key.scanCount) + 1, forKey: Key.scanCount)
-    defaults.set(Date().timeIntervalSince1970, forKey: Key.lastFrameAt)
+    if incrementScan {
+      defaults.set(defaults.integer(forKey: Key.scanCount) + 1, forKey: Key.scanCount)
+      defaults.set(Date().timeIntervalSince1970, forKey: Key.lastFrameAt)
+    }
+    if incrementSkip { defaults.set(defaults.integer(forKey: Key.skipCount) + 1, forKey: Key.skipCount) }
+    if incrementOk { defaults.set(defaults.integer(forKey: Key.okCount) + 1, forKey: Key.okCount) }
+    if incrementFail { defaults.set(defaults.integer(forKey: Key.failCount) + 1, forKey: Key.failCount) }
+    defaults.set(phase, forKey: Key.lastPhase)
+    if let status { defaults.set(status, forKey: Key.lastStatus) }
+    if let jpegBytes { defaults.set(jpegBytes, forKey: Key.lastJpegBytes) }
+    if let body {
+      defaults.set(String(body.prefix(500)), forKey: Key.lastBody)
+    }
     if let error {
       defaults.set(error, forKey: Key.lastError)
-    } else {
+    } else if incrementOk {
       defaults.removeObject(forKey: Key.lastError)
     }
     defaults.synchronize()
@@ -133,15 +173,26 @@ enum LiveScanStore {
 
   static func snapshot(screenCaptured: Bool) -> [String: Any] {
     let defaults = defaults
+    let creds = credentials()
     return [
       "available": defaults != nil,
       "broadcasting": defaults?.bool(forKey: Key.broadcasting) ?? false,
       "screenCaptured": screenCaptured,
       "scanCount": defaults?.integer(forKey: Key.scanCount) ?? 0,
       "findCount": defaults?.integer(forKey: Key.findCount) ?? 0,
+      "okCount": defaults?.integer(forKey: Key.okCount) ?? 0,
+      "failCount": defaults?.integer(forKey: Key.failCount) ?? 0,
+      "skipCount": defaults?.integer(forKey: Key.skipCount) ?? 0,
       "lastError": defaults?.string(forKey: Key.lastError) as Any,
+      "lastPhase": defaults?.string(forKey: Key.lastPhase) as Any,
+      "lastStatus": defaults?.integer(forKey: Key.lastStatus) ?? 0,
+      "lastBody": defaults?.string(forKey: Key.lastBody) as Any,
+      "lastJpegBytes": defaults?.integer(forKey: Key.lastJpegBytes) ?? 0,
       "startedAt": defaults?.object(forKey: Key.startedAt) as Any,
       "lastFrameAt": defaults?.object(forKey: Key.lastFrameAt) as Any,
+      "workerUrl": creds.workerUrl,
+      "installId": creds.installId,
+      "hasToken": creds.token != nil,
       "products": products()
     ]
   }

@@ -55,6 +55,11 @@ final class SampleHandler: RPBroadcastSampleHandler {
 
     guard let jpeg, !jpeg.isEmpty else {
       inFlight = false
+      if lastHash != 0 {
+        LiveScanStore.recordEvent(phase: "skipped_duplicate", incrementSkip: true)
+      } else {
+        LiveScanStore.recordEvent(phase: "encode_failed", error: "Could not encode frame")
+      }
       return
     }
     lastHash = hash
@@ -94,26 +99,45 @@ final class SampleHandler: RPBroadcastSampleHandler {
 
     URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
       defer { self?.inFlight = false }
+      let jpegBytes = jpeg.count
       if let error {
-        LiveScanStore.recordScan(error: error.localizedDescription)
+        LiveScanStore.recordEvent(
+          phase: "network_fail",
+          error: error.localizedDescription,
+          jpegBytes: jpegBytes,
+          incrementScan: true,
+          incrementFail: true
+        )
         return
       }
       let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-      guard let data, (200...299).contains(status) else {
-        LiveScanStore.recordScan(error: "Worker error \(status)")
-        return
-      }
-      guard
-        let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-        json["ok"] as? Bool == true
-      else {
-        LiveScanStore.recordScan(error: "Scan failed")
+      let bodyText = data.flatMap { String(data: $0, encoding: .utf8) } ?? ""
+      let parsed = data.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
+      let workerError = parsed?["error"] as? String
+
+      guard (200...299).contains(status), parsed?["ok"] as? Bool == true else {
+        LiveScanStore.recordEvent(
+          phase: "worker_\(status)",
+          error: workerError ?? "Worker error \(status)",
+          status: status,
+          body: bodyText,
+          jpegBytes: jpegBytes,
+          incrementScan: true,
+          incrementFail: true
+        )
         return
       }
 
-      let products = (json["products"] as? [[String: Any]] ?? [])
-        + (json["others"] as? [[String: Any]] ?? [])
-      LiveScanStore.recordScan()
+      let products = (parsed?["products"] as? [[String: Any]] ?? [])
+        + (parsed?["others"] as? [[String: Any]] ?? [])
+      LiveScanStore.recordEvent(
+        phase: products.isEmpty ? "ok_empty" : "ok_finds",
+        status: status,
+        body: bodyText,
+        jpegBytes: jpegBytes,
+        incrementScan: true,
+        incrementOk: true
+      )
       if !products.isEmpty {
         let before = LiveScanStore.products().count
         LiveScanStore.upsertProducts(products)
@@ -126,18 +150,62 @@ final class SampleHandler: RPBroadcastSampleHandler {
   }
 
   private static func notifyNewFinds(_ products: [[String: Any]]) {
-    let titles = products.compactMap { $0["title"] as? String }.prefix(2)
-    guard !titles.isEmpty else { return }
+    guard let first = products.first,
+          let title = first["title"] as? String, !title.isEmpty
+    else { return }
+
     let content = UNMutableNotificationContent()
-    content.title = "StreamSnap found \(products.count) item\(products.count == 1 ? "" : "s")"
-    content.body = titles.joined(separator: " · ")
+    let price = first["price"] as? String
+    let asin = first["asin"] as? String
+    let url = first["url"] as? String ?? (asin.map { "https://www.amazon.com/dp/\($0)" } ?? "")
+    let imageUrlString = first["imageUrl"] as? String
+
+    content.title = "⚡ StreamSnap Match Found!"
+    if let price, !price.isEmpty {
+      content.subtitle = "\(price) on Amazon"
+    } else {
+      content.subtitle = "Found on Amazon"
+    }
+    content.body = title
     content.sound = .default
-    let request = UNNotificationRequest(
-      identifier: "ss-live-\(Int(Date().timeIntervalSince1970))",
-      content: content,
-      trigger: nil
-    )
-    UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
+    content.categoryIdentifier = "PRODUCT_FIND"
+    content.userInfo = [
+      "url": url,
+      "asin": asin ?? "",
+      "title": title
+    ]
+
+    // Download image for rich notification attachment if available
+    if let imageUrlString, let imgUrl = URL(string: imageUrlString) {
+      URLSession.shared.dataTask(with: imgUrl) { data, _, _ in
+        if let data {
+          let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
+          let fileUrl = tempDir.appendingPathComponent("ss-thumb-\(UUID().uuidString).jpg")
+          if (try? data.write(to: fileUrl)) != nil {
+            if let attachment = try? UNNotificationAttachment(
+              identifier: "product-image",
+              url: fileUrl,
+              options: [UNNotificationAttachmentOptionsTypeHintKey: "public.jpeg"]
+            ) {
+              content.attachments = [attachment]
+            }
+          }
+        }
+        let request = UNNotificationRequest(
+          identifier: "ss-live-\(Int(Date().timeIntervalSince1970))",
+          content: content,
+          trigger: nil
+        )
+        UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
+      }.resume()
+    } else {
+      let request = UNNotificationRequest(
+        identifier: "ss-live-\(Int(Date().timeIntervalSince1970))",
+        content: content,
+        trigger: nil
+      )
+      UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
+    }
   }
 
   private static func averageHash(_ image: CIImage) -> UInt64 {

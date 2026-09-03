@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
   closeText: { color: "#64748B", fontSize: 14 },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   scroll: { flex: 1 },
-  groupLabel: { color: "#6366F1", fontSize: 14, fontWeight: "700", marginBottom: 12, marginTop: 20 },
+  groupLabel: { color: "#FF5500", fontSize: 14, fontWeight: "700", marginBottom: 12, marginTop: 20 },
   viewCatalogButton: {
     marginTop: 24,
     alignItems: "center",
@@ -256,5 +256,5 @@ const styles = StyleSheet.create({
     borderColor: "#334155",
     borderRadius: 12
   },
-  viewCatalogText: { color: "#6366F1", fontWeight: "600", fontSize: 14 }
+  viewCatalogText: { color: "#FF5500", fontWeight: "600", fontSize: 14 }
 });

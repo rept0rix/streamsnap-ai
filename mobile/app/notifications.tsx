@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#161D2B"
   },
   filterChipActive: {
-    backgroundColor: "#6366F1"
+    backgroundColor: "#FF5500"
   },
   filterText: {
     color: "#94A3B8",
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4
   },
   actionLinkText: {
-    color: "#6366F1",
+    color: "#FF5500",
     fontSize: 12,
     fontWeight: "600"
   },
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#6366F1",
+    backgroundColor: "#FF5500",
     marginLeft: 8,
     marginTop: 4
   }

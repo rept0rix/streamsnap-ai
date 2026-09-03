@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
     marginRight: 8
   },
   nowBadge: {
-    color: "#6366F1",
+    color: "#FF5500",
     fontSize: 10,
     fontWeight: "800",
     letterSpacing: 0.5

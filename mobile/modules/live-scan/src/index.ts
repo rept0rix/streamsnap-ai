@@ -21,9 +21,19 @@ export type LiveScanState = {
   screenCaptured: boolean;
   scanCount: number;
   findCount: number;
+  okCount: number;
+  failCount: number;
+  skipCount: number;
   lastError: string | null;
+  lastPhase: string | null;
+  lastStatus: number;
+  lastBody: string | null;
+  lastJpegBytes: number;
   startedAt: number | null;
   lastFrameAt: number | null;
+  workerUrl: string | null;
+  installId: string | null;
+  hasToken: boolean;
   products: LiveScanProduct[];
 };
 
@@ -33,9 +43,19 @@ const EMPTY_STATE: LiveScanState = {
   screenCaptured: false,
   scanCount: 0,
   findCount: 0,
+  okCount: 0,
+  failCount: 0,
+  skipCount: 0,
   lastError: null,
+  lastPhase: null,
+  lastStatus: 0,
+  lastBody: null,
+  lastJpegBytes: 0,
   startedAt: null,
   lastFrameAt: null,
+  workerUrl: null,
+  installId: null,
+  hasToken: false,
   products: []
 };
 
@@ -105,9 +125,19 @@ function normalize(raw: Partial<LiveScanState> | null | undefined): LiveScanStat
     screenCaptured: raw?.screenCaptured ?? false,
     scanCount: raw?.scanCount ?? 0,
     findCount: raw?.findCount ?? 0,
+    okCount: raw?.okCount ?? 0,
+    failCount: raw?.failCount ?? 0,
+    skipCount: raw?.skipCount ?? 0,
     lastError: raw?.lastError ?? null,
+    lastPhase: raw?.lastPhase ?? null,
+    lastStatus: raw?.lastStatus ?? 0,
+    lastBody: raw?.lastBody ?? null,
+    lastJpegBytes: raw?.lastJpegBytes ?? 0,
     startedAt: raw?.startedAt ?? null,
     lastFrameAt: raw?.lastFrameAt ?? null,
+    workerUrl: raw?.workerUrl ?? null,
+    installId: raw?.installId ?? null,
+    hasToken: raw?.hasToken ?? false,
     products: Array.isArray(raw?.products) ? raw.products : []
   };
 }

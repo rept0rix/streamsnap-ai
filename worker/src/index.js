@@ -297,13 +297,120 @@ async function callLens(imageUrl, env) {
   }
 }
 
+function bytesToBase64(bytes) {
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
+function parseModelJson(text) {
+  const clean = String(text || "")
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+  const start = clean.indexOf("{");
+  const end = clean.lastIndexOf("}");
+  if (start === -1 || end === -1) throw new Error("Vision model returned no JSON");
+  return JSON.parse(clean.slice(start, end + 1));
+}
+
+function normalizeVisionProducts(raw) {
+  const list = Array.isArray(raw?.products) ? raw.products : [];
+  const amazon = [];
+  const others = [];
+  for (const item of list) {
+    const title = String(item?.title || "").trim();
+    if (!title) continue;
+    const asin = /^B0[A-Z0-9]{8}$/i.test(item?.asin || "") ? String(item.asin).toUpperCase() : null;
+    const url =
+      item?.url ||
+      (asin ? `https://www.amazon.com/dp/${asin}` : `https://www.amazon.com/s?k=${encodeURIComponent(title)}`);
+    const product = {
+      title,
+      url,
+      asin,
+      image: item.imageUrl || item.image || null,
+      imageUrl: item.imageUrl || item.image || null,
+      price: item.price != null ? String(item.price) : null,
+      source: asin ? "amazon" : "other",
+      isAmazon: Boolean(asin),
+      verified: Boolean(asin)
+    };
+    if (product.verified) amazon.push(product);
+    else others.push(product);
+  }
+  return { amazon, others };
+}
+
+async function runLlamaVision(env, bytes, prompt) {
+  const model = "@cf/meta/llama-3.2-11b-vision-instruct";
+  const image = Array.from(new Uint8Array(bytes));
+  const payload = {
+    prompt,
+    image
+  };
+  try {
+    return await env.AI.run(model, payload);
+  } catch (err) {
+    const message = String(err?.message || err);
+    if (!message.includes("5016") && !message.includes("submit the prompt 'agree'")) {
+      throw err;
+    }
+    await env.AI.run(model, { prompt: "agree" });
+    return env.AI.run(model, payload);
+  }
+}
+
+async function runLlava(env, bytes, prompt) {
+  const response = await env.AI.run("@cf/llava-hf/llava-1.5-7b-hf", {
+    image: Array.from(new Uint8Array(bytes)),
+    prompt
+  });
+  return response;
+}
+
+async function callWorkersAI(bytes, env) {
+  const prompt = `Identify shoppable physical products visible in this screenshot.
+Return ONLY JSON with this shape:
+{"products":[{"title":"string","asin":"B0XXXXXXXX or empty","price":"29.99","source":"amazon"}]}
+Rules:
+- Only items you can actually see.
+- asin only if it is a real Amazon ASIN (B0 + 8 alphanumeric). Otherwise leave asin empty.
+- Max 5 products. No markdown.`;
+
+  let response;
+  try {
+    response = await runLlamaVision(env, bytes, prompt);
+  } catch (err) {
+    console.log("[resolve] llama vision failed, trying llava:", err.message);
+    response = await runLlava(env, bytes, prompt);
+  }
+
+  const text = response?.response || response?.result || response?.description || "";
+  if (!text) throw new Error("Workers AI returned an empty vision result");
+  return normalizeVisionProducts(parseModelJson(text));
+}
+
 // ---------------------------------------------------------------------------
 // /resolve
 // ---------------------------------------------------------------------------
 
 async function handleResolve(request, env, ctx) {
-  if (!env.BRIGHTDATA_API_KEY || !env.BRIGHTDATA_ZONE) {
-    return json({ ok: false, error: "Worker is not configured." }, 500, request, env);
+  const hasLens = Boolean(env.BRIGHTDATA_API_KEY && env.BRIGHTDATA_ZONE);
+  const hasAI = Boolean(env.AI);
+  if (!hasLens && !hasAI) {
+    return json(
+      {
+        ok: false,
+        error: "Worker is not configured. Set BRIGHTDATA_API_KEY and BRIGHTDATA_ZONE, or enable Workers AI."
+      },
+      503,
+      request,
+      env
+    );
   }
 
   let body;
@@ -340,30 +447,43 @@ async function handleResolve(request, env, ctx) {
     return json({ ok: false, error: limit.error }, 429, request, env);
   }
 
-  if (!env.IMAGES) {
-    return json({ ok: false, error: "Image storage is not configured." }, 500, request, env);
-  }
+  let amazon = [];
+  let others = [];
+  let engine = "lens";
 
-  // Lens fetches the image over HTTP, so it needs a public URL briefly.
-  await env.IMAGES.put(hash, bytes, {
-    httpMetadata: { contentType: "image/jpeg" }
-  });
-  const publicUrl = `${env.PUBLIC_BASE_URL.replace(/\/$/, "")}/img/${hash}`;
+  if (hasLens) {
+    if (!env.IMAGES) {
+      return json({ ok: false, error: "Image storage is not configured." }, 500, request, env);
+    }
 
-  let payload;
-  try {
-    payload = await callLens(publicUrl, env);
-  } catch (err) {
+    // Lens fetches the image over HTTP, so it needs a public URL briefly.
+    await env.IMAGES.put(hash, bytes, {
+      httpMetadata: { contentType: "image/jpeg" }
+    });
+    const publicUrl = `${env.PUBLIC_BASE_URL.replace(/\/$/, "")}/img/${hash}`;
+
+    let payload;
+    try {
+      payload = await callLens(publicUrl, env);
+    } catch (err) {
+      ctx.waitUntil(env.IMAGES.delete(hash));
+      const message = err.name === "AbortError" ? "Lens request timed out." : err.message;
+      return json({ ok: false, error: message }, 502, request, env);
+    }
+
     ctx.waitUntil(env.IMAGES.delete(hash));
-    const message = err.name === "AbortError" ? "Lens request timed out." : err.message;
-    return json({ ok: false, error: message }, 502, request, env);
+    ({ amazon, others } = parseLensResponse(payload));
+  } else {
+    try {
+      ({ amazon, others } = await callWorkersAI(bytes, env));
+      engine = "workers-ai";
+    } catch (err) {
+      const message = err.name === "AbortError" ? "Vision request timed out." : err.message;
+      return json({ ok: false, error: message }, 502, request, env);
+    }
   }
 
-  // The crop has served its purpose; do not retain user imagery.
-  ctx.waitUntil(env.IMAGES.delete(hash));
-
-  const { amazon, others } = parseLensResponse(payload);
-  const result = { products: amazon, others, count: amazon.length };
+  const result = { products: amazon, others, count: amazon.length, engine };
 
   if (env.CACHE) {
     ctx.waitUntil(
@@ -406,7 +526,7 @@ async function handleResolve(request, env, ctx) {
   // Until the upstream schema is confirmed against live traffic, log the shape
   // (not the content) of any response we failed to parse.
   if (amazon.length === 0 && others.length === 0) {
-    console.log("[lens] unparsed response shape:", JSON.stringify(collectRawShape(payload)));
+    console.log("[resolve] no products via", engine);
   }
 
   return json({ ok: true, cached: false, ...result }, 200, request, env);

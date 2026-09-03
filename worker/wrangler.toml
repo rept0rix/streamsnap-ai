@@ -49,3 +49,8 @@ migrations_dir = "migrations"
 
 [observability]
 enabled = true
+
+# Used when Bright Data secrets are not set. Lets /resolve keep working
+# for the mobile live scan without a third-party key.
+[ai]
+binding = "AI"

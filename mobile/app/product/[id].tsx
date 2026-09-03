@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#0B0F17" },
   centered: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#0B0F17" },
   errorText: { color: "#F8FAFC", fontSize: 18, marginBottom: 12 },
-  backLink: { color: "#6366F1", fontSize: 16 },
+  backLink: { color: "#FF5500", fontSize: 16 },
   imageHeader: {
     backgroundColor: "#fff",
     width: "100%",
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
   price: { color: "#FF9900", fontSize: 22, fontWeight: "800", marginTop: 12 },
   actions: { marginTop: 24, gap: 12 },
   primaryButton: {
-    backgroundColor: "#6366F1",
+    backgroundColor: "#FF5500",
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: "center"
