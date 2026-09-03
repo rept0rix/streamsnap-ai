@@ -66,7 +66,10 @@ enough for development. `GEMINI_MODELS` can override the model list
 own key in `X-Gemini-Key`, which takes precedence over the server secret.
 
 ```bash
-wrangler secret put GEMINI_API_KEY     # from https://aistudio.google.com/apikey
+npm install                                # wrangler is a devDependency, not global
+npx wrangler login                         # once per machine
+npx wrangler secret put GEMINI_API_KEY     # from https://aistudio.google.com/apikey
+npm run deploy
 ```
 
 The response reports which engine produced a result: `engine` is `lens`,
