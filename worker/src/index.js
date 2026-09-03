@@ -20,6 +20,7 @@
 import { parseLensResponse, collectRawShape } from "./parser.js";
 import { handleAuthRoute } from "./routes_auth.js";
 import { handleAdminRoute } from "./routes_admin.js";
+import { handleSyncRoute } from "./routes_sync.js";
 import { getCurrentUser } from "./auth.js";
 
 const LIMITS = {
@@ -85,6 +86,15 @@ export default {
           admin: "/api/admin/stats"
         }
       }, 200, request, env);
+    }
+
+    if (
+      url.pathname.startsWith("/sync/") ||
+      url.pathname.startsWith("/auth/device") ||
+      url.pathname.startsWith("/creator/gear")
+    ) {
+      const response = await handleSyncRoute(request, env, url, json);
+      if (response) return response;
     }
 
     if (
@@ -450,6 +460,8 @@ async function normalizeVisionProducts(raw) {
       videoTitle: videoTitle || "TikTok Video",
       videoUrl,
       confidence,
+      matchReason: item.matchReason || `Identified ${title} in video`,
+      box_2d: Array.isArray(item.box_2d) && item.box_2d.length >= 4 ? item.box_2d : null,
       isAmazon: Boolean(asin),
       verified: Boolean(asin)
     };
@@ -487,23 +499,28 @@ async function runLlava(env, bytes, prompt) {
 }
 
 async function callWorkersAI(bytes, env) {
-  const prompt = `You are a high-speed fashion and product recognition engine for TikTok video frames.
-Your task is to identify clothing, apparel, accessories, tech, and creator items in this frame.
+  const prompt = `You are StreamSnap AI, an advanced visual commerce recognition engine for video frames.
+Analyze this video frame.
+Identify every prominent consumer product, brand, device, packaging, or item visible in the frame (e.g. health supplements, protein powder, beverages, cosmetics, electronics, headphones, microphones, gadgets, apparel, footwear, accessories).
 
 GUIDELINES:
-1. Identify all visible clothing or apparel items even if unbranded (e.g. "Men's Classic White Ribbed Tank Top", "Oversized Cotton T-Shirt", "Black Cargo Pants", "Silver Chain Necklace").
-2. Look for any visible text on screen: creator handle (@username), song name, or video caption, and put it in "videoTitle".
-3. For each item provide a realistic retail price in USD (e.g. "24.99") and confidence score (75 to 98).
-4. DO NOT return background room furniture (NO table, NO plate, NO wall, NO floor).
+1. Provide a specific, searchable product title with brand and model if visible (e.g. "Sakura Bio Plant 9+ Protein Plant Based", "JBL Linklike EW011 Wireless Earbuds", "Shoei RF-1400 Motorcycle Helmet", "Stanley Quencher Tumbler").
+2. Provide bounding box coordinates [ymin, xmin, ymax, xmax] normalized between 0 and 1000 tightly enclosing ONLY that specific product.
+3. If any creator handle (@user), song name, or caption is visible on screen, output it in "videoTitle".
+4. For each item provide a realistic retail price in USD (e.g. "29.99"), confidence (80 to 99), and a short 1-sentence "matchReason" describing the visual cues.
+5. DO NOT identify generic background room items (NO table, NO plate, NO floor, NO wall, NO empty hands).
 
-YOU MUST OUTPUT ONLY RAW JSON matching this structure exactly, with NO other text:
+YOU MUST OUTPUT ONLY RAW VALID JSON matching this structure exactly:
 {
   "videoTitle": "@creator or video caption if visible",
   "products": [
     {
-      "title": "Descriptive Fashion or Product Name",
-      "price": "24.99",
-      "confidence": 92
+      "title": "Specific Product Name with Brand & Model",
+      "brand": "Brand",
+      "price": "29.99",
+      "confidence": 95,
+      "matchReason": "Clear brand packaging and distinctive bottle shape",
+      "box_2d": [180, 220, 650, 780]
     }
   ]
 }`;

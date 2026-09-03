@@ -37,9 +37,14 @@ export function ProductCard({ product, item, onPress, onAddToCart }: Props) {
   const isVerified = Boolean(p.asin);
   const targetUrl = p.url || (p.asin ? `https://www.amazon.com/dp/${p.asin}` : null);
   
-  // Images: Video Snapshot (base64 Data URL or remote) and Product Image
-  const frameImage = p.frameImage || p.sourceFrameBase64;
-  const productImageUrl = p.imageUrl || p.image;
+  // Images: cropped product screenshot (box_2d crop) and matched product catalog image
+  // sourceCrop = CIImage-cropped thumbnail from SampleHandler (exact product area)
+  // frameImage = full video frame (fallback if no crop available)
+  // productImageUrl = resolved catalog / Wikipedia image (match side)
+  const sourceCrop = p.sourceCrop; // exact product crop from box_2d
+  const frameImage = sourceCrop || p.frameImage || p.sourceFrameBase64;
+  // NEVER fall back to frameImage on the right (match) side — show placeholder instead
+  const productImageUrl = (p.imageUrl !== p.frameImage && p.imageUrl !== p.sourceFrameBase64) ? (p.imageUrl || p.image) : null;
   
   // Context details
   const videoTitle = p.videoTitle || (p.source?.includes("TikTok") ? "TikTok Live Video" : "Video Stream");
@@ -115,8 +120,6 @@ export function ProductCard({ product, item, onPress, onAddToCart }: Props) {
         <View style={styles.visualBox}>
           {productImageUrl ? (
             <Image source={{ uri: productImageUrl }} style={styles.thumbnail} resizeMode="cover" />
-          ) : frameImage ? (
-            <Image source={{ uri: frameImage }} style={styles.thumbnail} resizeMode="cover" />
           ) : (
             <View style={[styles.thumbnail, styles.placeholderBox]}>
               <Ionicons name="cube-outline" size={26} color="#64748B" />
@@ -139,6 +142,11 @@ export function ProductCard({ product, item, onPress, onAddToCart }: Props) {
         <Text style={styles.productTitle}>
           {p.title}
         </Text>
+        {p.matchReason ? (
+          <Text style={styles.matchReasonText} numberOfLines={2}>
+            💡 {p.matchReason}
+          </Text>
+        ) : null}
 
         <View style={styles.bottomRow}>
           <View style={styles.priceRow}>
@@ -299,7 +307,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "800",
     lineHeight: 21,
-    marginBottom: 8
+    marginBottom: 4
+  },
+  matchReasonText: {
+    color: "#94A3B8",
+    fontSize: 11,
+    fontStyle: "italic",
+    marginBottom: 8,
+    lineHeight: 15
   },
   bottomRow: {
     flexDirection: "row",

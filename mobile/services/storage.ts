@@ -44,7 +44,8 @@ const KEYS = {
   SETTINGS: "ss:settings",
   CART: "ss:cart",
   SESSION_TOKEN: "ss:session_token",
-  INSTALL_ID: "ss:install_id"
+  INSTALL_ID: "ss:install_id",
+  DEVICE_ID: "ss:device_id"
 } as const;
 
 const CATALOG_MAX = 200;
@@ -223,4 +224,12 @@ export async function getInstallId(): Promise<string> {
   const id = `mob-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
   await AsyncStorage.setItem(KEYS.INSTALL_ID, id);
   return id;
+}
+
+export async function getDeviceId(): Promise<string | null> {
+  return AsyncStorage.getItem(KEYS.DEVICE_ID);
+}
+
+export async function setDeviceId(id: string): Promise<void> {
+  await AsyncStorage.setItem(KEYS.DEVICE_ID, id);
 }

@@ -154,10 +154,13 @@ final class SampleHandler: RPBroadcastSampleHandler {
 
         products = products.map { item in
           var updated = item
-          // Provide base64 Data URL so React Native renders it with 100% reliability
-          updated["frameImage"] = base64DataUrl
-          if updated["imageUrl"] == nil || (updated["imageUrl"] as? String)?.isEmpty == true {
-            updated["imageUrl"] = base64DataUrl
+          // If bounding box was returned by AI, crop to the exact object! (Chrome Extension style)
+          if let box = item["box_2d"] as? [Any],
+             let cropped = Self.cropBox(from: jpeg, box: box) {
+            updated["frameImage"] = cropped
+            updated["sourceCrop"] = cropped
+          } else {
+            updated["frameImage"] = base64DataUrl
           }
           if updated["source"] == nil {
             updated["source"] = "TikTok / Live Video"
@@ -323,5 +326,57 @@ final class SampleHandler: RPBroadcastSampleHandler {
 
   private static func hamming(_ a: UInt64, _ b: UInt64) -> Int {
     (a ^ b).nonzeroBitCount
+  }
+
+  /// Crop a JPEG to the AI-returned bounding box [ymin, xmin, ymax, xmax] (0-1000 scale).
+  /// Returns a base64 data URL of the cropped JPEG, or nil on failure.
+  private static func cropBox(from jpeg: Data, box: [Any]) -> String? {
+    guard box.count >= 4 else { return nil }
+    let coords = box.compactMap { v -> CGFloat? in
+      if let n = v as? NSNumber { return CGFloat(n.doubleValue) }
+      if let d = v as? Double { return CGFloat(d) }
+      if let i = v as? Int { return CGFloat(i) }
+      return nil
+    }
+    guard coords.count >= 4 else { return nil }
+
+    let ymin = coords[0] / 1000.0
+    let xmin = coords[1] / 1000.0
+    let ymax = coords[2] / 1000.0
+    let xmax = coords[3] / 1000.0
+    guard xmax > xmin, ymax > ymin else { return nil }
+
+    // 4% margin, matching the Chrome extension
+    let margin: CGFloat = 0.04
+    let nx0 = max(0, xmin - margin)
+    let ny0 = max(0, ymin - margin)
+    let nx1 = min(1, xmax + margin)
+    let ny1 = min(1, ymax + margin)
+
+    // Decode the full JPEG via CIImage (no UIKit dependency)
+    let ciSrc = CIImage(data: jpeg)
+    guard let ciSrc else { return nil }
+    let W = ciSrc.extent.width
+    let H = ciSrc.extent.height
+
+    // CIImage origin is bottom-left; invert Y so the crop matches the model's top-left origin
+    let cropRect = CGRect(
+      x: nx0 * W,
+      y: (1 - ny1) * H,
+      width: max(20, (nx1 - nx0) * W),
+      height: max(20, (ny1 - ny0) * H)
+    )
+    let ciCropped = ciSrc.cropped(to: cropRect)
+
+    guard let cgCropped = sharedCIContext.createCGImage(ciCropped, from: ciCropped.extent) else { return nil }
+
+    // Encode cropped CGImage to JPEG bytes
+    let mutableData = NSMutableData()
+    guard
+      let dest = CGImageDestinationCreateWithData(mutableData, "public.jpeg" as CFString, 1, nil)
+    else { return nil }
+    CGImageDestinationAddImage(dest, cgCropped, [kCGImageDestinationLossyCompressionQuality: 0.85] as CFDictionary)
+    guard CGImageDestinationFinalize(dest) else { return nil }
+    return "data:image/jpeg;base64,\(mutableData.base64EncodedString())"
   }
 }

@@ -20,7 +20,11 @@ import {
   signOut,
   fetchProfile,
   deleteAccount,
-  saveAffiliateTag
+  saveAffiliateTag,
+  sendHeartbeat,
+  syncCloudState,
+  syncCartEvent,
+  recordSearchEvent
 } from "../services/account.js";
 import { CURRENT_BUILD, VERSION_HISTORY } from "../services/version_info.js";
 import { checkVersionGate } from "../services/version_gate.js";
@@ -621,6 +625,11 @@ async function runSignOut() {
 function initAccount() {
   fetchProfile().then(renderAccount);
 
+  // Send periodic device heartbeat every 2 minutes while panel is active
+  setInterval(() => {
+    sendHeartbeat().catch(() => {});
+  }, 120000);
+
   byId("signin-btn")?.addEventListener("click", (e) =>
     runSignIn(e.currentTarget, "Continue with Google")
   );
@@ -824,6 +833,16 @@ function initListeners() {
     switch (message.action) {
       case "SCAN_RESULTS_UPDATED":
         renderScanResults(message.data);
+        if (Array.isArray(message.data) && message.data[0]) {
+          const top = message.data[0];
+          recordSearchEvent({
+            streamPlatform: "web",
+            query: top.title || "Live Stream Scan",
+            asin: top.asin,
+            title: top.title,
+            confidence: top.confidence || 85
+          }).catch(() => {});
+        }
         break;
       case "SCAN_FAILED":
         showScanError(message.error);
