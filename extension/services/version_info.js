@@ -4,15 +4,15 @@
  */
 
 export const CURRENT_BUILD = {
-  version: "1.6.2",
+  version: "1.6.0",
   buildDate: "2026-09-01",
-  buildTime: "19:40",
-  buildTimestamp: "2026-09-01 19:40:00 IDT",
-  title: "Setup Reordering & Guest Auth Gates for History/Cart",
+  buildTime: "12:20",
+  buildTimestamp: "2026-09-01 12:20:00 IDT",
+  title: "Forced Updates, Account Header & Master On/Off",
   highlights: [
-    "🔒 Auth Gate for History & Cart: History, Cart, and Stats now require Google sign-in to prevent unauthorized access to local device traces.",
-    "⚙️ Setup Tab Reorganization: Placed Google Sign-in / Account & Quota as the primary #1 top card.",
-    "🔢 Clean Badge Counts: History & Cart badge counters show 0 when signed out instead of leaking stale counts."
+    "🔒 Forced Update Gate: server-driven minimum version with a hard 'Update required' block.",
+    "👤 Account in Header: signed-in Google account and Sign out on every tab.",
+    "⚡ Master On/Off Switch with OFF guard on the panel and video page."
   ]
 };
 

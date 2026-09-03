@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
     lineHeight: 22
   },
   primaryButton: {
-    backgroundColor: "#6366F1",
+    backgroundColor: "#FF5500",
     borderRadius: 12,
     paddingHorizontal: 32,
     paddingVertical: 14
@@ -297,9 +297,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#1E2533"
   },
-  backButton: { color: "#6366F1", fontSize: 14 },
+  backButton: { color: "#FF5500", fontSize: 14 },
   resultsTitle: { color: "#F8FAFC", fontSize: 16, fontWeight: "700", flex: 1, textAlign: "center" },
-  doneButton: { color: "#6366F1", fontSize: 14, fontWeight: "600" },
+  doneButton: { color: "#FF5500", fontSize: 14, fontWeight: "600" },
   resultsList: { flex: 1 },
   groupLabel: { color: "#94A3B8", fontSize: 13, fontWeight: "600", marginBottom: 12, marginTop: 16 }
 });

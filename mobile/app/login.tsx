@@ -36,7 +36,7 @@ export default function LoginScreen() {
       if (result.type === "success" && result.url) {
         // Extract token from URL hash: streamsnap://...?#token=...
         const url = new URL(result.url);
-        let token = url.hash.match(/token=([^&]+)/)?.[1];
+        let token: string | null | undefined = url.hash.match(/token=([^&]+)/)?.[1];
         
         // If it somehow landed in the query string instead
         if (!token) {
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   title: { color: "#F8FAFC", fontSize: 28, fontWeight: "800", marginBottom: 12, textAlign: "center" },
   subtitle: { color: "#94A3B8", fontSize: 16, lineHeight: 24, marginBottom: 40, textAlign: "center" },
   button: {
-    backgroundColor: "#6366F1",
+    backgroundColor: "#FF5500",
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: "center",

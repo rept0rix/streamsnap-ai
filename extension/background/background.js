@@ -23,6 +23,7 @@ import {
   safeSet,
   LIMITS
 } from "../services/storage.js";
+import { checkVersionGate } from "../services/version_gate.js";
 
 const DEFAULTS = {
   discoveredCatalog: [],
@@ -69,19 +70,51 @@ async function ensureDefaults() {
   return { ...DEFAULTS, ...stored, ...updates };
 }
 
+async function syncActionBadge() {
+  try {
+    const { updateReady } = await chrome.storage.local.get(["updateReady"]);
+    if (updateReady) {
+      await chrome.action.setBadgeText({ text: "↺" });
+      await chrome.action.setBadgeBackgroundColor({ color: "#10B981" });
+      await chrome.action.setTitle({ title: "StreamSnap AI — Update ready to apply. Click to open." });
+      return;
+    }
+
+    const gate = await checkVersionGate();
+    if (gate.blocked) {
+      await chrome.action.setBadgeText({ text: "!" });
+      await chrome.action.setBadgeBackgroundColor({ color: "#E53E3E" });
+      await chrome.action.setTitle({ title: `StreamSnap AI — Update required (v${gate.minVersion || "?"}+)` });
+    } else if (gate.updateAvailable) {
+      await chrome.action.setBadgeText({ text: "NEW" });
+      await chrome.action.setBadgeBackgroundColor({ color: "#FF9900" });
+      await chrome.action.setTitle({ title: `StreamSnap AI — v${gate.latestVersion} available` });
+    } else {
+      await chrome.action.setBadgeText({ text: "" });
+      await chrome.action.setTitle({ title: "Open StreamSnap AI" });
+    }
+  } catch (err) {
+    console.warn("[StreamSnap] badge sync failed:", err);
+  }
+}
+
+chrome.runtime.onUpdateAvailable?.addListener(async (details) => {
+  console.info("[StreamSnap] background update staged:", details.version);
+  await chrome.storage.local.set({ updateReady: true, stagedVersion: details.version });
+  await syncActionBadge();
+  broadcast({ action: "UPDATE_READY", version: details.version });
+});
+
 chrome.runtime.onInstalled.addListener(async (details) => {
   const settings = await ensureDefaults();
   await syncAutoScanAlarm(settings.autoScanIntervalSec);
-  if (details.reason === "install") {
-    chrome.tabs.create({
-      url: chrome.runtime.getURL("onboarding/onboarding.html")
-    });
-  }
+  await syncActionBadge();
 });
 
 chrome.runtime.onStartup.addListener(async () => {
   const settings = await ensureDefaults();
   await syncAutoScanAlarm(settings.autoScanIntervalSec);
+  await syncActionBadge();
 });
 
 chrome.sidePanel
@@ -813,6 +846,18 @@ const handlers = {
       url: chrome.runtime.getURL("onboarding/onboarding.html")
     });
     return { status: "opened" };
+  },
+
+  async RELOAD_EXTENSION() {
+    setTimeout(() => {
+      chrome.runtime.reload();
+    }, 100);
+    return { status: "reloading" };
+  },
+
+  async SYNC_BADGE() {
+    await syncActionBadge();
+    return { status: "synced" };
   }
 };
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StreamSnap AI — Admin Management Console</title>
+  <title>StreamSnap AI — SuperAdmin Cockpit & Multi-Product Control</title>
   <link rel="stylesheet" href="admin.css">
   <link rel="icon" type="image/svg+xml" href="assets/logo_full.svg">
 </head>
@@ -16,7 +16,7 @@
         <a href="index.html">
           <img src="assets/logo_full.svg" alt="StreamSnap AI" class="brand-logo" />
         </a>
-        <span class="admin-badge">Admin Portal</span>
+        <span class="admin-badge">SuperAdmin Cockpit</span>
       </div>
 
       <div class="header-actions">
@@ -28,6 +28,9 @@
         <a href="index.html" class="btn-header-action">
           <span>Website ↗</span>
         </a>
+        <a href="account.html" class="btn-header-action" style="border-color:var(--snap-gold); color:var(--snap-gold);">
+          <span>Portal &amp; Studio ↗</span>
+        </a>
       </div>
     </header>
 
@@ -38,14 +41,14 @@
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
           <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
         </svg>
-        <h2 style="font-size: 22px; font-weight: 800; color: #F8FAFC; margin-bottom: 10px;">Admin Access Required</h2>
-        <p style="font-size: 14px; color: #94A3B8; margin-bottom: 28px; line-height: 1.6;">Sign in with your Google account to access the StreamSnap admin console. Only accounts with admin permissions can enter.</p>
+        <h2 style="font-size: 22px; font-weight: 800; color: #F8FAFC; margin-bottom: 10px;">SuperAdmin Cockpit</h2>
+        <p style="font-size: 14px; color: #94A3B8; margin-bottom: 28px; line-height: 1.6;">Sign in with your administrator Google account to inspect real-time users, active multi-device connections, searches, and streamer revenue.</p>
         <a id="admin-login-btn" href="#" onclick="startAdminLogin(event)" style="display:inline-flex; align-items:center; gap: 10px; background: #FF9900; color: #000; font-weight: 700; font-size: 14px; padding: 12px 28px; border-radius: 8px; text-decoration: none; cursor:pointer;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
           Sign in with Google
         </a>
         <p id="login-wall-error" style="display:none; margin-top: 16px; font-size: 13px; color: #EF4444; background: rgba(239,68,68,0.1); border-radius: 6px; padding: 10px 14px;"></p>
-        <p style="margin-top: 20px; font-size: 12px; color: #475569;">Your Google account must be on the admin allowlist.</p>
+        <p style="margin-top: 20px; font-size: 12px; color: #475569;">Access restricted to emails configured in <code>ADMIN_EMAILS</code>.</p>
       </div>
     </div>
 
@@ -53,151 +56,393 @@
     <div id="demo-banner" style="display:none; background: rgba(255, 153, 0, 0.1); border: 1px solid var(--snap-gold); border-radius: var(--radius-md); padding: 12px 20px; margin-bottom: 24px; align-items: center; justify-content: space-between;">
       <div style="font-size: 13px; color: var(--snap-gold); display:flex; align-items:center; gap: 8px;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-        <span><strong>Preview Mode:</strong> Seed data only. Configure <code>GOOGLE_CLIENT_ID</code>, <code>GOOGLE_CLIENT_SECRET</code> and <code>ADMIN_EMAILS</code> in Cloudflare to enable live access.</span>
+        <span><strong>Preview / Demo Mode:</strong> Viewing simulated multi-product data. Sign in with an authorized Google admin email to manage live production D1.</span>
       </div>
-      <a href="#" onclick="startAdminLogin(event)" class="btn-primary" style="text-decoration:none; padding: 6px 14px; font-size: 12px; white-space: nowrap; margin-left: 16px;">Try Sign In</a>
+      <a href="#" onclick="startAdminLogin(event)" class="btn-primary" style="text-decoration:none; padding: 6px 14px; font-size: 12px; white-space: nowrap; margin-left: 16px;">Try Admin Sign In</a>
     </div>
 
     <!-- ===== MAIN CONTENT (hidden until auth confirmed or demo mode) ===== -->
     <div id="admin-main-content" style="display:none;">
-    <div class="metrics-grid">
-      <div class="metric-card">
-        <div class="metric-title">Total Registered Users</div>
-        <div class="metric-value" id="stat-total-users">0</div>
-        <div class="metric-sub">Across Extension &amp; Web</div>
+      
+      <!-- Metrics Grid (Bird's Eye HUD) -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-title">Total Users &amp; Accounts</div>
+          <div class="metric-value" id="stat-total-users">0</div>
+          <div class="metric-sub">Across Extension, Mobile &amp; Web</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-title">Live Connected Devices</div>
+          <div class="metric-value" id="stat-online-devices" style="color: var(--snap-emerald); display:flex; align-items:center; gap:8px;">
+            <span class="status-dot-online"></span>
+            <span id="stat-online-devices-count">0</span>
+          </div>
+          <div class="metric-sub" id="stat-device-breakdown">Ext: 0 | Mobile: 0 | Web: 0</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-title">Verified Streamers</div>
+          <div class="metric-value" id="stat-streamer-users" style="color: var(--snap-purple);">0</div>
+          <div class="metric-sub">Creators monetizing gear &amp; streams</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-title">Visual Scans &amp; Searches Today</div>
+          <div class="metric-value" id="stat-scans-today" style="color: var(--snap-gold);">0</div>
+          <div class="metric-sub">Multi-modal AI resolutions</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-title">Staged Cart Products</div>
+          <div class="metric-value" id="stat-cart-items" style="color: var(--snap-blue);">0</div>
+          <div class="metric-sub">Active Amazon 1-Click shopping carts</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-title">pHash Cache Savings</div>
+          <div class="metric-value" id="stat-cache-rate" style="color: #F59E0B;">0%</div>
+          <div class="metric-sub">Zero-cost perceptual frame matches</div>
+        </div>
       </div>
-      <div class="metric-card">
-        <div class="metric-title">Pro Subscribers</div>
-        <div class="metric-value" id="stat-pro-users" style="color: var(--snap-gold);">0</div>
-        <div class="metric-sub">Active tier memberships</div>
+
+      <!-- Navigation Tabs -->
+      <nav class="admin-nav">
+        <button class="nav-tab active" data-tab="users">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          <span>Users &amp; Roles</span>
+        </button>
+        <button class="nav-tab" data-tab="devices">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+          <span>Live Connections &amp; Devices</span>
+        </button>
+        <button class="nav-tab" data-tab="activity">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+          <span>Live Search &amp; Scan Feed</span>
+        </button>
+        <button class="nav-tab" data-tab="streamers">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+          <span>Streamers &amp; Creators</span>
+        </button>
+        <button class="nav-tab" data-tab="analytics">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          <span>Vision AI Analytics</span>
+        </button>
+        <button class="nav-tab" data-tab="audit">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+          <span>Audit Trail</span>
+        </button>
+      </nav>
+
+      <!-- TAB 1: Users & Permissions -->
+      <section id="pane-users" class="tab-pane">
+        <div class="control-bar">
+          <div class="search-group">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="user-search" class="search-input" placeholder="Search by name, email, affiliate tag, or user ID..." />
+          </div>
+
+          <div class="filter-group">
+            <select id="filter-role" class="filter-select">
+              <option value="all">All Roles</option>
+              <option value="user">Standard Shoppers</option>
+              <option value="streamer">Streamers / Creators</option>
+              <option value="admin">Administrators</option>
+            </select>
+            <select id="filter-plan" class="filter-select">
+              <option value="all">All Plans</option>
+              <option value="pro">Pro Plan</option>
+              <option value="free">Free Tier</option>
+            </select>
+            <select id="filter-status" class="filter-select">
+              <option value="all">All Statuses</option>
+              <option value="active">Active Accounts</option>
+              <option value="blocked">Suspended Accounts</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>User &amp; Identity</th>
+                <th>Role</th>
+                <th>Plan Tier</th>
+                <th>Connected Devices</th>
+                <th>Scans &amp; Cart</th>
+                <th>Status</th>
+                <th>Last Active</th>
+                <th>Admin Actions</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB 2: Live Connections & Devices -->
+      <section id="pane-devices" class="tab-pane" style="display:none;">
+        <div class="control-bar">
+          <div style="font-size:14px; font-weight:700; color:var(--text-main);">
+            <span>Active Hardware &amp; Extension Instances</span>
+          </div>
+          <div class="filter-group">
+            <select id="filter-device-type" class="filter-select" onchange="filterDevices(this.value)">
+              <option value="all">All Device Types</option>
+              <option value="extension">Chrome Extension</option>
+              <option value="mobile">Mobile (iOS / Android)</option>
+              <option value="web">Web Browser</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Device Name &amp; OS</th>
+                <th>Type</th>
+                <th>User Account</th>
+                <th>Network &amp; Geo</th>
+                <th>Presence Status</th>
+                <th>Last Ping</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="devices-tbody">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB 3: Live Search & Scan Feed -->
+      <section id="pane-activity" class="tab-pane" style="display:none;">
+        <div class="control-bar">
+          <div style="font-size:14px; font-weight:700; color:var(--text-main); display:flex; align-items:center; gap:8px;">
+            <span class="status-dot-online"></span>
+            <span>Real-Time In-Stream Visual Scans &amp; Detections</span>
+          </div>
+          <button class="btn-action" onclick="loadActivityFeed()">
+            <span>Refresh Feed ↻</span>
+          </button>
+        </div>
+
+        <div class="table-card">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Platform / Stream</th>
+                <th>Detected Object / Query</th>
+                <th>Amazon Match</th>
+                <th>AI Confidence</th>
+                <th>User</th>
+                <th>Device</th>
+              </tr>
+            </thead>
+            <tbody id="activity-tbody">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB 4: Streamers & Creators Network -->
+      <section id="pane-streamers" class="tab-pane" style="display:none;">
+        <div class="control-bar">
+          <div style="font-size:14px; font-weight:700; color:var(--text-main);">
+            <span>Streamer Network &amp; Creator Gear Bags</span>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Streamer</th>
+                <th>Affiliate Tag</th>
+                <th>Channels</th>
+                <th>Gear Bag Items</th>
+                <th>Audience Scans</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="streamers-tbody">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB 5: Vision AI Analytics -->
+      <section id="pane-analytics" class="tab-pane" style="display:none;">
+        <div class="table-card" style="padding: 32px; text-align: center;">
+          <h3 style="font-size:18px; margin-bottom:12px;">Vision AI &amp; Cloud Performance</h3>
+          <p style="color:var(--text-muted); max-width:600px; margin: 0 auto 24px;">Real-time breakdown of Google Lens reverse search queries, perceptual hashing deduplication rates, and Amazon ASIN resolutions.</p>
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; text-align:left;">
+            <div style="background:var(--bg-main); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+              <div style="font-size:12px; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Top Scanned Categories</div>
+              <ul style="margin-top:12px; list-style:none; line-height:2; font-size:13px;">
+                <li>🎙️ Studio &amp; Audio Microphones <span style="float:right; font-weight:700; color:var(--snap-gold);">36%</span></li>
+                <li>👕 Streamer Apparel &amp; Hoodies <span style="float:right; font-weight:700; color:var(--snap-gold);">28%</span></li>
+                <li>🏋️ Gaming &amp; Gym Setup <span style="float:right; font-weight:700; color:var(--snap-gold);">21%</span></li>
+                <li>⚡ Electronics &amp; Keyboards <span style="float:right; font-weight:700; color:var(--snap-gold);">15%</span></li>
+              </ul>
+            </div>
+            <div style="background:var(--bg-main); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+              <div style="font-size:12px; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Resolution Latency</div>
+              <div style="font-size:28px; font-weight:800; color:var(--snap-emerald); margin-top:8px;">820 ms</div>
+              <div style="font-size:12px; color:var(--text-dim); margin-top:4px;">Average end-to-end multi-modal vision match speed.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 6: Audit Trail -->
+      <section id="pane-audit" class="tab-pane" style="display:none;">
+        <div class="table-card">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Admin Actor</th>
+                <th>Action Executed</th>
+                <th>Details &amp; Payload</th>
+                <th>Timestamp</th>
+              </tr>
+            </thead>
+            <tbody id="audit-tbody">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div><!-- /#admin-main-content -->
+  </div><!-- /.admin-wrapper -->
+
+  <!-- ===== MODAL 1: Role Edit ===== -->
+  <div class="modal-backdrop" id="modal-role">
+    <div class="modal-box">
+      <div class="modal-title">Change User Role</div>
+      <div class="modal-desc" id="role-modal-desc">Assign system permissions or creator status.</div>
+      <div style="margin-bottom: 16px;">
+        <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px; color:var(--text-muted);">Role Designation</label>
+        <select id="role-select" class="filter-select" style="width:100%;">
+          <option value="user">Standard User (Shopper)</option>
+          <option value="streamer">Streamer / Creator (Monetization &amp; Gear)</option>
+          <option value="admin">Administrator (SuperAdmin Access)</option>
+        </select>
       </div>
-      <div class="metric-card">
-        <div class="metric-title">Scans Processed Today</div>
-        <div class="metric-value" id="stat-scans-today" style="color: var(--snap-emerald);">0</div>
-        <div class="metric-sub">Multi-modal visual resolutions</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-title">pHash Cache Savings</div>
-        <div class="metric-value" id="stat-cache-rate" style="color: var(--snap-blue);">0%</div>
-        <div class="metric-sub">Instant zero-cost cache hits</div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeModal('modal-role')">Cancel</button>
+        <button class="btn-primary" id="btn-save-role">Apply Role</button>
       </div>
     </div>
+  </div>
 
-    <!-- Navigation Tabs -->
-    <nav class="admin-nav">
-      <button class="nav-tab active" data-tab="users">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-        <span>Users &amp; Permissions</span>
-      </button>
-      <button class="nav-tab" data-tab="analytics">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-        <span>Platform Analytics</span>
-      </button>
-      <button class="nav-tab" data-tab="audit">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
-        <span>Audit Trail</span>
-      </button>
-    </nav>
+  <!-- ===== MODAL 2: Plan Edit ===== -->
+  <div class="modal-backdrop" id="modal-plan">
+    <div class="modal-box">
+      <div class="modal-title">Modify Plan &amp; Quota</div>
+      <div class="modal-desc" id="plan-modal-desc">Configure subscription tier and monthly scan limit.</div>
+      <div style="margin-bottom: 16px;">
+        <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px; color:var(--text-muted);">Plan Tier</label>
+        <select id="plan-select" class="filter-select" style="width:100%; margin-bottom: 12px;">
+          <option value="free">Free Tier (60 Scans/hr)</option>
+          <option value="pro">Pro Tier (Unlimited &amp; Verified Badges)</option>
+        </select>
+        <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px; color:var(--text-muted);">Custom Quota Override (Optional)</label>
+        <input type="number" id="quota-input" class="search-input" style="border:1px solid var(--border-subtle); padding:8px;" placeholder="Leave empty for plan default" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeModal('modal-plan')">Cancel</button>
+        <button class="btn-primary" id="btn-save-plan">Save Plan</button>
+      </div>
+    </div>
+  </div>
 
-    <!-- Tab 1: Users & Permissions -->
-    <section id="pane-users" class="tab-pane">
-      <div class="control-bar">
-        <div class="search-group">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-          <input type="text" id="user-search" class="search-input" placeholder="Search by name, email, or user ID..." />
+  <!-- ===== MODAL 3: Block User ===== -->
+  <div class="modal-backdrop" id="modal-block">
+    <div class="modal-box">
+      <div class="modal-title" id="block-modal-title">Account Suspension</div>
+      <div class="modal-desc" id="block-modal-desc">Are you sure you want to alter account status?</div>
+      <div id="block-reason-wrap" style="margin-bottom: 16px;">
+        <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px; color:var(--text-muted);">Reason for Suspension</label>
+        <input type="text" id="block-reason-input" class="search-input" style="border:1px solid var(--border-subtle); padding:8px;" placeholder="e.g. Terms violation or suspicious traffic" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeModal('modal-block')">Cancel</button>
+        <button class="btn-primary" id="btn-confirm-block" style="background:var(--snap-rose);">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MODAL 4: User 360 Inspector ===== -->
+  <div class="modal-backdrop" id="modal-inspector">
+    <div class="modal-box modal-box-wide">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div class="modal-title" id="inspector-user-title">User 360° Inspection</div>
+        <button class="btn-secondary" onclick="closeModal('modal-inspector')" style="padding:4px 10px;">✕</button>
+      </div>
+      <div id="inspector-user-subtitle" class="modal-desc" style="margin-bottom:12px;">Loading detailed state...</div>
+
+      <div class="inspector-grid">
+        <!-- Devices -->
+        <div class="inspector-card">
+          <h4>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+            Connected Devices
+          </h4>
+          <div id="inspector-devices-list">None</div>
         </div>
 
-        <div class="filter-group">
-          <select id="filter-role" class="filter-select">
-            <option value="all">All Roles</option>
-            <option value="admin">Admins Only</option>
-            <option value="user">Standard Users</option>
-          </select>
-          <select id="filter-plan" class="filter-select">
-            <option value="all">All Plans</option>
-            <option value="pro">Pro Plan</option>
-            <option value="free">Free Tier</option>
-          </select>
-          <select id="filter-status" class="filter-select">
-            <option value="all">All Statuses</option>
-            <option value="active">Active Accounts</option>
-            <option value="blocked">Suspended Accounts</option>
-          </select>
+        <!-- Staged Cart -->
+        <div class="inspector-card">
+          <h4>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+            Staged Amazon Cart Items
+          </h4>
+          <div id="inspector-cart-list">Cart empty</div>
+        </div>
+
+        <!-- Recent Searches -->
+        <div class="inspector-card">
+          <h4>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            Recent Visual Scans
+          </h4>
+          <div id="inspector-searches-list">No scans recorded</div>
+        </div>
+
+        <!-- Saved Products / Gear -->
+        <div class="inspector-card">
+          <h4>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            Saved Products / Streamer Gear
+          </h4>
+          <div id="inspector-products-list">No saved items</div>
         </div>
       </div>
 
-      <div class="table-card">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>User &amp; Identity</th>
-              <th>Role</th>
-              <th>Plan Tier</th>
-              <th>Scans</th>
-              <th>Account Status</th>
-              <th>Last Seen</th>
-              <th>Admin Actions</th>
-            </tr>
-          </thead>
-          <tbody id="users-tbody">
-            <!-- Rendered by JS -->
-          </tbody>
-        </table>
+      <div class="modal-actions" style="margin-top:20px;">
+        <button class="btn-secondary" onclick="closeModal('modal-inspector')">Close</button>
       </div>
-    </section>
+    </div>
+  </div>
 
-    <!-- Tab 2: Analytics -->
-    <section id="pane-analytics" class="tab-pane" style="display:none;">
-      <div class="table-card" style="padding: 32px; text-align: center;">
-        <h3 style="font-size:18px; margin-bottom:12px;">Vision AI &amp; Cloud Performance</h3>
-        <p style="color:var(--text-muted); max-width:600px; margin: 0 auto 24px;">Real-time breakdown of Google Lens reverse search queries, perceptual hashing deduplication rates, and Amazon ASIN resolutions.</p>
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; text-align:left;">
-          <div style="background:var(--bg-main); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
-            <div style="font-size:12px; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Top Scanned Categories</div>
-            <ul style="margin-top:12px; list-style:none; line-height:2; font-size:13px;">
-              <li>🏋️ Fitness &amp; Gym Equipment <span style="float:right; font-weight:700; color:var(--snap-gold);">38%</span></li>
-              <li>👕 Apparel &amp; Fashion <span style="float:right; font-weight:700; color:var(--snap-gold);">29%</span></li>
-              <li>🎙️ Studio &amp; Audio Microphones <span style="float:right; font-weight:700; color:var(--snap-gold);">18%</span></li>
-              <li>⚡ Electronics &amp; Accessories <span style="float:right; font-weight:700; color:var(--snap-gold);">15%</span></li>
-            </ul>
-          </div>
-          <div style="background:var(--bg-main); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
-            <div style="font-size:12px; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Resolution Latency</div>
-            <div style="font-size:28px; font-weight:800; color:var(--snap-emerald); margin-top:8px;">850 ms</div>
-            <div style="font-size:12px; color:var(--text-dim); margin-top:4px;">Average end-to-end multi-modal vision match speed.</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Tab 3: Audit Trail -->
-    <section id="pane-audit" class="tab-pane" style="display:none;">
-      <div class="table-card">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Admin Actor</th>
-              <th>Action Executed</th>
-              <th>Details &amp; Payload</th>
-              <th>Timestamp</th>
-            </tr>
-          </thead>
-          <tbody id="audit-tbody">
-            <!-- Rendered by JS -->
-          </tbody>
-        </table>
-      </div>
-    </section>
-  </div><!-- /#admin-main-content -->
+  <div class="toast-container" id="toast-container"></div>
 
   <script>
-    // Build the worker base URL dynamically: on streamsnap.online the worker
-    // lives at the same origin via a proxy; elsewhere hit the worker directly.
     function getWorkerBase() {
       const host = location.hostname;
       if (host === 'streamsnap.online' || host === 'www.streamsnap.online') {
-        return ''; // same-origin proxy — configured in Cloudflare
+        return '';
       }
       return 'https://streamsnap-lens.na0ryank0.workers.dev';
     }

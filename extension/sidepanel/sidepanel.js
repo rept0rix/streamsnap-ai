@@ -20,7 +20,11 @@ import {
   signOut,
   fetchProfile,
   deleteAccount,
-  saveAffiliateTag
+  saveAffiliateTag,
+  sendHeartbeat,
+  syncCloudState,
+  syncCartEvent,
+  recordSearchEvent
 } from "../services/account.js";
 import { CURRENT_BUILD, VERSION_HISTORY } from "../services/version_info.js";
 import { checkVersionGate } from "../services/version_gate.js";
@@ -64,8 +68,42 @@ document.addEventListener("DOMContentLoaded", () => {
 async function initVersionGate() {
   const overlay = byId("update-required-overlay");
   const recheckBtn = byId("update-recheck-btn");
+  const banner = byId("update-available-banner");
+  const bannerTitle = byId("update-banner-title");
+  const bannerDesc = byId("update-banner-desc");
+  const bannerBtn = byId("update-banner-action-btn");
+  const bannerDismiss = byId("update-banner-dismiss-btn");
+
+  bannerDismiss?.addEventListener("click", () => {
+    if (banner) banner.style.display = "none";
+    sessionStorage.setItem("dismissedUpdate", "true");
+  });
 
   async function run() {
+    // 1. Check if an update was already staged in background
+    const { updateReady, stagedVersion } = await chrome.storage.local.get([
+      "updateReady",
+      "stagedVersion"
+    ]);
+
+    if (updateReady) {
+      if (banner) {
+        banner.style.display = "flex";
+        if (bannerTitle) bannerTitle.textContent = "🎉 Update ready to install!";
+        if (bannerDesc) bannerDesc.textContent = `StreamSnap v${stagedVersion || "new"} is downloaded.`;
+        if (bannerBtn) {
+          bannerBtn.textContent = "Restart Now ↺";
+          bannerBtn.removeAttribute("href");
+          bannerBtn.removeAttribute("target");
+          bannerBtn.onclick = (e) => {
+            e.preventDefault();
+            chrome.runtime.sendMessage({ action: "RELOAD_EXTENSION" });
+          };
+        }
+      }
+      return;
+    }
+
     let result;
     try {
       result = await checkVersionGate();
@@ -73,22 +111,44 @@ async function initVersionGate() {
       return; // never brick the panel on an unexpected error
     }
 
-    if (!result.blocked) {
-      if (overlay) overlay.style.display = "none";
+    // Sync action badge
+    chrome.runtime.sendMessage({ action: "SYNC_BADGE" }).catch(() => {});
+
+    // Hard block
+    if (result.blocked) {
+      if (banner) banner.style.display = "none";
+      const cur = byId("update-current-version");
+      const min = byId("update-min-version");
+      const text = byId("update-required-text");
+      const link = byId("update-site-link");
+      if (cur) cur.textContent = `v${result.currentVersion}`;
+      if (min) min.textContent = `v${result.minVersion || "?"}`;
+      if (text) {
+        text.textContent = `This copy of StreamSnap (v${result.currentVersion}) is no longer supported. Update to v${result.minVersion} or newer to keep scanning.`;
+      }
+      if (link && result.updateUrl) link.href = result.updateUrl;
+      if (overlay) overlay.style.display = "flex";
       return;
     }
 
-    const cur = byId("update-current-version");
-    const min = byId("update-min-version");
-    const text = byId("update-required-text");
-    const link = byId("update-site-link");
-    if (cur) cur.textContent = `v${result.currentVersion}`;
-    if (min) min.textContent = `v${result.minVersion || "?"}`;
-    if (text) {
-      text.textContent = `This copy of StreamSnap (v${result.currentVersion}) is no longer supported. Update to v${result.minVersion} or newer to keep scanning.`;
+    if (overlay) overlay.style.display = "none";
+
+    // Soft update notification
+    if (result.updateAvailable && sessionStorage.getItem("dismissedUpdate") !== "true") {
+      if (banner) {
+        banner.style.display = "flex";
+        if (bannerTitle) bannerTitle.textContent = `StreamSnap v${result.latestVersion} available! 🚀`;
+        if (bannerDesc) bannerDesc.textContent = "New models and live detection features ready.";
+        if (bannerBtn) {
+          bannerBtn.textContent = "Update ↗";
+          bannerBtn.href = result.updateUrl || "https://streamsnap.online";
+          bannerBtn.target = "_blank";
+          bannerBtn.onclick = null;
+        }
+      }
+    } else {
+      if (banner) banner.style.display = "none";
     }
-    if (link && result.updateUrl) link.href = result.updateUrl;
-    if (overlay) overlay.style.display = "flex";
   }
 
   recheckBtn?.addEventListener("click", async () => {
@@ -258,11 +318,30 @@ function initSettings() {
   const saveTagBtn = byId("save-tag-btn");
 
   function paintKeyStatus(hasKey) {
-    if (!keyStatus) return;
-    keyStatus.textContent = hasKey
-      ? "Key saved — Gemini Vision active"
-      : "No API key. Scanning is disabled until you add one.";
-    keyStatus.style.color = hasKey ? "#10B981" : "#F59E0B";
+    if (keyStatus) {
+      keyStatus.textContent = hasKey
+        ? "Key saved — Gemini Vision active"
+        : "No API key. Sign in above to use Cloudflare proxy or add a key.";
+      keyStatus.style.color = hasKey ? "#10B981" : "#F59E0B";
+    }
+
+    const keyDetails = byId("gemini-key-details");
+    const keyBadge = byId("gemini-key-badge");
+
+    if (hasKey) {
+      if (keyDetails) keyDetails.open = true;
+      if (keyBadge) {
+        keyBadge.className = "gemini-key-badge active";
+        keyBadge.textContent = "● Key Active";
+        keyBadge.style.display = "inline-flex";
+      }
+    } else {
+      if (keyBadge) {
+        keyBadge.className = "gemini-key-badge inactive";
+        keyBadge.textContent = "No Key";
+        keyBadge.style.display = "none";
+      }
+    }
   }
 
   // Populate dynamic version tracking
@@ -398,6 +477,32 @@ function renderHeaderAccount(profile) {
 function updateAuthGates(signedIn) {
   state.signedIn = Boolean(signedIn);
 
+  // 0. Live Scan Gate: Must sign in before use, unless already signed in
+  const scanGate = byId("scan-auth-gate");
+  const scanEmpty = byId("scan-empty-state");
+  const scanResults = byId("scan-results-view");
+  const scanLoading = byId("scan-loading-state");
+
+  if (scanGate) scanGate.style.display = signedIn ? "none" : "flex";
+  if (!signedIn) {
+    if (scanEmpty) scanEmpty.style.display = "none";
+    if (scanResults) scanResults.style.display = "none";
+    if (scanLoading) scanLoading.style.display = "none";
+  } else {
+    // When signed in, restore standard scanner display state
+    const hasResults = Boolean(
+      (state.latestScan?.items?.exactMatches?.length || 0) +
+      (state.latestScan?.items?.lookAlikes?.length || 0) > 0
+    );
+    if (hasResults) {
+      if (scanResults) scanResults.style.display = "block";
+      if (scanEmpty) scanEmpty.style.display = "none";
+    } else {
+      if (scanEmpty) scanEmpty.style.display = "block";
+      if (scanResults) scanResults.style.display = "none";
+    }
+  }
+
   // 1. Catalog / History Gate
   const catalogGate = byId("catalog-auth-gate");
   const catalogAuthView = byId("catalog-authenticated-view");
@@ -429,6 +534,16 @@ function renderAccount(profile) {
   show("account-signed-in", signedIn);
   renderHeaderAccount(profile);
   updateAuthGates(signedIn);
+
+  if (signedIn) {
+    chrome.storage.local.get(["discoveredCatalog", "cartItems"], (res = {}) => {
+      if (Array.isArray(res.discoveredCatalog)) state.catalog = res.discoveredCatalog;
+      if (Array.isArray(res.cartItems)) state.cart = res.cartItems;
+      renderCatalog();
+      renderCart(state.cart);
+    });
+  }
+
   if (!signedIn) return;
 
   const user = profile.user || {};
@@ -509,6 +624,11 @@ async function runSignOut() {
 
 function initAccount() {
   fetchProfile().then(renderAccount);
+
+  // Send periodic device heartbeat every 2 minutes while panel is active
+  setInterval(() => {
+    sendHeartbeat().catch(() => {});
+  }, 120000);
 
   byId("signin-btn")?.addEventListener("click", (e) =>
     runSignIn(e.currentTarget, "Continue with Google")
@@ -713,6 +833,16 @@ function initListeners() {
     switch (message.action) {
       case "SCAN_RESULTS_UPDATED":
         renderScanResults(message.data);
+        if (Array.isArray(message.data) && message.data[0]) {
+          const top = message.data[0];
+          recordSearchEvent({
+            streamPlatform: "web",
+            query: top.title || "Live Stream Scan",
+            asin: top.asin,
+            title: top.title,
+            confidence: top.confidence || 85
+          }).catch(() => {});
+        }
         break;
       case "SCAN_FAILED":
         showScanError(message.error);

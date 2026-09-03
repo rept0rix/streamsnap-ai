@@ -37,7 +37,7 @@ export function LoadingPulse({ message = "Scanning...", dark = true }: Props) {
     };
   }, []);
 
-  const dotColor = dark ? "#6366F1" : "#fff";
+  const dotColor = dark ? "#FF5500" : "#fff";
   const textColor = dark ? "#94A3B8" : "rgba(255,255,255,0.8)";
 
   return (

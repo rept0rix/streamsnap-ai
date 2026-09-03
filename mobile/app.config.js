@@ -22,7 +22,9 @@ module.exports = ({ config }) => ({
       NSPhotoLibraryUsageDescription:
         "StreamSnap reads screenshots from your photo library to identify products.",
       NSPhotoLibraryAddUsageDescription:
-        "StreamSnap saves scan results to your photo library."
+        "StreamSnap saves scan results to your photo library.",
+      NSMicrophoneUsageDescription:
+        "StreamSnap does not record audio. iOS may show this if the broadcast microphone toggle appears."
     },
     entitlements: {
       "com.apple.security.application-groups": ["group.com.streamsnap.ai"]
@@ -52,6 +54,7 @@ module.exports = ({ config }) => ({
     bundler: "metro"
   },
   plugins: [
+    "./plugins/withBroadcastExtension",
     "expo-router",
     "expo-camera",
     [

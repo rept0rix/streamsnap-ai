@@ -20,7 +20,7 @@ import {
   Alert,
   Platform
 } from "react-native";
-import { useShareIntentContext, isImageShareIntent } from "expo-share-intent";
+import { useShareIntentContext } from "expo-share-intent";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -66,7 +66,7 @@ export default function ShareScreen() {
       let sharedUrl: string | null = null;
 
       // Case 1: User shared an image directly (screenshot from TikTok etc.)
-      if (isImageShareIntent(shareIntent)) {
+      if (shareIntent.type === "media" || shareIntent.type === "file" || (shareIntent.files && shareIntent.files.length > 0)) {
         const files = shareIntent.files;
         if (files && files.length > 0) {
           imageUri = files[0].path;
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
   closeText: { color: "#64748B", fontSize: 14 },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   scroll: { flex: 1 },
-  groupLabel: { color: "#6366F1", fontSize: 14, fontWeight: "700", marginBottom: 12, marginTop: 20 },
+  groupLabel: { color: "#FF5500", fontSize: 14, fontWeight: "700", marginBottom: 12, marginTop: 20 },
   viewCatalogButton: {
     marginTop: 24,
     alignItems: "center",
@@ -256,5 +256,5 @@ const styles = StyleSheet.create({
     borderColor: "#334155",
     borderRadius: 12
   },
-  viewCatalogText: { color: "#6366F1", fontWeight: "600", fontSize: 14 }
+  viewCatalogText: { color: "#FF5500", fontWeight: "600", fontSize: 14 }
 });
