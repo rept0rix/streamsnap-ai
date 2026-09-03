@@ -28,6 +28,8 @@ export interface Product {
   frameImage?: string | null;
   /** Data URL of the box_2d crop around the product, when available. */
   sourceCrop?: string | null;
+  /** True when the live scan fired because the viewer paused the video. */
+  capturedOnPause?: boolean;
 }
 
 export interface ResolveResult {

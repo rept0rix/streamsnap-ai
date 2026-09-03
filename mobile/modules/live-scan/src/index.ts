@@ -20,6 +20,9 @@ export type LiveScanProduct = {
   /** Data URL written by the broadcast extension: the frame (or crop) it saw. */
   frameImage?: string | null;
   sourceCrop?: string | null;
+  /** "pause" when the scan fired on a paused video, "periodic" otherwise. */
+  trigger?: "pause" | "periodic" | string;
+  capturedOnPause?: boolean;
   seenCount?: number;
   firstSeenAt?: number;
   lastSeenAt?: number;

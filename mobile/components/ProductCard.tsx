@@ -115,8 +115,13 @@ export function ProductCard({ product, item, onPress, onAddToCart }: Props) {
             </View>
           )}
           <View style={styles.thumbBadge}>
-            <Ionicons name="videocam" size={10} color="#FFFFFF" style={{ marginRight: 3 }} />
-            <Text style={styles.thumbBadgeText}>Video Frame</Text>
+            <Ionicons
+              name={p.capturedOnPause ? "pause-circle" : "videocam"}
+              size={10}
+              color="#FFFFFF"
+              style={{ marginRight: 3 }}
+            />
+            <Text style={styles.thumbBadgeText}>{p.capturedOnPause ? "Paused Frame" : "Video Frame"}</Text>
           </View>
         </View>
 

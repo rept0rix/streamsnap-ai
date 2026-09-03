@@ -67,7 +67,8 @@ export function useLiveScan() {
         videoTitle: item.videoTitle ?? null,
         videoUrl: item.videoUrl ?? null,
         frameImage,
-        sourceCrop: item.sourceCrop ?? null
+        sourceCrop: item.sourceCrop ?? null,
+        capturedOnPause: item.capturedOnPause ?? item.trigger === "pause"
       };
 
       const alreadySaved = currentCatalog.some(
