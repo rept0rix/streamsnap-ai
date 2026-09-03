@@ -8,12 +8,28 @@ const WORKER_URL = "https://streamsnap-lens.na0ryank0.workers.dev";
 
 export interface Product {
   title: string;
-  asin?: string;
+  asin?: string | null;
   url: string;
-  imageUrl?: string;
-  price?: string;
-  source: "amazon" | "other";
+  /** Catalog (Amazon listing) image. Never a video frame. */
+  imageUrl?: string | null;
+  price?: string | null;
+  /** True when `price` is the vision model's estimate, not a listing price. */
+  priceEstimated?: boolean;
+  source: "amazon" | "other" | string;
   confidence?: number;
+  /** True when an Amazon listing (ASIN) was verified for this detection. */
+  verified?: boolean;
+  /** Title of the matched Amazon listing, when verified. */
+  matchedTitle?: string | null;
+  matchReason?: string | null;
+  videoTitle?: string | null;
+  videoUrl?: string | null;
+  /** Data URL of the video frame (or tight crop) this product was seen in. */
+  frameImage?: string | null;
+  /** Data URL of the box_2d crop around the product, when available. */
+  sourceCrop?: string | null;
+  /** True when the live scan fired because the viewer paused the video. */
+  capturedOnPause?: boolean;
 }
 
 export interface ResolveResult {

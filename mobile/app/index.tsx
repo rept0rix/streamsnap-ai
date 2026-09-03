@@ -236,8 +236,8 @@ export default function HomeScreen() {
               </View>
               <Text style={styles.liveRadarSub} numberOfLines={1}>
                 {live.state.scanCount > 0
-                  ? `Scanning TikTok screen (${live.state.scanCount} frames analyzed)`
-                  : "Scanning TikTok / Reels screen in real-time..."}
+                  ? `Pause a video to scan it · ${live.state.scanCount} frames analyzed`
+                  : "Pause on any product to scan it instantly..."}
               </Text>
             </View>
           </View>
@@ -390,7 +390,7 @@ export default function HomeScreen() {
               </View>
               <Text style={styles.emptyTitle}>No products scanned yet</Text>
               <Text style={styles.emptyDesc}>
-                Tap Live Scan above, then open TikTok or YouTube. Products spotted in videos will stack right here.
+                Tap Live Scan above, then open TikTok or YouTube. Pause on anything you like — that frame is scanned instantly and lands right here.
               </Text>
               <TouchableOpacity
                 style={styles.emptyActionBtn}

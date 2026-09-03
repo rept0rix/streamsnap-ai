@@ -3,16 +3,44 @@ import UIKit
 import UserNotifications
 
 /// Receives the device screen while the user is in TikTok / YouTube / Instagram.
-/// Samples a frame every few seconds, skips near-duplicates, and POSTs to /resolve.
+///
+/// Two triggers send a frame to /resolve:
+///  1. **Pause** — the screen stops changing for ~1.2 s. Pausing a video to look
+///     at something is the strongest buying signal we get, so that exact frame
+///     is scanned immediately, once per still period, at higher JPEG quality
+///     (no motion blur). We cannot see the player's pause button; stillness of
+///     the pixels is the proxy.
+///  2. **Periodic** — every `minInterval` seconds while the video keeps moving,
+///     skipping near-duplicates of the last scanned frame.
+///
 /// Finds are written to the App Group so the main app accumulates them.
 final class SampleHandler: RPBroadcastSampleHandler {
   private let minInterval: TimeInterval = 5
   private let maxEdge: CGFloat = 960
   private let jpegQuality: CGFloat = 0.55
+  // A paused frame is the user explicitly asking "what is this?", so it gets
+  // more pixels and less compression: brand/model text is what the vision
+  // model keys on, and it is the first thing lost to downscaling.
+  private let pausedMaxEdge: CGFloat = 1280
+  private let pausedJpegQuality: CGFloat = 0.72
+
+  /// How often the cheap 8×8 hash is computed to watch for stillness.
+  private let hashInterval: TimeInterval = 0.4
+  /// Consecutive near-identical hashes that count as "the user paused".
+  private let stillFramesRequired = 3
+  private let stillHammingMax = 4
+  /// Hamming distance under which a frame is "the same content" as the last scan.
+  private let duplicateHammingMax = 6
 
   private var lastSampleAt: Date = .distantPast
+  private var lastHashAt: Date = .distantPast
   private var inFlight = false
   private var lastHash: UInt64 = 0
+
+  private var stillHash: UInt64 = 0
+  private var stillCount = 0
+  private var stillScanned = false
+
   private static let sharedCIContext = CIContext(options: [
     .useSoftwareRenderer: false,
     .cacheIntermediates: false,
@@ -31,41 +59,82 @@ final class SampleHandler: RPBroadcastSampleHandler {
     LiveScanStore.endSession()
   }
 
+  private enum Trigger: String {
+    case pause
+    case periodic
+  }
+
   override func processSampleBuffer(_ sampleBuffer: CMSampleBuffer, with sampleBufferType: RPSampleBufferType) {
     guard sampleBufferType == .video else { return }
     guard !inFlight else { return }
     let now = Date()
-    guard now.timeIntervalSince(lastSampleAt) >= minInterval else { return }
+    guard now.timeIntervalSince(lastHashAt) >= hashInterval else { return }
     guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
-
-    lastSampleAt = now
-    inFlight = true
+    lastHashAt = now
 
     var jpeg: Data?
     var hash: UInt64 = 0
+    var trigger: Trigger?
+    var skippedDuplicate = false
+
     autoreleasepool {
       let image = CIImage(cvPixelBuffer: pixelBuffer)
       hash = Self.averageHash(image)
-      if lastHash != 0 && Self.hamming(lastHash, hash) < 6 {
+      guard hash != 0 else { return }
+
+      // Stillness tracking: a run of near-identical hashes means the video is
+      // paused (or the user is on a static screen). Motion resets the run.
+      if stillHash != 0 && Self.hamming(stillHash, hash) <= stillHammingMax {
+        stillCount += 1
+      } else {
+        stillHash = hash
+        stillCount = 1
+        stillScanned = false
+      }
+
+      let isDuplicateOfLastScan = lastHash != 0 && Self.hamming(lastHash, hash) < duplicateHammingMax
+      let pausedNow = stillCount >= stillFramesRequired && !stillScanned
+      let periodicDue = now.timeIntervalSince(lastSampleAt) >= minInterval
+
+      if pausedNow {
+        // One scan per still period, and none if this content was just scanned.
+        stillScanned = true
+        if isDuplicateOfLastScan { return }
+        trigger = .pause
+      } else if periodicDue {
+        lastSampleAt = now
+        if isDuplicateOfLastScan {
+          skippedDuplicate = true
+          return
+        }
+        trigger = .periodic
+      } else {
         return
       }
-      jpeg = encodeJPEG(image)
+
+      jpeg = trigger == .pause
+        ? encodeJPEG(image, quality: pausedJpegQuality, maxEdge: pausedMaxEdge)
+        : encodeJPEG(image, quality: jpegQuality, maxEdge: maxEdge)
     }
 
-    guard let jpeg, !jpeg.isEmpty else {
-      inFlight = false
-      if lastHash != 0 {
-        LiveScanStore.recordEvent(phase: "skipped_duplicate", incrementSkip: true)
-      } else {
-        LiveScanStore.recordEvent(phase: "encode_failed", error: "Could not encode frame")
-      }
+    if skippedDuplicate {
+      LiveScanStore.recordEvent(phase: "skipped_duplicate", incrementSkip: true)
       return
     }
+    guard let trigger else { return }
+
+    guard let jpeg, !jpeg.isEmpty else {
+      LiveScanStore.recordEvent(phase: "encode_failed", error: "Could not encode frame")
+      return
+    }
+
+    inFlight = true
     lastHash = hash
-    resolve(jpeg: jpeg)
+    lastSampleAt = now
+    resolve(jpeg: jpeg, trigger: trigger)
   }
 
-  private func encodeJPEG(_ image: CIImage) -> Data? {
+  private func encodeJPEG(_ image: CIImage, quality: CGFloat, maxEdge: CGFloat) -> Data? {
     let extent = image.extent.integral
     guard extent.width > 8, extent.height > 8 else { return nil }
     let longest = max(extent.width, extent.height)
@@ -73,11 +142,11 @@ final class SampleHandler: RPBroadcastSampleHandler {
     let scaled = image.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
     let colorSpace = CGColorSpaceCreateDeviceRGB()
     return Self.sharedCIContext.jpegRepresentation(of: scaled, colorSpace: colorSpace, options: [
-      CIImageRepresentationOption(rawValue: kCGImageDestinationLossyCompressionQuality as String): jpegQuality
+      CIImageRepresentationOption(rawValue: kCGImageDestinationLossyCompressionQuality as String): quality
     ])
   }
 
-  private func resolve(jpeg: Data) {
+  private func resolve(jpeg: Data, trigger: Trigger) {
     let creds = LiveScanStore.credentials()
     let payload: [String: Any] = [
       "image": "data:image/jpeg;base64,\(jpeg.base64EncodedString())",
@@ -129,8 +198,10 @@ final class SampleHandler: RPBroadcastSampleHandler {
         return
       }
 
-      var products = (parsed?["products"] as? [[String: Any]] ?? [])
-        + (parsed?["others"] as? [[String: Any]] ?? [])
+      // `products` already equals amazon + others; older workers only sent the
+      // two lists separately.
+      var products = parsed?["products"] as? [[String: Any]]
+        ?? ((parsed?["amazon"] as? [[String: Any]] ?? []) + (parsed?["others"] as? [[String: Any]] ?? []))
 
       // Save the captured video frame screenshot so the user sees exactly where it came from!
       if !products.isEmpty {
@@ -154,7 +225,9 @@ final class SampleHandler: RPBroadcastSampleHandler {
 
         products = products.map { item in
           var updated = item
-          // If bounding box was returned by AI, crop to the exact object! (Chrome Extension style)
+          // Crop to the AI bounding box when available (Chrome Extension style);
+          // otherwise keep the full frame. Either way this is the "Video Frame"
+          // side only — imageUrl (the Amazon listing photo) is left untouched.
           if let box = item["box_2d"] as? [Any],
              let cropped = Self.cropBox(from: jpeg, box: box) {
             updated["frameImage"] = cropped
@@ -162,15 +235,21 @@ final class SampleHandler: RPBroadcastSampleHandler {
           } else {
             updated["frameImage"] = base64DataUrl
           }
+          if let imageUrl = updated["imageUrl"] as? String, imageUrl.hasPrefix("data:") {
+            // Never let a frame masquerade as the catalog image.
+            updated["imageUrl"] = nil
+          }
           if updated["source"] == nil {
             updated["source"] = "TikTok / Live Video"
           }
+          updated["trigger"] = trigger.rawValue
+          updated["capturedOnPause"] = trigger == .pause
           return updated
         }
       }
 
       LiveScanStore.recordEvent(
-        phase: products.isEmpty ? "ok_empty" : "ok_finds",
+        phase: (products.isEmpty ? "ok_empty" : "ok_finds") + (trigger == .pause ? "_pause" : ""),
         status: status,
         body: bodyText,
         jpegBytes: jpegBytes,
@@ -187,21 +266,27 @@ final class SampleHandler: RPBroadcastSampleHandler {
   }
 
   private static func notifyNewFinds(_ products: [[String: Any]]) {
-    guard let first = products.first,
+    // Lead with a verified Amazon listing when there is one.
+    let verifiedFirst = products.first { ($0["asin"] as? String).map { !$0.isEmpty } ?? false }
+    guard let first = verifiedFirst ?? products.first,
           let title = first["title"] as? String, !title.isEmpty
     else { return }
 
     let content = UNMutableNotificationContent()
     let price = first["price"] as? String
-    let asin = first["asin"] as? String
+    let priceEstimated = first["priceEstimated"] as? Bool ?? false
+    let asin = (first["asin"] as? String).flatMap { $0.isEmpty ? nil : $0 }
     let url = first["url"] as? String ?? (asin.map { "https://www.amazon.com/dp/\($0)" } ?? "")
-    let imageUrlString = first["imageUrl"] as? String
+    // Prefer the listing photo; fall back to the crop we actually saw.
+    let imageUrlString = (first["imageUrl"] as? String).flatMap { $0.isEmpty ? nil : $0 }
+      ?? (first["sourceCrop"] as? String)
+      ?? (first["frameImage"] as? String)
 
-    content.title = "⚡ StreamSnap Match Found!"
+    content.title = asin != nil ? "⚡ StreamSnap Match Found!" : "👀 StreamSnap Spotted Something"
     if let price, !price.isEmpty {
-      content.subtitle = "\(price) on Amazon"
+      content.subtitle = asin != nil && !priceEstimated ? "\(price) on Amazon" : "~\(price) · tap to search Amazon"
     } else {
-      content.subtitle = "Found on Amazon"
+      content.subtitle = asin != nil ? "Found on Amazon" : "Tap to search Amazon"
     }
     content.body = title
     content.sound = .default
