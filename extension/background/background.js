@@ -109,11 +109,6 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   const settings = await ensureDefaults();
   await syncAutoScanAlarm(settings.autoScanIntervalSec);
   await syncActionBadge();
-  if (details.reason === "install") {
-    chrome.tabs.create({
-      url: chrome.runtime.getURL("onboarding/onboarding.html")
-    });
-  }
 });
 
 chrome.runtime.onStartup.addListener(async () => {

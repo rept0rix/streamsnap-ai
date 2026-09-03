@@ -616,10 +616,17 @@
             </div>
           </div>
 
-          <!-- Advanced: bring your own key. Collapsed, and clearly labelled as
-               the riskier path, because it is. -->
-          <details class="settings-section advanced-section">
-            <summary class="advanced-summary">Advanced: use your own Gemini key</summary>
+          <!-- Advanced: bring your own key -->
+          <details class="settings-section advanced-section" id="gemini-key-details">
+            <summary class="advanced-summary" id="gemini-key-summary">
+              <span class="advanced-summary-left">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="key-inline-icon">
+                  <path d="m21 2-2 2m-1.5 1.5L14 9M10 13l-4 4m0 0H3v3h3l1-1m-1 1 1-1m4-8a4.5 4.5 0 1 1-6.364-6.364A4.5 4.5 0 0 1 11.636 7.636Z"></path>
+                </svg>
+                <span>Advanced: use your own Gemini key</span>
+              </span>
+              <span id="gemini-key-badge" class="gemini-key-badge"></span>
+            </summary>
             <p class="settings-subtext warning-text">
               A Gemini key is billable, and it is stored on this device as plain text. Anyone who
               obtains it can spend money on your account. Signing in above is safer and needs no key.
@@ -814,7 +821,7 @@
       <div class="footer-info">
         <a href="https://streamsnap.online" target="_blank" rel="noopener noreferrer" class="footer-link">streamsnap.online ↗</a>
         <span>•</span>
-        <span id="footer-version-tag" class="footer-version-badge" title="StreamSnap AI v1.6.2 Built 2026-09-01 19:40 IDT">v1.6.2 (01/09 19:40)</span>
+        <span id="footer-version-tag" class="footer-version-badge" title="StreamSnap AI v1.6.0 Built 2026-09-01 12:20 IDT">v1.6.0 (2026-09-01 12:20)</span>
         <span>•</span>
         <span id="footer-storage-note">Data stored locally</span>
       </div>

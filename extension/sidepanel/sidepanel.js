@@ -314,11 +314,30 @@ function initSettings() {
   const saveTagBtn = byId("save-tag-btn");
 
   function paintKeyStatus(hasKey) {
-    if (!keyStatus) return;
-    keyStatus.textContent = hasKey
-      ? "Key saved — Gemini Vision active"
-      : "No API key. Scanning is disabled until you add one.";
-    keyStatus.style.color = hasKey ? "#10B981" : "#F59E0B";
+    if (keyStatus) {
+      keyStatus.textContent = hasKey
+        ? "Key saved — Gemini Vision active"
+        : "No API key. Sign in above to use Cloudflare proxy or add a key.";
+      keyStatus.style.color = hasKey ? "#10B981" : "#F59E0B";
+    }
+
+    const keyDetails = byId("gemini-key-details");
+    const keyBadge = byId("gemini-key-badge");
+
+    if (hasKey) {
+      if (keyDetails) keyDetails.open = true;
+      if (keyBadge) {
+        keyBadge.className = "gemini-key-badge active";
+        keyBadge.textContent = "● Key Active";
+        keyBadge.style.display = "inline-flex";
+      }
+    } else {
+      if (keyBadge) {
+        keyBadge.className = "gemini-key-badge inactive";
+        keyBadge.textContent = "No Key";
+        keyBadge.style.display = "none";
+      }
+    }
   }
 
   // Populate dynamic version tracking
@@ -511,6 +530,16 @@ function renderAccount(profile) {
   show("account-signed-in", signedIn);
   renderHeaderAccount(profile);
   updateAuthGates(signedIn);
+
+  if (signedIn) {
+    chrome.storage.local.get(["discoveredCatalog", "cartItems"], (res = {}) => {
+      if (Array.isArray(res.discoveredCatalog)) state.catalog = res.discoveredCatalog;
+      if (Array.isArray(res.cartItems)) state.cart = res.cartItems;
+      renderCatalog();
+      renderCart(state.cart);
+    });
+  }
+
   if (!signedIn) return;
 
   const user = profile.user || {};
