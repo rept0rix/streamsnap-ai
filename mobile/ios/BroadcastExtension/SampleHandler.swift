@@ -18,6 +18,10 @@ final class SampleHandler: RPBroadcastSampleHandler {
   private let minInterval: TimeInterval = 5
   private let maxEdge: CGFloat = 960
   private let jpegQuality: CGFloat = 0.55
+  // A paused frame is the user explicitly asking "what is this?", so it gets
+  // more pixels and less compression: brand/model text is what the vision
+  // model keys on, and it is the first thing lost to downscaling.
+  private let pausedMaxEdge: CGFloat = 1280
   private let pausedJpegQuality: CGFloat = 0.72
 
   /// How often the cheap 8×8 hash is computed to watch for stillness.
@@ -108,7 +112,9 @@ final class SampleHandler: RPBroadcastSampleHandler {
         return
       }
 
-      jpeg = encodeJPEG(image, quality: trigger == .pause ? pausedJpegQuality : jpegQuality)
+      jpeg = trigger == .pause
+        ? encodeJPEG(image, quality: pausedJpegQuality, maxEdge: pausedMaxEdge)
+        : encodeJPEG(image, quality: jpegQuality, maxEdge: maxEdge)
     }
 
     if skippedDuplicate {
@@ -128,7 +134,7 @@ final class SampleHandler: RPBroadcastSampleHandler {
     resolve(jpeg: jpeg, trigger: trigger)
   }
 
-  private func encodeJPEG(_ image: CIImage, quality: CGFloat) -> Data? {
+  private func encodeJPEG(_ image: CIImage, quality: CGFloat, maxEdge: CGFloat) -> Data? {
     let extent = image.extent.integral
     guard extent.width > 8, extent.height > 8 else { return nil }
     let longest = max(extent.width, extent.height)
