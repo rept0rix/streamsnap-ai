@@ -250,6 +250,15 @@ export async function handleSyncRoute(request, env, url, json) {
         data.quantity || 1
       ).run();
 
+      if (env.SYNC_HUB) {
+        const hubId = env.SYNC_HUB.idFromName(user.id);
+        const hub = env.SYNC_HUB.get(hubId);
+        await hub.fetch(new Request("http://internal/broadcast", {
+          method: "POST",
+          body: JSON.stringify({ type: "broadcast", payload: { event: "cart.add", item: data } })
+        })).catch(() => {});
+      }
+
       return json({ ok: true, synced: "cart.add", id: cartId }, 200, request, env);
     }
 
@@ -260,6 +269,15 @@ export async function handleSyncRoute(request, env, url, json) {
         await env.DB.prepare("UPDATE user_cart_items SET status = 'removed' WHERE id = ? AND user_id = ?").bind(id, user.id).run();
       } else if (asin) {
         await env.DB.prepare("UPDATE user_cart_items SET status = 'removed' WHERE asin = ? AND user_id = ?").bind(asin, user.id).run();
+      }
+      
+      if (env.SYNC_HUB) {
+        const hubId = env.SYNC_HUB.idFromName(user.id);
+        const hub = env.SYNC_HUB.get(hubId);
+        await hub.fetch(new Request("http://internal/broadcast", {
+          method: "POST",
+          body: JSON.stringify({ type: "broadcast", payload: { event: "cart.remove", asin, id } })
+        })).catch(() => {});
       }
       return json({ ok: true, synced: "cart.remove" }, 200, request, env);
     }
@@ -284,6 +302,15 @@ export async function handleSyncRoute(request, env, url, json) {
         typeof data.confidenceScore === "number" ? data.confidenceScore : null,
         data.sourceFrameUrl || null
       ).run();
+
+      if (env.SYNC_HUB) {
+        const hubId = env.SYNC_HUB.idFromName(user.id);
+        const hub = env.SYNC_HUB.get(hubId);
+        await hub.fetch(new Request("http://internal/broadcast", {
+          method: "POST",
+          body: JSON.stringify({ type: "broadcast", payload: { event: "search.record", id: searchId, query: detectedQuery } })
+        })).catch(() => {});
+      }
 
       return json({ ok: true, synced: "search.record", id: searchId }, 200, request, env);
     }
@@ -313,6 +340,15 @@ export async function handleSyncRoute(request, env, url, json) {
         data.source || "amazon",
         data.verified ? 1 : 0
       ).run();
+
+      if (env.SYNC_HUB) {
+        const hubId = env.SYNC_HUB.idFromName(user.id);
+        const hub = env.SYNC_HUB.get(hubId);
+        await hub.fetch(new Request("http://internal/broadcast", {
+          method: "POST",
+          body: JSON.stringify({ type: "broadcast", payload: { event: "product.save", id: prodId, title } })
+        })).catch(() => {});
+      }
 
       return json({ ok: true, synced: "product.save", id: prodId }, 200, request, env);
     }

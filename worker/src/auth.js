@@ -211,6 +211,10 @@ function readToken(request) {
   const header = request.headers.get("Authorization") || "";
   if (header.startsWith("Bearer ")) return header.slice(7).trim();
 
+  const url = new URL(request.url);
+  const queryToken = url.searchParams.get("token");
+  if (queryToken) return queryToken;
+
   const cookie = request.headers.get("Cookie") || "";
   const match = cookie.match(new RegExp(`${SESSION_COOKIE}=([^;]+)`));
   return match ? match[1] : null;

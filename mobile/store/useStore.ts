@@ -244,6 +244,7 @@ export const useStore = create<StreamSnapState>((set, get) => ({
 
   setSessionToken: (token) => {
     const { setSessionToken: persistToken, clearSessionToken, getDeviceId, setDeviceId } = require("../services/storage");
+    const { subscribeToSyncHub } = require("../services/api");
     if (token) {
       persistToken(token);
       // Register device in background
@@ -256,9 +257,17 @@ export const useStore = create<StreamSnapState>((set, get) => ({
             if (res?.deviceId) setDeviceId(res.deviceId);
           });
         });
+
+        // Initialize Live Sync
+        subscribeToSyncHub(token, () => {
+          get().loadCatalog();
+          get().loadCart();
+        });
       } catch (_) {}
     } else {
       clearSessionToken();
+      // To properly clear WS, we might need to close it. For now, subscribeToSyncHub closes old connections.
+      subscribeToSyncHub("", () => {});
     }
     set({ sessionToken: token });
   },

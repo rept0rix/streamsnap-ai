@@ -3103,3 +3103,72 @@ body.studio-dark {
     justify-content: center;
   }
 }
+
+/* ==========================================================================
+   Mobile Showcase — self-contained phone mockups of the mobile app
+   (scoped with .mobshow- prefix to avoid collisions)
+   ========================================================================== */
+.mobshow-section {
+  padding: 90px 0;
+  background:
+    radial-gradient(1200px 400px at 50% -10%, rgba(255, 153, 0, 0.06), transparent 70%),
+    #05070C;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+.mobshow-grid {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 56px;
+  margin-top: 48px;
+  flex-wrap: wrap;
+}
+.mobshow-item {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 300px;
+}
+.mobshow-phone {
+  width: 260px;
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 30px 60px rgba(0, 0, 0, 0.55));
+  transition: transform 0.3s ease;
+}
+.mobshow-item:hover .mobshow-phone {
+  transform: translateY(-6px);
+}
+.mobshow-caption {
+  margin-top: 22px;
+  text-align: center;
+  color: #94A3B8;
+  font-size: 14px;
+  line-height: 1.5;
+  max-width: 260px;
+}
+.mobshow-caption strong {
+  display: block;
+  color: #F8FAFC;
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+/* Tablet */
+@media (max-width: 840px) {
+  .mobshow-section { padding: 60px 0; }
+  .mobshow-grid { gap: 36px; margin-top: 36px; }
+  .mobshow-phone { width: 230px; }
+}
+
+/* Phone: keep the mockups clearly visible but not oversized, stacked */
+@media (max-width: 560px) {
+  .mobshow-section { padding: 48px 0; }
+  .mobshow-grid { gap: 40px; margin-top: 28px; }
+  .mobshow-item { max-width: 82vw; }
+  .mobshow-phone { width: min(240px, 62vw); }
+  .mobshow-caption { font-size: 13px; }
+  .mobshow-caption strong { font-size: 14px; }
+}

@@ -243,6 +243,49 @@ export async function sendSyncEvent(
 }
 
 // ---------------------------------------------------------------------------
+// WebSockets / Live Sync
+// ---------------------------------------------------------------------------
+
+let wsInstance: WebSocket | null = null;
+
+export function subscribeToSyncHub(
+  token: string,
+  onUpdate: () => void
+): () => void {
+  const wsUrl = WORKER_URL.replace(/^http/, "ws") + `/_ws/sync?token=${encodeURIComponent(token)}`;
+  
+  if (wsInstance && wsInstance.readyState <= 1) {
+    return () => { if (wsInstance) wsInstance.close(); };
+  }
+
+  wsInstance = new WebSocket(wsUrl);
+
+  wsInstance.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      if (data.type === "broadcast" && data.payload) {
+        const ev = data.payload.event;
+        if (ev === "cart.add" || ev === "cart.remove" || ev === "product.save") {
+          onUpdate();
+        }
+      }
+    } catch (err) {}
+  };
+
+  wsInstance.onclose = () => {
+    wsInstance = null;
+    // Reconnection logic could be handled by the caller or added here
+  };
+
+  return () => {
+    if (wsInstance) {
+      wsInstance.close();
+      wsInstance = null;
+    }
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Health check
 // ---------------------------------------------------------------------------
 

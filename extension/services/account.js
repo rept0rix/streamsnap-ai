@@ -96,6 +96,7 @@ export async function fetchProfile() {
       });
       registerDevice().catch(() => {});
       syncCloudState().catch(() => {});
+      initWebSocketSync().catch(() => {});
     }
     return data;
   } catch (err) {
@@ -222,6 +223,39 @@ export async function sendHeartbeat() {
   } catch (_) {}
 }
 
+let wsInstance = null;
+
+export async function initWebSocketSync() {
+  const token = await getToken();
+  if (!token) return;
+
+  const apiBase = await getApiBase();
+  const wsUrl = apiBase.replace(/^http/, "ws") + `/_ws/sync?token=${encodeURIComponent(token)}`;
+
+  if (wsInstance && wsInstance.readyState <= 1) return; // already connecting/connected
+
+  wsInstance = new WebSocket(wsUrl);
+  
+  wsInstance.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      if (data.type === "broadcast" && data.payload) {
+        const ev = data.payload.event;
+        if (ev === "cart.add" || ev === "cart.remove" || ev === "product.save") {
+          // A mutation happened elsewhere, fetch the latest state from the cloud
+          syncCloudState();
+        }
+      }
+    } catch (err) {}
+  };
+
+  wsInstance.onclose = () => {
+    wsInstance = null;
+    // Attempt reconnect after delay if token still exists
+    setTimeout(initWebSocketSync, 5000);
+  };
+}
+
 export async function syncCloudState() {
   const token = await getToken();
   if (!token) return null;
@@ -235,11 +269,20 @@ export async function syncCloudState() {
     if (response.ok) {
       const state = await response.json();
       if (state.ok) {
+        let updates = {};
         if (state.user?.isStreamer && state.user?.affiliateTag) {
-          await chrome.storage.local.set({
-            isStreamer: true,
-            creatorAffiliateTag: state.user.affiliateTag
-          });
+          updates.isStreamer = true;
+          updates.creatorAffiliateTag = state.user.affiliateTag;
+        }
+        if (state.savedProducts) {
+          updates.discoveredCatalog = state.savedProducts;
+        }
+        if (state.cartItems) {
+          updates.cartItems = state.cartItems;
+        }
+        
+        if (Object.keys(updates).length > 0) {
+          await chrome.storage.local.set(updates);
         }
         return state;
       }

@@ -1336,6 +1336,7 @@
           renderUserProfile();
           loadProducts();
           loadCreatorStats();
+          initWebSocketSync(workerBase, getAuthToken());
         } else {
           authWall.style.display = "flex";
           mainApp.style.display = "none";
@@ -1345,6 +1346,29 @@
         mainApp.style.display = "none";
       }
     });
+
+    function initWebSocketSync(workerBase, token) {
+      if (!token) return;
+      const wsUrl = workerBase.replace(/^http/, "ws") + `/_ws/sync?token=${encodeURIComponent(token)}`;
+      let ws = new WebSocket(wsUrl);
+      
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === "broadcast" && data.payload) {
+            const ev = data.payload.event;
+            if (ev === "cart.add" || ev === "cart.remove" || ev === "product.save") {
+              loadProducts(); // Reload lists to show live changes
+              showToast("Live Sync: Products updated", false);
+            }
+          }
+        } catch (err) {}
+      };
+
+      ws.onclose = () => {
+        setTimeout(() => initWebSocketSync(workerBase, token), 5000);
+      };
+    }
 
     function switchRoleMode(mode) {
       currentRole = mode;

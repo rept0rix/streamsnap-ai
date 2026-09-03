@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">
+  <defs>
+    <clipPath id="screen2"><rect x="14" y="14" width="362" height="816" rx="46"/></clipPath>
+    <linearGradient id="frame" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1c2740"/>
+      <stop offset="1" stop-color="#0d1526"/>
+    </linearGradient>
+    <linearGradient id="scan" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FF9900" stop-opacity="0.0"/>
+      <stop offset="1" stop-color="#FF9900" stop-opacity="0.25"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Device body -->
+  <rect x="6" y="6" width="378" height="832" rx="54" fill="#05070C" stroke="#232B3A" stroke-width="2"/>
+  <rect x="14" y="14" width="362" height="816" rx="46" fill="#0B0F17"/>
+
+  <g clip-path="url(#screen2)">
+    <!-- Status bar -->
+    <text x="42" y="46" fill="#F8FAFC" font-size="13" font-weight="700">9:41</text>
+    <g fill="#F8FAFC">
+      <rect x="300" y="37" width="16" height="10" rx="2" opacity="0.9"/>
+      <rect x="320" y="37" width="16" height="10" rx="2" opacity="0.9"/>
+      <rect x="340" y="35" width="22" height="12" rx="3" opacity="0.5"/>
+      <rect x="342" y="37" width="16" height="8" rx="1.5"/>
+    </g>
+
+    <!-- Header -->
+    <text x="28" y="90" font-size="20">‹</text>
+    <text x="44" y="90" fill="#F8FAFC" font-size="17" font-weight="800">Live Results</text>
+    <g transform="translate(300,78)">
+      <circle cx="8" cy="4" r="4" fill="#EF4444"/>
+      <text x="20" y="8" fill="#94A3B8" font-size="11" font-weight="700">LIVE</text>
+    </g>
+
+    <!-- Scanned frame -->
+    <rect x="24" y="106" width="342" height="196" rx="16" fill="url(#frame)" stroke="#1E2533"/>
+    <!-- silhouettes -->
+    <circle cx="150" cy="176" r="26" fill="#0B0F17" opacity="0.5"/>
+    <rect x="126" y="200" width="48" height="78" rx="12" fill="#c0392b" opacity="0.85"/>
+    <circle cx="250" cy="172" r="28" fill="#0B0F17" opacity="0.5"/>
+    <rect x="224" y="198" width="54" height="82" rx="12" fill="#7f8c8d" opacity="0.7"/>
+    <rect x="24" y="240" width="342" height="62" fill="url(#scan)"/>
+    <!-- bounding box on jersey -->
+    <rect x="120" y="150" width="64" height="132" rx="6" fill="none" stroke="#10B981" stroke-width="2"/>
+    <rect x="120" y="136" width="96" height="16" rx="4" fill="#10B981"/>
+    <text x="126" y="148" fill="#04121a" font-size="9.5" font-weight="800">🟢 AC Milan Jersey</text>
+    <!-- bounding box on cap -->
+    <rect x="232" y="148" width="42" height="30" rx="6" fill="none" stroke="#F59E0B" stroke-width="2"/>
+    <rect x="232" y="134" width="58" height="15" rx="4" fill="#F59E0B"/>
+    <text x="237" y="145" fill="#0B0F17" font-size="9" font-weight="800">🟡 Cap</text>
+
+    <!-- Tier heading -->
+    <circle cx="30" cy="330" r="4" fill="#10B981"/>
+    <text x="42" y="334" fill="#F8FAFC" font-size="14" font-weight="700">Best Matches</text>
+    <rect x="270" y="322" width="96" height="18" rx="9" fill="#10B981" fill-opacity="0.15"/>
+    <text x="318" y="335" fill="#10B981" font-size="9.5" font-weight="700" text-anchor="middle">High confidence</text>
+
+    <!-- Result card 1 -->
+    <rect x="24" y="350" width="342" height="92" rx="14" fill="#172030" stroke="#1E2533"/>
+    <rect x="34" y="360" width="72" height="72" rx="10" fill="#0B0F17" stroke="#FF9900" stroke-opacity="0.3"/>
+    <rect x="52" y="376" width="36" height="46" rx="6" fill="#c0392b"/>
+    <text x="118" y="378" fill="#F8FAFC" font-size="12.5" font-weight="700">PUMA AC Milan 2023/24</text>
+    <text x="118" y="395" fill="#F8FAFC" font-size="12.5" font-weight="700">Home Replica Jersey</text>
+    <text x="118" y="416" fill="#FF9900" font-size="15" font-weight="800">$89.99</text>
+    <rect x="196" y="404" width="92" height="16" rx="8" fill="#FF9900" fill-opacity="0.14"/>
+    <text x="242" y="416" fill="#FF9900" font-size="9" font-weight="700" text-anchor="middle">95% confidence</text>
+    <rect x="300" y="399" width="56" height="30" rx="9" fill="#FF9900"/>
+    <text x="328" y="419" fill="#0B0F17" font-size="12" font-weight="800" text-anchor="middle">Buy</text>
+
+    <!-- Result card 2 -->
+    <rect x="24" y="452" width="342" height="92" rx="14" fill="#172030" stroke="#1E2533"/>
+    <rect x="34" y="462" width="72" height="72" rx="10" fill="#0B0F17" stroke="#FF9900" stroke-opacity="0.3"/>
+    <path d="M46 500 a26 18 0 0 1 52 0 z" fill="#c0392b"/>
+    <rect x="44" y="500" width="56" height="8" rx="3" fill="#8e2b22"/>
+    <text x="118" y="480" fill="#F8FAFC" font-size="12.5" font-weight="700">LA Angels 47 Brand</text>
+    <text x="118" y="497" fill="#F8FAFC" font-size="12.5" font-weight="700">Adjustable Cap</text>
+    <text x="118" y="518" fill="#FF9900" font-size="15" font-weight="800">$27.99</text>
+    <rect x="196" y="506" width="70" height="16" rx="8" fill="#334155" fill-opacity="0.5"/>
+    <text x="231" y="518" fill="#94A3B8" font-size="9" font-weight="700" text-anchor="middle">Visual match</text>
+    <rect x="300" y="501" width="56" height="30" rx="9" fill="#FF9900"/>
+    <text x="328" y="521" fill="#0B0F17" font-size="12" font-weight="800" text-anchor="middle">Buy</text>
+
+    <!-- Look-alikes heading -->
+    <circle cx="30" cy="576" r="4" fill="#F59E0B"/>
+    <text x="42" y="580" fill="#F8FAFC" font-size="14" font-weight="700">Look-Alikes</text>
+
+    <!-- Look-alike mini cards -->
+    <rect x="24" y="596" width="166" height="150" rx="14" fill="#172030" stroke="#1E2533"/>
+    <rect x="36" y="608" width="142" height="96" rx="10" fill="#0B0F17"/>
+    <rect x="86" y="628" width="42" height="56" rx="6" fill="#b23b30"/>
+    <text x="36" y="722" fill="#F8FAFC" font-size="11" font-weight="700">Soccer jersey (red)</text>
+    <text x="36" y="740" fill="#FF9900" font-size="12" font-weight="800">$42.99</text>
+
+    <rect x="200" y="596" width="166" height="150" rx="14" fill="#172030" stroke="#1E2533"/>
+    <rect x="212" y="608" width="142" height="96" rx="10" fill="#0B0F17"/>
+    <circle cx="283" cy="656" r="26" fill="#4a5568"/>
+    <text x="212" y="722" fill="#F8FAFC" font-size="11" font-weight="700">Grey crew tee</text>
+    <text x="212" y="740" fill="#FF9900" font-size="12" font-weight="800">$19.99</text>
+
+    <!-- Cart bar -->
+    <rect x="24" y="762" width="342" height="52" rx="14" fill="#FF9900"/>
+    <text x="195" y="794" fill="#0B0F17" font-size="14" font-weight="800" text-anchor="middle">🛒  Open Amazon 1-Click Cart</text>
+  </g>
+
+  <!-- Notch -->
+  <rect x="150" y="20" width="90" height="26" rx="13" fill="#05070C"/>
+</svg>

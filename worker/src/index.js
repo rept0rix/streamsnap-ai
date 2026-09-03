@@ -22,6 +22,8 @@ import { handleAuthRoute } from "./routes_auth.js";
 import { handleAdminRoute } from "./routes_admin.js";
 import { handleSyncRoute } from "./routes_sync.js";
 import { getCurrentUser } from "./auth.js";
+import { analyzeFrameWithOpenAI } from "./services/ai_vision.js";
+import { searchAmazonProduct } from "./services/amazon_api.js";
 
 const LIMITS = {
   MAX_IMAGE_BYTES: 3 * 1024 * 1024,
@@ -115,6 +117,14 @@ export default {
 
     if (url.pathname.startsWith("/img/")) {
       return serveImage(url.pathname.slice(5), env);
+    }
+
+    if (url.pathname === "/_ws/sync") {
+      const user = await getCurrentUser(env, request);
+      if (!user) return json({ error: "Unauthorized" }, 401, request, env);
+      const id = env.SYNC_HUB.idFromName(user.id);
+      const obj = env.SYNC_HUB.get(id);
+      return obj.fetch(request);
     }
 
     if (url.pathname === "/resolve" && request.method === "POST") {
@@ -411,7 +421,7 @@ async function fetchProductImage(query) {
   return null;
 }
 
-async function normalizeVisionProducts(raw) {
+async function normalizeVisionProducts(raw, env) {
   const list = Array.isArray(raw?.products) ? raw.products : [];
   const videoTitle = String(raw?.videoTitle || raw?.caption || "").trim();
   const amazon = [];
@@ -431,22 +441,31 @@ async function normalizeVisionProducts(raw) {
     if (!title || title.length < 3) continue;
     if (JUNK_TITLES.test(title)) continue;
 
-    const asin = /^B0[A-Z0-9]{8}$/i.test(item?.asin || "") ? String(item.asin).toUpperCase() : null;
-    const url =
-      item?.url ||
-      (asin ? `https://www.amazon.com/dp/${asin}` : `https://www.amazon.com/s?k=${encodeURIComponent(title)}`);
+    // Use Amazon PA-API to try and find a real ASIN / Affiliate link
+    let asin = /^B0[A-Z0-9]{8}$/i.test(item?.asin || "") ? String(item.asin).toUpperCase() : null;
+    let url = item?.url || (asin ? `https://www.amazon.com/dp/${asin}` : `https://www.amazon.com/s?k=${encodeURIComponent(title)}`);
+    let price = item.price != null ? (String(item.price).startsWith("$") ? String(item.price) : `$${item.price}`) : "$29.99";
+    let imageUrl = item.imageUrl || item.image || null;
+
+    if (!asin && env) {
+      const amzSearch = await searchAmazonProduct(title, env);
+      if (amzSearch && amzSearch.asin) {
+        asin = amzSearch.asin;
+        url = amzSearch.url;
+        if (!imageUrl) imageUrl = amzSearch.imageUrl;
+        if (amzSearch.price) price = amzSearch.price;
+      }
+    }
+
+    if (!imageUrl) {
+      imageUrl = await fetchProductImage(title);
+    }
     
-    // Confidence percentage
     let confidence = 92;
     if (typeof item?.confidence === "number") {
       confidence = Math.min(99, Math.max(70, Math.round(item.confidence)));
     } else {
       confidence = Math.floor(88 + ((title.length * 7) % 10));
-    }
-
-    let imageUrl = item.imageUrl || item.image || null;
-    if (!imageUrl) {
-      imageUrl = await fetchProductImage(title);
     }
 
     const product = {
@@ -455,7 +474,7 @@ async function normalizeVisionProducts(raw) {
       asin,
       image: imageUrl,
       imageUrl: imageUrl,
-      price: item.price != null ? (String(item.price).startsWith("$") ? String(item.price) : `$${item.price}`) : "$29.99",
+      price,
       source: "TikTok / Video",
       videoTitle: videoTitle || "TikTok Video",
       videoUrl,
@@ -535,7 +554,7 @@ YOU MUST OUTPUT ONLY RAW VALID JSON matching this structure exactly:
 
   const text = response?.response || response?.result || response?.description || "";
   if (!text) throw new Error("Workers AI returned an empty vision result");
-  const norm = await normalizeVisionProducts(parseModelJson(text));
+  const norm = await normalizeVisionProducts(parseModelJson(text), env);
   return { ...norm, rawText: text };
 }
 
@@ -546,12 +565,12 @@ YOU MUST OUTPUT ONLY RAW VALID JSON matching this structure exactly:
 async function handleResolve(request, env, ctx) {
   try {
     const hasLens = Boolean(env.BRIGHTDATA_API_KEY && env.BRIGHTDATA_ZONE);
-  const hasAI = Boolean(env.AI);
+  const hasAI = Boolean(env.AI || env.OPENAI_API_KEY);
   if (!hasLens && !hasAI) {
     return json(
       {
         ok: false,
-        error: "Worker is not configured. Set BRIGHTDATA_API_KEY and BRIGHTDATA_ZONE, or enable Workers AI."
+        error: "Worker is not configured. Set BRIGHTDATA_API_KEY and BRIGHTDATA_ZONE, or OPENAI_API_KEY."
       },
       503,
       request,
@@ -620,6 +639,20 @@ async function handleResolve(request, env, ctx) {
 
     ctx.waitUntil(env.IMAGES.delete(hash));
     ({ amazon, others } = parseLensResponse(payload));
+  } else if (env.OPENAI_API_KEY) {
+    try {
+      const rawJson = await analyzeFrameWithOpenAI(body.image, env);
+      const res = await normalizeVisionProducts(rawJson, env);
+      amazon = res.amazon;
+      others = res.others;
+      engine = "openai-gpt4o";
+    } catch (err) {
+      console.log("[resolve] OpenAI vision error:", err.message);
+      amazon = [];
+      others = [];
+      engine = "none";
+      rawVisionText = err.message;
+    }
   } else {
     try {
       const res = await callWorkersAI(bytes, env);
@@ -795,3 +828,5 @@ async function handleResolveUrl(request, env, ctx) {
     return json({ ok: false, error: err.message }, 500, request, env);
   }
 }
+
+export { SyncHub } from "./durable_objects/SyncHub.js";

@@ -54,3 +54,12 @@ enabled = true
 # for the mobile live scan without a third-party key.
 [ai]
 binding = "AI"
+
+# SyncHub Durable Object for real-time WebSocket state distribution
+[[durable_objects.bindings]]
+name = "SYNC_HUB"
+class_name = "SyncHub"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["SyncHub"]
