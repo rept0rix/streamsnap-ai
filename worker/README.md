@@ -43,12 +43,15 @@ frame ──► Gemini 2.5 Flash            (GEMINI_API_KEY, or X-Gemini-Key hea
             └─ fallback: Llama 4 Scout → Llama 3.2 Vision → LLaVA  ([ai] binding)
               │  names + locates physical products only; UI / app / body-part
               │  "products" and generic single nouns are filtered out
+              │  each detection is cropped by its box_2d (src/crop.js)
               ▼
         amazon.com/s?k=<title>  (per detection, cached in KV)      src/amazon_lookup.js
               │  keep the organic listing whose title overlaps the detection
               ▼
-   amazon[]  = verified listings: asin, dp url, catalog image, live price
-   others[]  = honest misses: search url, model's price estimate, no image
+   optional: Google Lens on each crop (BRIGHTDATA_*) — upgrades weak matches
+              ▼
+   amazon[]  = verified listings: asin, dp url, catalog image, live price, sourceCrop
+   others[]  = honest misses: search url, model's price estimate, sourceCrop, no image
 ```
 
 The model is never allowed to invent ASINs, catalog images or "Amazon" prices;

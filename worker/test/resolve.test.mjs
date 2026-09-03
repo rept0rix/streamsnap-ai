@@ -125,6 +125,8 @@ await test("returns a verified Amazon listing with catalog image and live price"
   assert.deepEqual(watch.box_2d, [100, 200, 600, 700]);
   assert.equal(watch.videoTitle, "@gadgetgirl");
   assert.equal(watch.videoUrl, "https://www.tiktok.com/@gadgetgirl");
+  // Tiny fixture JPEG is too small to crop — sourceCrop stays null, which is fine.
+  assert.equal(watch.sourceCrop, null);
 });
 
 await test("unverified detections get a search link, an estimated price and NO image", async () => {
@@ -191,6 +193,104 @@ await test("X-Gemini-Key lets a caller bring their own key (and is CORS-allowed)
     ctx
   );
   assert.match(preflight.headers.get("Access-Control-Allow-Headers") || "", /X-Gemini-Key/);
+});
+
+await test("attaches a sourceCrop data URL when the frame is large enough to crop", async () => {
+  // Build a real 120x120 JPEG so box_2d [100,200,600,700] yields a usable crop.
+  const { default: jpeg } = await import("jpeg-js");
+  const w = 120, h = 120;
+  const data = new Uint8Array(w * h * 4);
+  data.fill(200);
+  const encoded = new Uint8Array(jpeg.encode({ data, width: w, height: h }, 85).data);
+  const dataUrl = "data:image/jpeg;base64," + Buffer.from(encoded).toString("base64");
+
+  const env = makeEnv();
+  const request = new Request("https://worker.test/resolve", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ image: dataUrl, installId: "test-install-0001" })
+  });
+  const response = await worker.fetch(request, env, ctx);
+  const body = await response.json();
+  assert.equal(body.ok, true);
+  assert.equal(body.amazon.length, 1);
+  assert.match(body.amazon[0].sourceCrop, /^data:image\/jpeg;base64,/);
+  assert.ok(body.amazon[0].sourceCrop.length > 64);
+});
+
+await test("with Bright Data, Lens runs on product crops and can upgrade a miss", async () => {
+  const lensCalls = [];
+  const images = new Map();
+  const env = {
+    ...makeEnv(),
+    BRIGHTDATA_API_KEY: "bd-key",
+    BRIGHTDATA_ZONE: "serp",
+    PUBLIC_BASE_URL: "https://worker.test",
+    IMAGES: {
+      async put(k, v) { images.set(k, v); },
+      async delete(k) { images.delete(k); },
+      async get(k) { return images.has(k) ? { body: images.get(k) } : null; }
+    },
+    AI: {
+      async run() {
+        // Monitor stays unverified against the Apple Watch fixture → Lens can promote it.
+        return {
+          response: JSON.stringify({
+            videoTitle: null,
+            products: [
+              { title: "Curved ultrawide gaming monitor", confidence: 88, matchReason: "curve", box_2d: [100, 100, 800, 800] }
+            ]
+          })
+        };
+      }
+    }
+  };
+
+  const real = globalThis.fetch;
+  globalThis.fetch = async (url, init) => {
+    const href = String(url);
+    if (href.startsWith("https://www.amazon.com/s?k=")) {
+      return new Response(FIXTURE, { status: 200, headers: { "Content-Type": "text/html" } });
+    }
+    if (href === "https://api.brightdata.com/request") {
+      lensCalls.push(JSON.parse(init.body));
+      return new Response(JSON.stringify({
+        products: [{
+          title: "SAMSUNG 49-Inch Odyssey G9 Gaming Monitor",
+          link: "https://www.amazon.com/dp/B08D6J2P48",
+          price: "$999.00",
+          image: "https://m.media-amazon.com/images/I/monitor.jpg"
+        }]
+      }), { status: 200 });
+    }
+    throw new Error("unexpected fetch: " + href);
+  };
+
+  try {
+    const { default: jpeg } = await import("jpeg-js");
+    const w = 160, h = 160;
+    const data = new Uint8Array(w * h * 4); data.fill(180);
+    const encoded = new Uint8Array(jpeg.encode({ data, width: w, height: h }, 85).data);
+    const dataUrl = "data:image/jpeg;base64," + Buffer.from(encoded).toString("base64");
+    const request = new Request("https://worker.test/resolve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ image: dataUrl, installId: "test-install-0001" })
+    });
+    const response = await worker.fetch(request, env, ctx);
+    const body = await response.json();
+    assert.equal(body.ok, true);
+    assert.equal(lensCalls.length, 1, "Lens called once on the crop");
+    assert.match(lensCalls[0].url, /lens\.google\.com\/uploadbyurl/);
+    assert.equal(body.engine, "workers-ai+lens");
+    assert.equal(body.lensCrops, 1);
+    assert.equal(body.amazon.length, 1);
+    assert.equal(body.amazon[0].asin, "B08D6J2P48");
+    assert.equal(body.amazon[0].verified, true);
+    assert.equal(body.others.length, 0);
+  } finally {
+    globalThis.fetch = real;
+  }
 });
 
 globalThis.fetch = realFetch;

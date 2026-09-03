@@ -81,8 +81,16 @@ export const useStore = create<StreamSnapState>((set, get) => ({
     set({
       scanStatus: "success",
       scanError: null,
-      lastProducts: products,
-      lastOthers: others,
+      // Keep each product's sourceCrop from the worker; only fall back to the
+      // full frame when no crop was produced (no box_2d / crop failed).
+      lastProducts: products.map((p) => ({
+        ...p,
+        frameImage: p.sourceCrop || p.frameImage || frameBase64 || null
+      })),
+      lastOthers: others.map((p) => ({
+        ...p,
+        frameImage: p.sourceCrop || p.frameImage || frameBase64 || null
+      })),
       lastFrameBase64: frameBase64 ?? null
     }),
 
@@ -130,12 +138,12 @@ export const useStore = create<StreamSnapState>((set, get) => ({
   },
 
   saveProduct: async (product, frameBase64) => {
-    // Persist the frame once, under sourceFrameBase64; the transient
-    // frameImage/sourceCrop fields would otherwise double the stored payload.
+    // Prefer the tight box crop when the worker/extension produced one; the
+    // full frame is only a fallback so the catalog card still has something.
     const { frameImage, sourceCrop, ...rest } = product;
     const item = await upsertCatalogItem({
       ...rest,
-      sourceFrameBase64: frameBase64 ?? sourceCrop ?? frameImage ?? undefined
+      sourceFrameBase64: sourceCrop ?? frameBase64 ?? frameImage ?? undefined
     });
     const token = get().sessionToken;
     if (token) {

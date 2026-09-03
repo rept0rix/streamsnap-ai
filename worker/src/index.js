@@ -19,7 +19,8 @@
 
 import { parseLensResponse, collectRawShape } from "./parser.js";
 import { detectProducts } from "./vision.js";
-import { lookupAmazonProduct } from "./amazon_lookup.js";
+import { lookupAmazonProduct, scoreTitleMatch } from "./amazon_lookup.js";
+import { cropJpegByBox, cropToDataUrl } from "./crop.js";
 import { handleAuthRoute } from "./routes_auth.js";
 import { handleAdminRoute } from "./routes_admin.js";
 import { handleSyncRoute } from "./routes_sync.js";
@@ -362,12 +363,16 @@ async function resolveWithVision(bytes, env, options = {}) {
     if (match?.asin && seenAsins.has(match.asin)) return;
 
     const estimated = d.estimatedPrice != null ? `$${d.estimatedPrice.toFixed(2)}` : null;
+    // Per-product crop so the mobile card can show the object itself, not the
+    // full stream chrome. Failure is fine — the client falls back to the frame.
+    const sourceCrop = d.box_2d ? cropToDataUrl(bytes, d.box_2d) : null;
     const base = {
       title: d.title,
       brand: d.brand,
       confidence: d.confidence,
       matchReason: d.matchReason || `Spotted ${d.title} in the video`,
       box_2d: d.box_2d,
+      sourceCrop,
       source: "TikTok / Video",
       videoTitle: videoTitle || "TikTok Video",
       videoUrl
@@ -409,7 +414,108 @@ async function resolveWithVision(bytes, env, options = {}) {
     }
   });
 
-  return { amazon, others, model, rawText };
+  return { amazon, others, detections, model, rawText };
+}
+
+/**
+ * When Bright Data is configured, run Lens on each product crop (not the full
+ * TikTok frame). A Lens Amazon hit that overlaps the detection title upgrades
+ * an unverified "Best Guess" — or replaces a weaker text match. Caps at
+ * MAX_LENS_CROPS to protect the free 5K/month quota.
+ */
+const MAX_LENS_CROPS = 2;
+
+async function enrichWithLensCrops(bytes, amazon, others, env, ctx) {
+  if (!env.IMAGES || !env.PUBLIC_BASE_URL) return { amazon, others, lensUsed: 0 };
+
+  const pool = [...amazon, ...others]
+    .filter((p) => Array.isArray(p.box_2d) && p.box_2d.length === 4)
+    // Prefer unverified detections — those benefit most from visual search.
+    .sort((a, b) => Number(Boolean(a.verified)) - Number(Boolean(b.verified)))
+    .slice(0, MAX_LENS_CROPS);
+
+  if (!pool.length) return { amazon, others, lensUsed: 0 };
+
+  let lensUsed = 0;
+  const seenAsins = new Set(amazon.map((p) => p.asin).filter(Boolean));
+  const upgraded = new Map(); // title key → Lens product
+
+  for (const product of pool) {
+    const cropBytes = cropJpegByBox(bytes, product.box_2d);
+    if (!cropBytes) continue;
+
+    const cropHash = await sha256Hex(cropBytes);
+    try {
+      await env.IMAGES.put(cropHash, cropBytes, {
+        httpMetadata: { contentType: "image/jpeg" }
+      });
+      const lensUrl = `${env.PUBLIC_BASE_URL.replace(/\/$/, "")}/img/${cropHash}`;
+
+      let payload;
+      try {
+        payload = await callLens(lensUrl, env);
+        lensUsed += 1;
+      } catch (err) {
+        console.log("[resolve] lens crop failed:", err?.message || err);
+        ctx.waitUntil(env.IMAGES.delete(cropHash));
+        continue;
+      }
+      ctx.waitUntil(env.IMAGES.delete(cropHash));
+
+      const lens = parseLensResponse(payload);
+      const best = (lens.amazon || [])
+        .map((item) => ({ item, score: scoreTitleMatch(product.title, item.title || "") }))
+        .filter((x) => x.score >= 0.5 && x.item?.asin)
+        .sort((a, b) => b.score - a.score)[0];
+
+      if (!best) continue;
+      if (seenAsins.has(best.item.asin) && product.asin !== best.item.asin) continue;
+
+      upgraded.set(product.title, {
+        ...product,
+        ...normalizeLensProduct(best.item),
+        title: product.title,
+        brand: product.brand,
+        confidence: product.confidence,
+        matchReason: product.matchReason,
+        box_2d: product.box_2d,
+        sourceCrop: product.sourceCrop,
+        matchedTitle: best.item.title,
+        matchScore: Math.round(best.score * 100),
+        videoTitle: product.videoTitle,
+        videoUrl: product.videoUrl,
+        source: product.source,
+        verified: true,
+        isAmazon: true,
+        priceEstimated: false
+      });
+      seenAsins.add(best.item.asin);
+    } catch (err) {
+      console.log("[resolve] lens crop error:", err?.message || err);
+    }
+  }
+
+  if (!upgraded.size) return { amazon, others, lensUsed };
+
+  const nextAmazon = [];
+  const nextOthers = [];
+  const consume = (list, bucket) => {
+    for (const p of list) {
+      const hit = upgraded.get(p.title);
+      if (hit) {
+        nextAmazon.push(hit);
+        upgraded.delete(p.title);
+      } else {
+        bucket.push(p);
+      }
+    }
+  };
+  consume(amazon, nextAmazon);
+  consume(others, nextOthers);
+  // Anything still in upgraded was only in others and got promoted.
+  for (const hit of upgraded.values()) nextAmazon.push(hit);
+
+  return { amazon: nextAmazon, others: nextOthers, lensUsed };
 }
 
 
@@ -420,18 +526,19 @@ async function resolveWithVision(bytes, env, options = {}) {
 async function handleResolve(request, env, ctx) {
   try {
     const hasLens = Boolean(env.BRIGHTDATA_API_KEY && env.BRIGHTDATA_ZONE);
-  const hasAI = Boolean(env.AI);
-  if (!hasLens && !hasAI) {
-    return json(
-      {
-        ok: false,
-        error: "Worker is not configured. Set BRIGHTDATA_API_KEY and BRIGHTDATA_ZONE, or enable Workers AI."
-      },
-      503,
-      request,
-      env
-    );
-  }
+    const hasVision = Boolean(env.AI) || Boolean(String(env.GEMINI_API_KEY || "").trim());
+    if (!hasLens && !hasVision) {
+      return json(
+        {
+          ok: false,
+          error:
+            "Worker is not configured. Set GEMINI_API_KEY (or enable Workers AI), and optionally BRIGHTDATA_API_KEY + BRIGHTDATA_ZONE for Lens verification."
+        },
+        503,
+        request,
+        env
+      );
+    }
 
   let body;
   try {
@@ -472,13 +579,47 @@ async function handleResolve(request, env, ctx) {
   let engine = "lens";
   let rawVisionText = null;
   let visionModel = null;
+  let lensCrops = 0;
 
-  if (hasLens) {
+  // Prefer vision (Gemini) first when available — it names + locates products in
+  // a busy live-stream frame. Lens on the full frame alone is noisy (UI chrome,
+  // face, logos). When Bright Data is also set we Lens the per-product crops.
+  if (hasVision) {
+    try {
+      const geminiKey = (request.headers.get("X-Gemini-Key") || "").trim() || undefined;
+      const res = await resolveWithVision(bytes, env, { geminiKey });
+      amazon = res.amazon;
+      others = res.others;
+      rawVisionText = res.rawText;
+      visionModel = res.model;
+      engine = String(visionModel || "").startsWith("gemini") ? "gemini" : "workers-ai";
+
+      if (hasLens && (amazon.length || others.length)) {
+        const enriched = await enrichWithLensCrops(bytes, amazon, others, env, ctx);
+        amazon = enriched.amazon;
+        others = enriched.others;
+        lensCrops = enriched.lensUsed;
+        if (lensCrops > 0) engine = `${engine}+lens`;
+      }
+    } catch (err) {
+      console.log("[resolve] vision error on frame:", err.message);
+      // Fall through to full-frame Lens if we have it; otherwise empty.
+      if (!hasLens) {
+        amazon = [];
+        others = [];
+        engine = "none";
+        rawVisionText = err.message;
+      } else {
+        engine = "lens";
+      }
+    }
+  }
+
+  if ((!amazon.length && !others.length && hasLens && engine !== "none") || (!hasVision && hasLens)) {
     if (!env.IMAGES) {
       return json({ ok: false, error: "Image storage is not configured." }, 500, request, env);
     }
 
-    // Lens fetches the image over HTTP, so it needs a public URL briefly.
     await env.IMAGES.put(hash, bytes, {
       httpMetadata: { contentType: "image/jpeg" }
     });
@@ -489,31 +630,21 @@ async function handleResolve(request, env, ctx) {
       payload = await callLens(publicUrl, env);
     } catch (err) {
       ctx.waitUntil(env.IMAGES.delete(hash));
-      const message = err.name === "AbortError" ? "Lens request timed out." : err.message;
-      return json({ ok: false, error: message }, 502, request, env);
+      // If vision already produced results we keep them; only fail hard when
+      // Lens was the sole engine.
+      if (!amazon.length && !others.length) {
+        const message = err.name === "AbortError" ? "Lens request timed out." : err.message;
+        return json({ ok: false, error: message }, 502, request, env);
+      }
+      payload = null;
     }
 
     ctx.waitUntil(env.IMAGES.delete(hash));
-    const lens = parseLensResponse(payload);
-    amazon = lens.amazon.map(normalizeLensProduct);
-    others = lens.others.map(normalizeLensProduct);
-  } else {
-    try {
-      // A caller-supplied Gemini key (mobile settings) takes precedence over the
-      // server secret so a user can bring their own quota, exactly like the extension.
-      const geminiKey = (request.headers.get("X-Gemini-Key") || "").trim() || undefined;
-      const res = await resolveWithVision(bytes, env, { geminiKey });
-      amazon = res.amazon;
-      others = res.others;
-      rawVisionText = res.rawText;
-      visionModel = res.model;
-      engine = String(visionModel || "").startsWith("gemini") ? "gemini" : "workers-ai";
-    } catch (err) {
-      console.log("[resolve] vision error on frame:", err.message);
-      amazon = [];
-      others = [];
-      engine = "none";
-      rawVisionText = err.message;
+    if (payload) {
+      const lens = parseLensResponse(payload);
+      amazon = lens.amazon.map(normalizeLensProduct);
+      others = lens.others.map(normalizeLensProduct);
+      engine = "lens";
     }
   }
 
@@ -525,6 +656,7 @@ async function handleResolve(request, env, ctx) {
     count: allProducts.length,
     engine,
     visionModel,
+    lensCrops,
     rawVisionText
   };
 
