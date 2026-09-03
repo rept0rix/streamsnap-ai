@@ -310,6 +310,36 @@ async function callLens(imageUrl, env) {
   }
 }
 
+function stripSourceCrops(result) {
+  const clean = (list) =>
+    (list || []).map(({ sourceCrop, ...rest }) => rest);
+  const amazon = clean(result.amazon);
+  const others = clean(result.others);
+  return {
+    ...result,
+    amazon,
+    others,
+    products: [...amazon, ...others]
+  };
+}
+
+function reattachSourceCrops(bytes, result) {
+  const attach = (list) =>
+    (list || []).map((p) => ({
+      ...p,
+      sourceCrop: Array.isArray(p.box_2d) ? cropToDataUrl(bytes, p.box_2d) : p.sourceCrop || null
+    }));
+  const amazon = attach(result.amazon);
+  const others = attach(result.others);
+  return {
+    ...result,
+    amazon,
+    others,
+    products: [...amazon, ...others],
+    count: amazon.length + others.length
+  };
+}
+
 const CURRENCY_SYMBOLS = { USD: "$", EUR: "€", GBP: "£", ILS: "₪" };
 
 /**
@@ -563,9 +593,9 @@ async function handleResolve(request, env, ctx) {
 
   // Cache first — only use cache if products were found
   if (env.CACHE) {
-    const cached = await env.CACHE.get(`lens:${hash}`, "json");
+    const cached = await env.CACHE.get(`resolve:v3:${hash}`, "json");
     if (cached && Array.isArray(cached.products) && cached.products.length > 0) {
-      return json({ ok: true, cached: true, ...cached }, 200, request, env);
+      return json({ ok: true, cached: true, ...reattachSourceCrops(bytes, cached) }, 200, request, env);
     }
   }
 
@@ -661,8 +691,9 @@ async function handleResolve(request, env, ctx) {
   };
 
   if (env.CACHE && allProducts.length > 0) {
+    // Persist without bulky sourceCrop data URLs; reattach from box_2d on hit.
     ctx.waitUntil(
-      env.CACHE.put(`lens:${hash}`, JSON.stringify(result), {
+      env.CACHE.put(`resolve:v3:${hash}`, JSON.stringify(stripSourceCrops(result)), {
         expirationTtl: LIMITS.CACHE_TTL_SECONDS
       })
     );

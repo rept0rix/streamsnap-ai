@@ -1,6 +1,7 @@
 name = "streamsnap-lens"
 main = "src/index.js"
 compatibility_date = "2026-08-01"
+compatibility_flags = ["nodejs_compat"]
 
 # PUBLIC_BASE_URL must be this Worker's own reachable URL. Google Lens fetches
 # the crop from /img/:key, so a wrong value here fails every request.
