@@ -12,7 +12,7 @@ struct LiveScanWidgetBundle: WidgetBundle {
 struct LiveScanActivityWidget: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: LiveScanActivityAttributes.self) { context in
-            // Lock Screen / Banner UI
+            // Lock Screen / Notification Banner UI
             LockScreenLiveScanView(state: context.state)
         } dynamicIsland: { context in
             DynamicIsland {
@@ -77,22 +77,38 @@ struct LiveScanActivityWidget: Widget {
                     .padding(.horizontal, 4)
                 }
             } compactLeading: {
-                // ⚡ LEFT OF CAMERA: StreamSnap Glowing Bolt Icon
-                Image(systemName: "bolt.fill")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(Color(red: 1.0, green: 0.35, blue: 0.0))
+                // 📱 LEFT OF CAMERA: If product spotted, show bag icon; else pulse dot
+                if context.state.latestPrice != nil {
+                    HStack(spacing: 2) {
+                        Image(systemName: "bag.fill")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(Color(red: 0.1, green: 0.85, blue: 0.5))
+                    }
+                } else {
+                    Circle()
+                        .fill(Color(red: 1.0, green: 0.35, blue: 0.0))
+                        .frame(width: 8, height: 8)
+                }
             } compactTrailing: {
-                // 📻 RIGHT OF CAMERA: Animated Radar Waveform (Shazam-Style)
-                HStack(spacing: 2) {
-                    Image(systemName: "waveform")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(Color(red: 1.0, green: 0.35, blue: 0.0))
+                // ⚡ RIGHT OF CAMERA: Circular Animated StreamSnap Logo (Like Shazam!)
+                ZStack {
+                    Circle()
+                        .fill(Color(red: 1.0, green: 0.35, blue: 0.0))
+                        .frame(width: 20, height: 20)
+                    Image(systemName: "bolt.fill")
+                        .font(.system(size: 10, weight: .black))
+                        .foregroundColor(.white)
                 }
             } minimal: {
-                // MINIMAL SINGLE ICON (when multiple apps share the Island)
-                Image(systemName: "bolt.fill")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(Color(red: 1.0, green: 0.35, blue: 0.0))
+                // MINIMAL SINGLE ICON
+                ZStack {
+                    Circle()
+                        .fill(Color(red: 1.0, green: 0.35, blue: 0.0))
+                        .frame(width: 18, height: 18)
+                    Image(systemName: "bolt.fill")
+                        .font(.system(size: 9, weight: .black))
+                        .foregroundColor(.white)
+                }
             }
         }
     }

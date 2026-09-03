@@ -202,6 +202,7 @@ final class SampleHandler: RPBroadcastSampleHandler {
     }
     content.body = title
     content.sound = .default
+    content.interruptionLevel = .timeSensitive
     content.categoryIdentifier = "PRODUCT_FIND"
     content.userInfo = [
       "url": url,
@@ -209,54 +210,84 @@ final class SampleHandler: RPBroadcastSampleHandler {
       "title": title
     ]
 
-    // Attach image for rich notification attachment if available
-    if let imageUrlString, let imgUrl = URL(string: imageUrlString) {
-      if imgUrl.isFileURL {
-        if let attachment = try? UNNotificationAttachment(
-          identifier: "product-image",
-          url: imgUrl,
-          options: [UNNotificationAttachmentOptionsTypeHintKey: "public.jpeg"]
-        ) {
-          content.attachments = [attachment]
-        }
-        let request = UNNotificationRequest(
-          identifier: "ss-live-\(Int(Date().timeIntervalSince1970))",
-          content: content,
-          trigger: nil
-        )
-        UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
-        return
+    func sendReq(_ attachment: UNNotificationAttachment? = nil) {
+      if let attachment {
+        content.attachments = [attachment]
       }
-
-      URLSession.shared.dataTask(with: imgUrl) { data, _, _ in
-        if let data {
-          let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
-          let fileUrl = tempDir.appendingPathComponent("ss-thumb-\(UUID().uuidString).jpg")
-          if (try? data.write(to: fileUrl)) != nil {
-            if let attachment = try? UNNotificationAttachment(
-              identifier: "product-image",
-              url: fileUrl,
-              options: [UNNotificationAttachmentOptionsTypeHintKey: "public.jpeg"]
-            ) {
-              content.attachments = [attachment]
-            }
-          }
-        }
-        let request = UNNotificationRequest(
-          identifier: "ss-live-\(Int(Date().timeIntervalSince1970))",
-          content: content,
-          trigger: nil
-        )
-        UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
-      }.resume()
-    } else {
       let request = UNNotificationRequest(
         identifier: "ss-live-\(Int(Date().timeIntervalSince1970))",
         content: content,
         trigger: nil
       )
-      UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
+      UNUserNotificationCenter.current().add(request) { err in
+        if let err {
+          print("[StreamSnap] Notification error: \(err)")
+        } else {
+          print("[StreamSnap] Notification banner dispatched successfully!")
+        }
+      }
     }
+
+    // Attach image if available
+    guard let imageUrlString, !imageUrlString.isEmpty else {
+      sendReq()
+      return
+    }
+
+    // 1. Base64 Data URL handling (exact video snapshot)
+    if imageUrlString.hasPrefix("data:image") {
+      if let commaIdx = imageUrlString.firstIndex(of: ",") {
+        let b64 = String(imageUrlString[imageUrlString.index(after: commaIdx)...])
+        if let data = Data(base64Encoded: b64) {
+          let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
+          let fileUrl = tempDir.appendingPathComponent("ss-thumb-\(UUID().uuidString).jpg")
+          if (try? data.write(to: fileUrl)) != nil {
+            let att = try? UNNotificationAttachment(
+              identifier: "product-image",
+              url: fileUrl,
+              options: [UNNotificationAttachmentOptionsTypeHintKey: "public.jpeg"]
+            )
+            sendReq(att)
+            return
+          }
+        }
+      }
+      sendReq()
+      return
+    }
+
+    // 2. Local File URL handling
+    if let imgUrl = URL(string: imageUrlString), imgUrl.isFileURL {
+      let att = try? UNNotificationAttachment(
+        identifier: "product-image",
+        url: imgUrl,
+        options: [UNNotificationAttachmentOptionsTypeHintKey: "public.jpeg"]
+      )
+      sendReq(att)
+      return
+    }
+
+    // 3. Remote HTTP URL handling
+    if let imgUrl = URL(string: imageUrlString) {
+      URLSession.shared.dataTask(with: imgUrl) { data, _, _ in
+        var att: UNNotificationAttachment?
+        if let data {
+          let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
+          let fileUrl = tempDir.appendingPathComponent("ss-thumb-\(UUID().uuidString).jpg")
+          if (try? data.write(to: fileUrl)) != nil {
+            att = try? UNNotificationAttachment(
+              identifier: "product-image",
+              url: fileUrl,
+              options: [UNNotificationAttachmentOptionsTypeHintKey: "public.jpeg"]
+            )
+          }
+        }
+        sendReq(att)
+      }.resume()
+      return
+    }
+
+    sendReq()
   }
 
   private static func averageHash(_ image: CIImage) -> UInt64 {

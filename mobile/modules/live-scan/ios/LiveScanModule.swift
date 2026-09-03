@@ -117,6 +117,8 @@ public class LiveScanModule: Module {
             confidence: conf,
             framesCount: prods.count
           )
+        } else {
+          LiveActivityManager.shared.startActivity()
         }
       } else {
         LiveActivityManager.shared.endActivity()
