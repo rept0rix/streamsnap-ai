@@ -314,7 +314,10 @@ function parseModelJson(text) {
     clean.match(/\*\*Video Title:\*\*\s*([^\n]+)/i) ||
     clean.match(/(?:Video Title|Creator|Handle|Username):\s*([^\n*]+)/i);
   if (vtMatch) {
-    videoTitle = vtMatch[1].trim();
+    const candidate = vtMatch[1].trim();
+    if (!/not visible|none|n\/a/i.test(candidate)) {
+      videoTitle = candidate;
+    }
   }
 
   // 1. Extract all individual JSON blocks: {...}
@@ -323,6 +326,9 @@ function parseModelJson(text) {
   for (const block of jsonBlocks) {
     try {
       const parsed = JSON.parse(block);
+      if (parsed?.videoTitle && !videoTitle && !/not visible|none|n\/a/i.test(parsed.videoTitle)) {
+        videoTitle = parsed.videoTitle;
+      }
       if (parsed?.title) {
         products.push(parsed);
       } else if (Array.isArray(parsed?.products)) {
@@ -339,16 +345,16 @@ function parseModelJson(text) {
 
   // 2. Fallback: Parse markdown list (strip formatting stars/underscores/hashes first)
   const stripped = clean.replace(/[*_#]/g, "");
-  const itemRegex = /Title:\s*([^\n]+)[\s\S]*?Price:\s*\$?([0-9.]+)/gi;
+  const itemRegex = /(?:^|\n)\s*(?:[•\-+*]\s*)?Title:\s*([^\n]+)[\s\S]*?Price:\s*\$?([0-9.]+)/gi;
   let m;
   while ((m = itemRegex.exec(stripped)) !== null) {
     const title = m[1].trim();
     const price = m[2].trim();
-    if (/creator|handle|caption|n\/a/i.test(title)) continue;
+    if (/creator|handle|caption|video title|not visible|none|n\/a/i.test(title)) continue;
     products.push({
       title,
       price: `$${price}`,
-      confidence: 92
+      confidence: 90
     });
   }
 
@@ -356,6 +362,19 @@ function parseModelJson(text) {
 }
 
 async function fetchProductImage(query) {
+  // 1. Try Openverse Creative Commons Index (700M+ images)
+  try {
+    const ovUrl = `https://api.openverse.org/v1/images/?q=${encodeURIComponent(query)}&page_size=1`;
+    const res = await fetch(ovUrl, { headers: { "User-Agent": "StreamSnapAI/1.0" }, signal: AbortSignal.timeout(2500) });
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.results?.[0]?.url) {
+        return data.results[0].url;
+      }
+    }
+  } catch {}
+
+  // 2. Fallback: Wikipedia Page Images
   const attempts = [
     query,
     query.replace(/\b(men's|women's|classic|vintage|casual|summer|winter|retro|aesthetic|distressed)\b/gi, "").trim(),
