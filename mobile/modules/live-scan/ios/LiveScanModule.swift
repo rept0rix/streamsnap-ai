@@ -40,8 +40,17 @@ public class LiveScanModule: Module {
     }
 
     AsyncFunction("startBroadcast") {
+      if #available(iOS 16.2, *) {
+        LiveActivityManager.shared.startActivity()
+      }
       await MainActor.run {
         self.presentBroadcastPicker()
+      }
+    }
+
+    AsyncFunction("stopBroadcast") {
+      if #available(iOS 16.2, *) {
+        LiveActivityManager.shared.endActivity()
       }
     }
   }
@@ -92,7 +101,27 @@ public class LiveScanModule: Module {
   }
 
   private func emitUpdate() {
-    sendEvent("onUpdate", LiveScanStore.snapshot(screenCaptured: UIScreen.main.isCaptured))
+    let captured = UIScreen.main.isCaptured
+    sendEvent("onUpdate", LiveScanStore.snapshot(screenCaptured: captured))
+
+    if #available(iOS 16.2, *) {
+      if captured {
+        let prods = LiveScanStore.products()
+        if let first = prods.first {
+          let title = first["title"] as? String
+          let price = first["price"] as? String
+          let conf = first["confidence"] as? Int
+          LiveActivityManager.shared.updateActivity(
+            title: title,
+            price: price,
+            confidence: conf,
+            framesCount: prods.count
+          )
+        }
+      } else {
+        LiveActivityManager.shared.endActivity()
+      }
+    }
   }
 
   private static func keyWindow() -> UIWindow? {

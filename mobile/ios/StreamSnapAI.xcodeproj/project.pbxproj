@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A1110001000000000000000A /* LiveScanWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11100010000000000000008 /* LiveScanWidget.swift */; };
+		A1110001000000000000000B /* LiveScanActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11100010000000000000009 /* LiveScanActivityAttributes.swift */; };
+		A1110001000000000000000C /* LiveScanWidget.appex in Copy Files */ = {isa = PBXBuildFile; fileRef = A11100010000000000000007 /* LiveScanWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.mm */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
@@ -22,6 +25,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		A1110001000000000000000E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A11100010000000000000001;
+			remoteInfo = LiveScanWidget;
+		};
 		BCASTPROXY000000000001 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
@@ -38,6 +48,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
+				A1110001000000000000000C /* LiveScanWidget.appex in Copy Files */,
 				DB31A9CF544B422EBBB6B5BD /* BroadcastExtension.appex in Copy Files */,
 			);
 			name = "Copy Files";
@@ -46,6 +57,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A11100010000000000000007 /* LiveScanWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; name = LiveScanWidget.appex; path = LiveScanWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A11100010000000000000008 /* LiveScanWidget.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = LiveScanWidget.swift; path = LiveScanWidget.swift; sourceTree = "<group>"; };
+		A11100010000000000000009 /* LiveScanActivityAttributes.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = LiveScanActivityAttributes.swift; path = LiveScanActivityAttributes.swift; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* StreamSnapAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StreamSnapAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FAF1A68108700A75B9A /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = StreamSnapAI/AppDelegate.h; sourceTree = "<group>"; };
 		13B07FB01A68108700A75B9A /* AppDelegate.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AppDelegate.mm; path = StreamSnapAI/AppDelegate.mm; sourceTree = "<group>"; };
@@ -67,6 +81,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		A11100010000000000000006 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		13B07F8C1A680F5B00A75B9A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -86,6 +107,16 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A1110001000000000000000F /* LiveScanWidget */ = {
+			isa = PBXGroup;
+			children = (
+				A11100010000000000000008 /* LiveScanWidget.swift */,
+				A11100010000000000000009 /* LiveScanActivityAttributes.swift */,
+			);
+			name = LiveScanWidget;
+			path = LiveScanWidget;
+			sourceTree = "<group>";
+		};
 		13B07FAE1A68108700A75B9A /* StreamSnapAI */ = {
 			isa = PBXGroup;
 			children = (
@@ -121,6 +152,7 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				A1110001000000000000000F /* LiveScanWidget */,
 				13B07FAE1A68108700A75B9A /* StreamSnapAI */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
@@ -179,6 +211,22 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		A11100010000000000000001 /* LiveScanWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A11100010000000000000002 /* Build configuration list for PBXNativeTarget "LiveScanWidget" */;
+			buildPhases = (
+				A11100010000000000000005 /* Sources */,
+				A11100010000000000000006 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LiveScanWidget;
+			productName = LiveScanWidget;
+			productReference = A11100010000000000000007 /* LiveScanWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		07497F6670354A7F809B71E4 /* BroadcastExtension */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 1D6C919DE50E465CABAAA519 /* Build configuration list for PBXNativeTarget "BroadcastExtension" */;
@@ -212,6 +260,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				A1110001000000000000000D /* PBXTargetDependency */,
 				BCASTDEP0000000000001 /* PBXTargetDependency */,
 			);
 			name = StreamSnapAI;
@@ -252,6 +301,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+				A11100010000000000000001 /* LiveScanWidget */,
 				13B07F861A680F5B00A75B9A /* StreamSnapAI */,
 				07497F6670354A7F809B71E4 /* BroadcastExtension */,
 			);
@@ -386,6 +436,15 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		A11100010000000000000005 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1110001000000000000000A /* LiveScanWidget.swift in Sources */,
+				A1110001000000000000000B /* LiveScanActivityAttributes.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		13B07F871A680F5B00A75B9A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -408,6 +467,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		A1110001000000000000000D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A11100010000000000000001 /* LiveScanWidget */;
+			targetProxy = A1110001000000000000000E /* PBXContainerItemProxy */;
+		};
 		BCASTDEP0000000000001 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 07497F6670354A7F809B71E4 /* BroadcastExtension */;
@@ -416,6 +480,52 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		A11100010000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = LiveScanWidget/LiveScanWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = CM9QNMLQMQ;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = LiveScanWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.name.StreamSnapAI.LiveScanWidget;
+				PRODUCT_NAME = LiveScanWidget;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		A11100010000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = LiveScanWidget/LiveScanWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = CM9QNMLQMQ;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = LiveScanWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.name.StreamSnapAI.LiveScanWidget;
+				PRODUCT_NAME = LiveScanWidget;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 6C2E3173556A471DD304B334 /* Pods-StreamSnapAI.debug.xcconfig */;
@@ -672,6 +782,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		A11100010000000000000002 /* Build configuration list for PBXNativeTarget "LiveScanWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A11100010000000000000003 /* Debug */,
+				A11100010000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "StreamSnapAI" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
