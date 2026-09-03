@@ -45,29 +45,47 @@ export function useLiveScan() {
       if (ingestedKeys.current.has(key)) continue;
       ingestedKeys.current.add(key);
 
+      // The frame/crop the extension saw stays on the "Video Frame" side; the
+      // Amazon listing image stays on the "Amazon Match" side. They are never
+      // substituted for one another.
+      const frameImage = item.sourceCrop || item.frameImage || null;
+      const isDataUrl = (v: unknown) => typeof v === "string" && v.startsWith("data:");
+      const imageUrl = item.imageUrl && !isDataUrl(item.imageUrl) ? item.imageUrl : null;
+
       const product: Product = {
         title: item.title,
-        asin: item.asin,
+        asin: item.asin ?? undefined,
         url: item.url || (item.asin ? `https://www.amazon.com/dp/${item.asin}` : ""),
-        imageUrl: item.imageUrl,
-        price: item.price,
-        source: item.source === "other" ? "other" : "amazon",
-        confidence: item.confidence
+        imageUrl,
+        price: item.price ?? null,
+        priceEstimated: item.priceEstimated ?? !item.asin,
+        source: item.asin ? "amazon" : "other",
+        confidence: item.confidence,
+        verified: item.verified ?? Boolean(item.asin),
+        matchedTitle: item.matchedTitle ?? null,
+        matchReason: item.matchReason ?? null,
+        videoTitle: item.videoTitle ?? null,
+        videoUrl: item.videoUrl ?? null,
+        frameImage,
+        sourceCrop: item.sourceCrop ?? null
       };
 
       const alreadySaved = currentCatalog.some(
         (p) => (p.asin && p.asin === product.asin) || (p.url && p.url === product.url)
       );
 
-      await store.saveProduct(product);
+      await store.saveProduct(product, frameImage ?? undefined);
 
       if (!alreadySaved) {
+        // Notifications are persisted too; keep the bulky frame out of them.
+        const { frameImage: _frame, sourceCrop: _crop, ...lightProduct } = product;
+        const priceLabel = product.price ? (product.priceEstimated ? `~${product.price}` : product.price) : null;
         await notifStore.addNotification({
           id: `live-find-${product.asin || Date.now()}`,
           type: "scan_find",
-          title: "⚡ Live Scan Found Product!",
-          message: `${product.title}${product.price ? ` (${product.price})` : ""}`,
-          product
+          title: product.verified ? "⚡ Live Scan Found Product!" : "👀 Live Scan Spotted Something",
+          message: `${product.title}${priceLabel ? ` (${priceLabel})` : ""}`,
+          product: lightProduct
         });
       }
     }

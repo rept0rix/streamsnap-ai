@@ -34,22 +34,30 @@ export function ProductCard({ product, item, onPress, onAddToCart }: Props) {
   const p = product || item;
   if (!p) return null;
 
-  const isVerified = Boolean(p.asin);
+  const isVerified = Boolean(p.asin) && p.verified !== false;
   const targetUrl = p.url || (p.asin ? `https://www.amazon.com/dp/${p.asin}` : null);
-  
-  // Images: cropped product screenshot (box_2d crop) and matched product catalog image
-  // sourceCrop = CIImage-cropped thumbnail from SampleHandler (exact product area)
-  // frameImage = full video frame (fallback if no crop available)
-  // productImageUrl = resolved catalog / Wikipedia image (match side)
-  const sourceCrop = p.sourceCrop; // exact product crop from box_2d
-  const frameImage = sourceCrop || p.frameImage || p.sourceFrameBase64;
-  // NEVER fall back to frameImage on the right (match) side — show placeholder instead
-  const productImageUrl = (p.imageUrl !== p.frameImage && p.imageUrl !== p.sourceFrameBase64) ? (p.imageUrl || p.image) : null;
-  
+
+  // Left side: what the camera/broadcast actually saw — the box_2d crop when
+  // available, else the frame. Right side: the matched Amazon listing image.
+  // The two are never substituted for one another; a missing image shows a
+  // placeholder instead so the card can't lie about what was found.
+  const frameImage: string | null =
+    p.sourceCrop || p.frameImage || p.sourceFrameBase64 || null;
+  const isDataUrl = (v: unknown) => typeof v === "string" && v.startsWith("data:");
+  const rawProductImage: string | null = p.imageUrl || p.image || null;
+  const productImageUrl =
+    rawProductImage && !isDataUrl(rawProductImage) && rawProductImage !== frameImage
+      ? rawProductImage
+      : null;
+
   // Context details
   const videoTitle = p.videoTitle || (p.source?.includes("TikTok") ? "TikTok Live Video" : "Video Stream");
   const videoUrl = p.videoUrl || (videoTitle && videoTitle !== "TikTok Video" ? `https://www.tiktok.com/search?q=${encodeURIComponent(videoTitle)}` : "https://www.tiktok.com");
-  const confidence = p.confidence || (p.asin ? 96 : 92);
+  const confidence: number | null =
+    typeof p.confidence === "number" && Number.isFinite(p.confidence)
+      ? Math.round(p.confidence <= 1 ? p.confidence * 100 : p.confidence)
+      : null;
+  const priceLabel = p.price ? (p.priceEstimated ? `~${p.price}` : p.price) : null;
 
   const handlePress = () => {
     if (onPress) {
@@ -86,23 +94,24 @@ export function ProductCard({ product, item, onPress, onAddToCart }: Props) {
           <Ionicons name="open-outline" size={11} color="#38BDF8" style={{ marginLeft: 4 }} />
         </TouchableOpacity>
 
-        <View style={styles.confidencePill}>
-          <Ionicons name="sparkles" size={11} color="#FF7700" style={{ marginRight: 3 }} />
-          <Text style={styles.confidenceText}>{confidence}% Match</Text>
-        </View>
+        {confidence !== null && (
+          <View style={styles.confidencePill}>
+            <Ionicons name="sparkles" size={11} color="#FF7700" style={{ marginRight: 3 }} />
+            <Text style={styles.confidenceText}>{confidence}% Match</Text>
+          </View>
+        )}
       </View>
 
       {/* 2. Side-by-Side Dual Thumbnails: [Video Screenshot] ➔ [Amazon Match] */}
       <View style={styles.visualsContainer}>
-        {/* Left: Video Screenshot */}
+        {/* Left: Video Screenshot — only ever the captured frame/crop */}
         <View style={styles.visualBox}>
           {frameImage ? (
             <Image source={{ uri: frameImage }} style={styles.thumbnail} resizeMode="cover" />
-          ) : productImageUrl ? (
-            <Image source={{ uri: productImageUrl }} style={styles.thumbnail} resizeMode="cover" />
           ) : (
             <View style={[styles.thumbnail, styles.placeholderBox]}>
               <Ionicons name="phone-portrait-outline" size={26} color="#64748B" />
+              <Text style={styles.placeholderText}>No frame saved</Text>
             </View>
           )}
           <View style={styles.thumbBadge}>
@@ -116,18 +125,26 @@ export function ProductCard({ product, item, onPress, onAddToCart }: Props) {
           <Ionicons name="arrow-forward" size={16} color="#FF5500" />
         </View>
 
-        {/* Right: Amazon / Identified Product */}
+        {/* Right: the Amazon listing image — never the frame */}
         <View style={styles.visualBox}>
           {productImageUrl ? (
-            <Image source={{ uri: productImageUrl }} style={styles.thumbnail} resizeMode="cover" />
+            <Image source={{ uri: productImageUrl }} style={styles.thumbnail} resizeMode="contain" />
           ) : (
             <View style={[styles.thumbnail, styles.placeholderBox]}>
-              <Ionicons name="cube-outline" size={26} color="#64748B" />
+              <Ionicons name={isVerified ? "cube-outline" : "search-outline"} size={26} color="#64748B" />
+              <Text style={styles.placeholderText}>
+                {isVerified ? "No listing photo" : "Search Amazon"}
+              </Text>
             </View>
           )}
-          <View style={[styles.thumbBadge, styles.amazonThumbBadge]}>
-            <Ionicons name="logo-amazon" size={10} color="#FFFFFF" style={{ marginRight: 3 }} />
-            <Text style={styles.thumbBadgeText}>Amazon Match</Text>
+          <View style={[styles.thumbBadge, isVerified ? styles.amazonThumbBadge : styles.guessThumbBadge]}>
+            <Ionicons
+              name={isVerified ? "logo-amazon" : "help-circle-outline"}
+              size={10}
+              color="#FFFFFF"
+              style={{ marginRight: 3 }}
+            />
+            <Text style={styles.thumbBadgeText}>{isVerified ? "Amazon Match" : "Best Guess"}</Text>
           </View>
           {isVerified && (
             <View style={styles.verifiedCheck}>
@@ -142,6 +159,11 @@ export function ProductCard({ product, item, onPress, onAddToCart }: Props) {
         <Text style={styles.productTitle}>
           {p.title}
         </Text>
+        {isVerified && p.matchedTitle && p.matchedTitle !== p.title ? (
+          <Text style={styles.matchedTitleText} numberOfLines={2}>
+            {p.matchedTitle}
+          </Text>
+        ) : null}
         {p.matchReason ? (
           <Text style={styles.matchReasonText} numberOfLines={2}>
             💡 {p.matchReason}
@@ -150,19 +172,19 @@ export function ProductCard({ product, item, onPress, onAddToCart }: Props) {
 
         <View style={styles.bottomRow}>
           <View style={styles.priceRow}>
-            {p.price && (
+            {priceLabel && (
               <View style={styles.pricePill}>
-                <Text style={styles.priceText}>{p.price}</Text>
+                <Text style={styles.priceText}>{priceLabel}</Text>
               </View>
             )}
             <View style={styles.amazonBadge}>
               <Ionicons name="logo-amazon" size={12} color="#FF9900" style={{ marginRight: 3 }} />
-              <Text style={styles.amazonBadgeText}>Amazon</Text>
+              <Text style={styles.amazonBadgeText}>{isVerified ? "Amazon" : "Amazon search"}</Text>
             </View>
           </View>
 
           <View style={styles.actions}>
-            <Text style={styles.viewLinkText}>View Deal →</Text>
+            <Text style={styles.viewLinkText}>{isVerified ? "View Deal →" : "Search →"}</Text>
             {onAddToCart && (
               <TouchableOpacity
                 style={styles.cartBtn}
@@ -254,7 +276,13 @@ const styles = StyleSheet.create({
   placeholderBox: {
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#0F172A"
+    backgroundColor: "#0F172A",
+    gap: 4
+  },
+  placeholderText: {
+    color: "#64748B",
+    fontSize: 9,
+    fontWeight: "600"
   },
   thumbBadge: {
     position: "absolute",
@@ -269,6 +297,9 @@ const styles = StyleSheet.create({
   },
   amazonThumbBadge: {
     backgroundColor: "rgba(255, 85, 0, 0.9)"
+  },
+  guessThumbBadge: {
+    backgroundColor: "rgba(71, 85, 105, 0.9)"
   },
   thumbBadgeText: {
     color: "#FFFFFF",
@@ -307,6 +338,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "800",
     lineHeight: 21,
+    marginBottom: 4
+  },
+  matchedTitleText: {
+    color: "#CBD5E1",
+    fontSize: 12,
+    lineHeight: 16,
     marginBottom: 4
   },
   matchReasonText: {

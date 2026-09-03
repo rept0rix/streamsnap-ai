@@ -104,11 +104,16 @@ export async function upsertCatalogItem(
       (cleanTitle && c.title?.trim().toLowerCase() === cleanTitle)
   );
 
+  // A re-sighting must not wipe fields it does not carry (e.g. the frame).
+  const incoming = Object.fromEntries(
+    Object.entries(item).filter(([, value]) => value !== undefined)
+  ) as typeof item;
+
   let updated: CatalogItem;
   if (existing) {
     updated = {
       ...existing,
-      ...item,
+      ...incoming,
       seenCount: existing.seenCount + 1,
       lastSeenAt: now
     };
@@ -116,7 +121,7 @@ export async function upsertCatalogItem(
     catalog[idx] = updated;
   } else {
     updated = {
-      ...item,
+      ...incoming,
       id: item.id || `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       seenCount: 1,
       firstSeenAt: now,

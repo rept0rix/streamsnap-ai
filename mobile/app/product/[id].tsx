@@ -41,14 +41,20 @@ export default function ProductScreen() {
     );
   }
 
-  const isVerified = Boolean(product.asin);
+  const isVerified = Boolean(product.asin) && product.verified !== false;
+  const sourceFrame = product.sourceCrop || product.frameImage || product.sourceFrameBase64 || null;
+  const listingImage =
+    product.imageUrl && !product.imageUrl.startsWith("data:") && product.imageUrl !== sourceFrame
+      ? product.imageUrl
+      : null;
+  const priceLabel = product.price ? (product.priceEstimated ? `~${product.price}` : product.price) : null;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
       {/* Product Image */}
       <View style={styles.imageHeader}>
-        {product.imageUrl ? (
-          <Image source={{ uri: product.imageUrl }} style={styles.mainImage} resizeMode="contain" />
+        {listingImage ? (
+          <Image source={{ uri: listingImage }} style={styles.mainImage} resizeMode="contain" />
         ) : (
           <View style={[styles.mainImage, styles.placeholder]}>
             <Text style={{ fontSize: 64 }}>📦</Text>
@@ -68,7 +74,7 @@ export default function ProductScreen() {
         )}
 
         <Text style={styles.title}>{product.title}</Text>
-        {product.price && <Text style={styles.price}>{product.price}</Text>}
+        {priceLabel && <Text style={styles.price}>{priceLabel}</Text>}
 
         <View style={styles.actions}>
           <TouchableOpacity
@@ -91,15 +97,15 @@ export default function ProductScreen() {
         </View>
       </View>
 
-      {/* Source Frame (Traceability) */}
-      {(product.sourceFrameBase64 || (product as any).frameImage || product.imageUrl) && (
+      {/* Source Frame (Traceability) — only the captured frame, never the listing image */}
+      {sourceFrame && (
         <View style={styles.sourceSection}>
           <Text style={styles.sectionTitle}>Captured Video Snapshot</Text>
           <Text style={styles.sectionSubtitle}>
             This is the exact frame from TikTok / Live Video that StreamSnap used to spot this product.
           </Text>
           <Image
-            source={{ uri: (product as any).frameImage || product.sourceFrameBase64 || product.imageUrl }}
+            source={{ uri: sourceFrame }}
             style={styles.sourceImage}
             resizeMode="cover"
           />

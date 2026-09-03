@@ -129,8 +129,10 @@ final class SampleHandler: RPBroadcastSampleHandler {
         return
       }
 
-      var products = (parsed?["products"] as? [[String: Any]] ?? [])
-        + (parsed?["others"] as? [[String: Any]] ?? [])
+      // `products` already equals amazon + others; older workers only sent the
+      // two lists separately.
+      var products = parsed?["products"] as? [[String: Any]]
+        ?? ((parsed?["amazon"] as? [[String: Any]] ?? []) + (parsed?["others"] as? [[String: Any]] ?? []))
 
       // Save the captured video frame screenshot so the user sees exactly where it came from!
       if !products.isEmpty {
@@ -154,13 +156,19 @@ final class SampleHandler: RPBroadcastSampleHandler {
 
         products = products.map { item in
           var updated = item
-          // If bounding box was returned by AI, crop to the exact object! (Chrome Extension style)
+          // Crop to the AI bounding box when available (Chrome Extension style);
+          // otherwise keep the full frame. Either way this is the "Video Frame"
+          // side only — imageUrl (the Amazon listing photo) is left untouched.
           if let box = item["box_2d"] as? [Any],
              let cropped = Self.cropBox(from: jpeg, box: box) {
             updated["frameImage"] = cropped
             updated["sourceCrop"] = cropped
           } else {
             updated["frameImage"] = base64DataUrl
+          }
+          if let imageUrl = updated["imageUrl"] as? String, imageUrl.hasPrefix("data:") {
+            // Never let a frame masquerade as the catalog image.
+            updated["imageUrl"] = nil
           }
           if updated["source"] == nil {
             updated["source"] = "TikTok / Live Video"
@@ -187,21 +195,27 @@ final class SampleHandler: RPBroadcastSampleHandler {
   }
 
   private static func notifyNewFinds(_ products: [[String: Any]]) {
-    guard let first = products.first,
+    // Lead with a verified Amazon listing when there is one.
+    let verifiedFirst = products.first { ($0["asin"] as? String).map { !$0.isEmpty } ?? false }
+    guard let first = verifiedFirst ?? products.first,
           let title = first["title"] as? String, !title.isEmpty
     else { return }
 
     let content = UNMutableNotificationContent()
     let price = first["price"] as? String
-    let asin = first["asin"] as? String
+    let priceEstimated = first["priceEstimated"] as? Bool ?? false
+    let asin = (first["asin"] as? String).flatMap { $0.isEmpty ? nil : $0 }
     let url = first["url"] as? String ?? (asin.map { "https://www.amazon.com/dp/\($0)" } ?? "")
-    let imageUrlString = first["imageUrl"] as? String
+    // Prefer the listing photo; fall back to the crop we actually saw.
+    let imageUrlString = (first["imageUrl"] as? String).flatMap { $0.isEmpty ? nil : $0 }
+      ?? (first["sourceCrop"] as? String)
+      ?? (first["frameImage"] as? String)
 
-    content.title = "⚡ StreamSnap Match Found!"
+    content.title = asin != nil ? "⚡ StreamSnap Match Found!" : "👀 StreamSnap Spotted Something"
     if let price, !price.isEmpty {
-      content.subtitle = "\(price) on Amazon"
+      content.subtitle = asin != nil && !priceEstimated ? "\(price) on Amazon" : "~\(price) · tap to search Amazon"
     } else {
-      content.subtitle = "Found on Amazon"
+      content.subtitle = asin != nil ? "Found on Amazon" : "Tap to search Amazon"
     }
     content.body = title
     content.sound = .default

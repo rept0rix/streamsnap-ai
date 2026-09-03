@@ -130,9 +130,12 @@ export const useStore = create<StreamSnapState>((set, get) => ({
   },
 
   saveProduct: async (product, frameBase64) => {
+    // Persist the frame once, under sourceFrameBase64; the transient
+    // frameImage/sourceCrop fields would otherwise double the stored payload.
+    const { frameImage, sourceCrop, ...rest } = product;
     const item = await upsertCatalogItem({
-      ...product,
-      sourceFrameBase64: frameBase64
+      ...rest,
+      sourceFrameBase64: frameBase64 ?? sourceCrop ?? frameImage ?? undefined
     });
     const token = get().sessionToken;
     if (token) {
@@ -195,8 +198,8 @@ export const useStore = create<StreamSnapState>((set, get) => ({
     const cart = await addToCart({
       asin: product.asin,
       title: product.title,
-      imageUrl: product.imageUrl,
-      price: product.price
+      imageUrl: product.imageUrl ?? undefined,
+      price: product.price ?? undefined
     });
     const token = get().sessionToken;
     if (token) {
