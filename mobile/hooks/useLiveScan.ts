@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState, Platform } from "react-native";
 import Constants from "expo-constants";
 import {
@@ -21,54 +21,65 @@ const WORKER_URL =
   "https://streamsnap-lens.na0ryank0.workers.dev";
 
 export function useLiveScan() {
-  const { sessionToken, saveProduct, catalog } = useStore();
-  const { addNotification } = useNotificationStore();
+  const { sessionToken } = useStore();
   const [state, setState] = useState<LiveScanState>(getLiveScanState);
   const available = isLiveScanAvailable();
+  const ingestedKeys = useRef<Set<string>>(new Set());
 
   const refresh = useCallback(() => {
     setState(getLiveScanState());
   }, []);
 
-  const ingest = useCallback(
-    async (products?: LiveScanProduct[]) => {
-      const list = products ?? getLiveScanState().products;
-      for (const item of list) {
-        if (!item.title || !(item.asin || item.url)) continue;
-        const product: Product = {
-          title: item.title,
-          asin: item.asin,
-          url: item.url || (item.asin ? `https://www.amazon.com/dp/${item.asin}` : ""),
-          imageUrl: item.imageUrl,
-          price: item.price,
-          source: item.source === "other" ? "other" : "amazon",
-          confidence: item.confidence
-        };
+  const ingest = useCallback(async (products?: LiveScanProduct[]) => {
+    const list = products ?? getLiveScanState().products;
+    if (!list || list.length === 0) return;
 
-        const alreadySaved = catalog.some((p) => (p.asin && p.asin === product.asin) || (p.url && p.url === product.url));
-        await saveProduct(product);
+    const store = useStore.getState();
+    const currentCatalog = store.catalog;
+    const notifStore = useNotificationStore.getState();
 
-        if (!alreadySaved) {
-          await addNotification({
-            id: `live-find-${product.asin || Date.now()}`,
-            type: "scan_find",
-            title: "⚡ Live Scan Found Product!",
-            message: `${product.title}${product.price ? ` (${product.price})` : ""}`,
-            product
-          });
-        }
+    for (const item of list) {
+      if (!item.title || !(item.asin || item.url)) continue;
+      const key = item.asin || item.url;
+      if (!key) continue;
+      if (ingestedKeys.current.has(key)) continue;
+      ingestedKeys.current.add(key);
+
+      const product: Product = {
+        title: item.title,
+        asin: item.asin,
+        url: item.url || (item.asin ? `https://www.amazon.com/dp/${item.asin}` : ""),
+        imageUrl: item.imageUrl,
+        price: item.price,
+        source: item.source === "other" ? "other" : "amazon",
+        confidence: item.confidence
+      };
+
+      const alreadySaved = currentCatalog.some(
+        (p) => (p.asin && p.asin === product.asin) || (p.url && p.url === product.url)
+      );
+
+      await store.saveProduct(product);
+
+      if (!alreadySaved) {
+        await notifStore.addNotification({
+          id: `live-find-${product.asin || Date.now()}`,
+          type: "scan_find",
+          title: "⚡ Live Scan Found Product!",
+          message: `${product.title}${product.price ? ` (${product.price})` : ""}`,
+          product
+        });
       }
-    },
-    [catalog, saveProduct, addNotification]
-  );
+    }
+  }, []);
 
   useEffect(() => {
     if (Platform.OS !== "ios") return;
 
-    let cancelled = false;
+    let mounted = true;
     (async () => {
       const installId = await getInstallId();
-      if (cancelled) return;
+      if (!mounted) return;
       await syncLiveScanCredentials({
         token: sessionToken,
         installId,
@@ -80,7 +91,10 @@ export function useLiveScan() {
       setState(next);
       void ingest(next.products);
     });
-    const poll = setInterval(refresh, 2500);
+
+    // Poll periodically to catch extension writes
+    const poll = setInterval(refresh, 3500);
+
     const app = AppState.addEventListener("change", (status) => {
       if (status === "active") {
         refresh();
@@ -92,12 +106,12 @@ export function useLiveScan() {
     void ingest();
 
     return () => {
-      cancelled = true;
+      mounted = false;
       sub.remove();
       clearInterval(poll);
       app.remove();
     };
-  }, [ingest, refresh, sessionToken]);
+  }, [refresh, ingest, sessionToken]);
 
   const start = useCallback(async () => {
     await requestLiveScanNotifications();

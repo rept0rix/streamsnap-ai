@@ -13,12 +13,11 @@ final class SampleHandler: RPBroadcastSampleHandler {
   private var lastSampleAt: Date = .distantPast
   private var inFlight = false
   private var lastHash: UInt64 = 0
-  private lazy var ciContext: CIContext = {
-    CIContext(options: [
-      .useSoftwareRenderer: false,
-      .cacheIntermediates: false
-    ])
-  }()
+  private static let sharedCIContext = CIContext(options: [
+    .useSoftwareRenderer: false,
+    .cacheIntermediates: false,
+    .priorityRequestLow: true
+  ])
 
   override func broadcastStarted(withSetupInfo setupInfo: [String: NSObject]?) {
     LiveScanStore.beginSession()
@@ -72,8 +71,10 @@ final class SampleHandler: RPBroadcastSampleHandler {
     let longest = max(extent.width, extent.height)
     let scale = min(1, maxEdge / longest)
     let scaled = image.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
-    guard let cgImage = ciContext.createCGImage(scaled, from: scaled.extent) else { return nil }
-    return UIImage(cgImage: cgImage).jpegData(compressionQuality: jpegQuality)
+    let colorSpace = CGColorSpaceCreateDeviceRGB()
+    return Self.sharedCIContext.jpegRepresentation(of: scaled, colorSpace: colorSpace, options: [
+      CIImageRepresentationOption(rawValue: kCGImageDestinationLossyCompressionQuality as String): jpegQuality
+    ])
   }
 
   private func resolve(jpeg: Data) {
@@ -214,8 +215,7 @@ final class SampleHandler: RPBroadcastSampleHandler {
     filter?.setValue(1.0, forKey: kCIInputAspectRatioKey)
     guard
       let output = filter?.outputImage,
-      let cgImage = CIContext(options: [.useSoftwareRenderer: true])
-        .createCGImage(output, from: CGRect(x: 0, y: 0, width: 8, height: 8)),
+      let cgImage = sharedCIContext.createCGImage(output, from: CGRect(x: 0, y: 0, width: 8, height: 8)),
       let data = cgImage.dataProvider?.data,
       let ptr = CFDataGetBytePtr(data)
     else { return 0 }
