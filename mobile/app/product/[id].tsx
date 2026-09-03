@@ -12,15 +12,14 @@ import {
   TouchableOpacity,
   Linking
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "react-native-router-flux"; // Actually Expo router uses this under the hood, but let's use expo-router
-import { useLocalSearchParams as useExpoParams, useRouter as useExpoRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useStore } from "../../store/useStore";
 import type { CatalogItem } from "../../services/storage";
 
 export default function ProductScreen() {
-  const { id } = useExpoParams<{ id: string }>();
-  const router = useExpoRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { catalog, addProductToCart } = useStore();
 

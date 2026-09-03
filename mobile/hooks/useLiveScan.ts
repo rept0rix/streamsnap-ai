@@ -13,6 +13,7 @@ import {
 } from "../modules/live-scan/src";
 import { getInstallId } from "../services/storage";
 import { useStore } from "../store/useStore";
+import { useNotificationStore } from "../store/useNotificationStore";
 import type { Product } from "../services/api";
 
 const WORKER_URL =
@@ -20,7 +21,8 @@ const WORKER_URL =
   "https://streamsnap-lens.na0ryank0.workers.dev";
 
 export function useLiveScan() {
-  const { sessionToken, saveProduct } = useStore();
+  const { sessionToken, saveProduct, catalog } = useStore();
+  const { addNotification } = useNotificationStore();
   const [state, setState] = useState<LiveScanState>(getLiveScanState);
   const available = isLiveScanAvailable();
 
@@ -42,10 +44,22 @@ export function useLiveScan() {
           source: item.source === "other" ? "other" : "amazon",
           confidence: item.confidence
         };
+
+        const alreadySaved = catalog.some((p) => (p.asin && p.asin === product.asin) || (p.url && p.url === product.url));
         await saveProduct(product);
+
+        if (!alreadySaved) {
+          await addNotification({
+            id: `live-find-${product.asin || Date.now()}`,
+            type: "scan_find",
+            title: "⚡ Live Scan Found Product!",
+            message: `${product.title}${product.price ? ` (${product.price})` : ""}`,
+            product
+          });
+        }
       }
     },
-    [saveProduct]
+    [catalog, saveProduct, addNotification]
   );
 
   useEffect(() => {

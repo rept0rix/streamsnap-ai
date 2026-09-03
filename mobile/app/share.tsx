@@ -20,7 +20,7 @@ import {
   Alert,
   Platform
 } from "react-native";
-import { useShareIntentContext, isImageShareIntent } from "expo-share-intent";
+import { useShareIntentContext } from "expo-share-intent";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -66,7 +66,7 @@ export default function ShareScreen() {
       let sharedUrl: string | null = null;
 
       // Case 1: User shared an image directly (screenshot from TikTok etc.)
-      if (isImageShareIntent(shareIntent)) {
+      if (shareIntent.type === "media" || shareIntent.type === "file" || (shareIntent.files && shareIntent.files.length > 0)) {
         const files = shareIntent.files;
         if (files && files.length > 0) {
           imageUri = files[0].path;

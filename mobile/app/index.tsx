@@ -25,10 +25,12 @@ import { resolve } from "../services/api";
 import { compressToBase64 } from "../services/imageUtils";
 import { getInstallId } from "../services/storage";
 import { useLiveScan } from "../hooks/useLiveScan";
+import { useNotificationStore } from "../store/useNotificationStore";
 
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { unreadCount } = useNotificationStore();
   const {
     catalog,
     cart,
@@ -115,6 +117,20 @@ export default function HomeScreen() {
           <Text style={styles.tagline}>Shop anything you see live</Text>
         </View>
         <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.notifBtn}
+            onPress={() => router.push("/notifications" as any)}
+          >
+            <Text style={styles.settingsIcon}>🔔</Text>
+            {unreadCount > 0 && (
+              <View style={styles.unreadBadge}>
+                <Text style={styles.unreadBadgeText}>
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
           {cart.length > 0 && (
             <TouchableOpacity style={styles.cartBadge} onPress={() => router.push("/cart")}>
               <Text style={styles.cartBadgeText}>🛒 {cart.length}</Text>
@@ -232,6 +248,22 @@ const styles = StyleSheet.create({
   logo: { color: "#F8FAFC", fontSize: 22, fontWeight: "800" },
   tagline: { color: "#64748B", fontSize: 12, marginTop: 2 },
   headerActions: { flexDirection: "row", alignItems: "center", gap: 12 },
+  notifBtn: { position: "relative", padding: 4 },
+  unreadBadge: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    backgroundColor: "#EF4444",
+    borderRadius: 9,
+    minWidth: 18,
+    height: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 4,
+    borderWidth: 1.5,
+    borderColor: "#0B0F17"
+  },
+  unreadBadgeText: { color: "#FFFFFF", fontSize: 10, fontWeight: "800" },
   cartBadge: {
     backgroundColor: "#FF9900",
     borderRadius: 16,

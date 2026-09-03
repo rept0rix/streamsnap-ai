@@ -36,7 +36,7 @@ export default function LoginScreen() {
       if (result.type === "success" && result.url) {
         // Extract token from URL hash: streamsnap://...?#token=...
         const url = new URL(result.url);
-        let token = url.hash.match(/token=([^&]+)/)?.[1];
+        let token: string | null | undefined = url.hash.match(/token=([^&]+)/)?.[1];
         
         // If it somehow landed in the query string instead
         if (!token) {

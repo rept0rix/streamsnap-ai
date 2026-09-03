@@ -98,7 +98,7 @@ export const useStore = create<StreamSnapState>((set, get) => ({
         
         if (cloudData.ok && cloudData.products) {
           // Merge cloud products into local catalog
-          const cloudCatalog = cloudData.products.map(p => ({
+          const cloudCatalog = cloudData.products.map((p: any) => ({
             id: p.id,
             asin: p.asin,
             title: p.title,
