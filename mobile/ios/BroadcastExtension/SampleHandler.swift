@@ -139,10 +139,8 @@ final class SampleHandler: RPBroadcastSampleHandler {
         incrementOk: true
       )
       if !products.isEmpty {
-        let before = LiveScanStore.products().count
-        LiveScanStore.upsertProducts(products)
-        let after = LiveScanStore.products().count
-        if after > before {
+        let added = LiveScanStore.upsertProducts(products)
+        if added > 0 {
           Self.notifyNewFinds(products)
         }
       }

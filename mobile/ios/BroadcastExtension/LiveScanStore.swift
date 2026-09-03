@@ -117,8 +117,9 @@ enum LiveScanStore {
     ping()
   }
 
-  static func upsertProducts(_ incoming: [[String: Any]]) {
-    guard let defaults else { return }
+  @discardableResult
+  static func upsertProducts(_ incoming: [[String: Any]]) -> Int {
+    guard let defaults else { return 0 }
     var existing = products()
     let now = Date().timeIntervalSince1970 * 1000
     var added = 0
@@ -162,6 +163,7 @@ enum LiveScanStore {
     defaults.set(existing.count, forKey: Key.findCount)
     defaults.synchronize()
     ping()
+    return added
   }
 
   static func products() -> [[String: Any]] {

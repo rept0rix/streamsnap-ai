@@ -399,7 +399,8 @@ Rules:
 // ---------------------------------------------------------------------------
 
 async function handleResolve(request, env, ctx) {
-  const hasLens = Boolean(env.BRIGHTDATA_API_KEY && env.BRIGHTDATA_ZONE);
+  try {
+    const hasLens = Boolean(env.BRIGHTDATA_API_KEY && env.BRIGHTDATA_ZONE);
   const hasAI = Boolean(env.AI);
   if (!hasLens && !hasAI) {
     return json(
@@ -478,12 +479,15 @@ async function handleResolve(request, env, ctx) {
       ({ amazon, others } = await callWorkersAI(bytes, env));
       engine = "workers-ai";
     } catch (err) {
-      const message = err.name === "AbortError" ? "Vision request timed out." : err.message;
-      return json({ ok: false, error: message }, 502, request, env);
+      console.log("[resolve] vision error on frame:", err.message);
+      amazon = [];
+      others = [];
+      engine = "none";
     }
   }
 
-  const result = { products: amazon, others, count: amazon.length, engine };
+  const allProducts = [...amazon, ...others];
+  const result = { products: allProducts, amazon, others, count: allProducts.length, engine };
 
   if (env.CACHE) {
     ctx.waitUntil(
@@ -495,9 +499,9 @@ async function handleResolve(request, env, ctx) {
 
   // Auto-sync products into user's cloud wishlist if authenticated
   const user = await getCurrentUser(env, request).catch(() => null);
-  if (user && amazon.length > 0 && env.DB) {
+  if (user && allProducts.length > 0 && env.DB) {
     ctx.waitUntil((async () => {
-      for (const p of amazon.slice(0, 5)) {
+      for (const p of allProducts.slice(0, 5)) {
         const id = `prod_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
         await env.DB.prepare(`
           INSERT INTO saved_products (id, user_id, asin, title, price, image_url, product_url, category, source, verified, sighting_count, last_seen_at)
@@ -530,6 +534,10 @@ async function handleResolve(request, env, ctx) {
   }
 
   return json({ ok: true, cached: false, ...result }, 200, request, env);
+  } catch (err) {
+    console.error("[resolve fatal error]", err);
+    return json({ ok: false, error: err.message || "Internal server error" }, 500, request, env);
+  }
 }
 
 // ---------------------------------------------------------------------------
