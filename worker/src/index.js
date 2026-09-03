@@ -321,9 +321,13 @@ function normalizeVisionProducts(raw) {
   const list = Array.isArray(raw?.products) ? raw.products : [];
   const amazon = [];
   const others = [];
+  const JUNK_TITLES = /^(table|plate|table plate|tableplate|wall|floor|ceiling|room|door|window|person|human|man|woman|background|scenery|sky|cloud|water|hand|finger|hair|face|body|building|road|street)$/i;
+
   for (const item of list) {
     const title = String(item?.title || "").trim();
-    if (!title) continue;
+    if (!title || title.length < 3) continue;
+    if (JUNK_TITLES.test(title)) continue;
+
     const asin = /^B0[A-Z0-9]{8}$/i.test(item?.asin || "") ? String(item.asin).toUpperCase() : null;
     const url =
       item?.url ||
@@ -334,7 +338,7 @@ function normalizeVisionProducts(raw) {
       asin,
       image: item.imageUrl || item.image || null,
       imageUrl: item.imageUrl || item.image || null,
-      price: item.price != null ? String(item.price) : null,
+      price: item.price != null ? (String(item.price).startsWith("$") ? String(item.price) : `$${item.price}`) : "$29.99",
       source: asin ? "amazon" : "other",
       isAmazon: Boolean(asin),
       verified: Boolean(asin)
@@ -373,13 +377,24 @@ async function runLlava(env, bytes, prompt) {
 }
 
 async function callWorkersAI(bytes, env) {
-  const prompt = `Identify shoppable physical products visible in this screenshot.
-Return ONLY JSON with this shape:
-{"products":[{"title":"string","asin":"B0XXXXXXXX or empty","price":"29.99","source":"amazon"}]}
-Rules:
-- Only items you can actually see.
-- asin only if it is a real Amazon ASIN (B0 + 8 alphanumeric). Otherwise leave asin empty.
-- Max 5 products. No markdown.`;
+  const prompt = `You are StreamSnap, an AI product scout for TikTok and Reels videos.
+Analyze this video screenshot and extract ONLY real shoppable consumer goods featured in the video.
+
+PRIORITIZE:
+- Fashion & Apparel (shirts, jackets, hoodies, dresses, pants, sneakers, boots)
+- Accessories (watches, sunglasses, bags, necklaces, rings, caps)
+- Tech & Creator Gear (smartphones, headphones, microphones, cameras, chargers)
+- Beauty & Cosmetics (skincare bottles, makeup, perfumes)
+- Home & Aesthetic Decor (lamps, mugs, desk accessories)
+
+STRICT RULES:
+- DO NOT return generic scene infrastructure (NO "table", NO "plate", NO "table plate", NO "wall", NO "floor", NO "door", NO "window", NO "room").
+- Write specific, descriptive titles ready for Amazon search (e.g. "Vintage Distressed Leather Jacket", "Classic Ribbed Tank Top").
+- Estimate a realistic retail price (e.g. "34.99").
+
+Return ONLY valid JSON in this shape:
+{"products":[{"title":"Descriptive Product Name","price":"29.99"}]}
+If no shoppable items are visible, return {"products":[]}.`;
 
   let response;
   try {
