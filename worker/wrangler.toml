@@ -41,6 +41,10 @@ database_id = "caa4a66d-0cab-4dd5-9deb-ebf53c6b80da"
 migrations_dir = "migrations"
 
 # Secrets are set with `wrangler secret put`, never in this file:
+#   GEMINI_API_KEY    Gemini 2.5 Flash for frame recognition (same model as the extension);
+#                     without it the Worker falls back to Workers AI (Llama), which is
+#                     noticeably worse at reading brands/models off a video frame.
+#   GEMINI_MODELS     optional comma-separated override, default "gemini-2.5-flash,gemini-flash-latest"
 #   BRIGHTDATA_API_KEY
 #   BRIGHTDATA_ZONE
 #   GOOGLE_CLIENT_ID

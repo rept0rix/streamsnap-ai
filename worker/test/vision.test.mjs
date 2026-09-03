@@ -228,5 +228,135 @@ await test("throws only when every model fails", async () => {
   await assert.rejects(() => detectProducts(env, new Uint8Array([1])), /Vision models unavailable/);
 });
 
+console.log("\nGemini tier");
+
+const realFetch = globalThis.fetch;
+function mockGemini(handler) {
+  const calls = [];
+  globalThis.fetch = async (url, init) => {
+    calls.push({ url: String(url), init, body: JSON.parse(init.body) });
+    return handler(calls.length, String(url));
+  };
+  return { calls, restore: () => (globalThis.fetch = realFetch) };
+}
+const geminiOk = (payload) =>
+  new Response(
+    JSON.stringify({
+      candidates: [{ content: { parts: [{ text: JSON.stringify(payload) }] }, finishReason: "STOP" }]
+    }),
+    { status: 200, headers: { "Content-Type": "application/json" } }
+  );
+
+await test("uses Gemini 2.5 Flash first when GEMINI_API_KEY is set, with structured output", async () => {
+  const { calls, restore } = mockGemini(() => geminiOk(GOOD));
+  const aiCalls = [];
+  const env = { GEMINI_API_KEY: "k-server", AI: { async run(m) { aiCalls.push(m); } } };
+  try {
+    const out = await detectProducts(env, new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]));
+    assert.equal(out.model, "gemini-2.5-flash");
+    assert.equal(aiCalls.length, 0, "Workers AI is not touched when Gemini succeeds");
+    assert.equal(calls.length, 1);
+    assert.match(calls[0].url, /models\/gemini-2\.5-flash:generateContent$/);
+    assert.equal(calls[0].init.headers["x-goog-api-key"], "k-server");
+    const body = calls[0].body;
+    assert.equal(body.generationConfig.responseMimeType, "application/json");
+    assert.equal(body.generationConfig.responseSchema.type, "OBJECT");
+    assert.equal(body.generationConfig.thinkingConfig.thinkingBudget, 0);
+    const img = body.contents[0].parts.find((p) => p.inlineData);
+    assert.equal(img.inlineData.mimeType, "image/jpeg");
+    assert.ok(img.inlineData.data.length > 0);
+    assert.ok(body.systemInstruction.parts[0].text.includes("box_2d"));
+    assert.equal(out.detections[0].title, "Apple Watch Series 8 45mm");
+  } finally {
+    restore();
+  }
+});
+
+await test("X-Gemini-Key (options.geminiKey) overrides the server secret", async () => {
+  const { calls, restore } = mockGemini(() => geminiOk(GOOD));
+  try {
+    await detectProducts({ GEMINI_API_KEY: "k-server" }, new Uint8Array([1]), { geminiKey: "k-user" });
+    assert.equal(calls[0].init.headers["x-goog-api-key"], "k-user");
+  } finally {
+    restore();
+  }
+});
+
+await test("quota error on the first Gemini model tries the next one, then Workers AI", async () => {
+  const { calls, restore } = mockGemini(() => new Response("{}", { status: 429 }));
+  const aiCalls = [];
+  const env = {
+    GEMINI_API_KEY: "k",
+    AI: {
+      async run(model) {
+        aiCalls.push(model);
+        return { response: JSON.stringify(GOOD) };
+      }
+    }
+  };
+  try {
+    const out = await detectProducts(env, new Uint8Array([1]));
+    assert.equal(calls.length, 2, "both default Gemini models attempted");
+    assert.match(calls[1].url, /gemini-flash-latest/);
+    assert.deepEqual(aiCalls, [VISION_MODELS.scout]);
+    assert.equal(out.model, VISION_MODELS.scout);
+  } finally {
+    restore();
+  }
+});
+
+await test("a rejected key stops the Gemini ladder immediately and falls back", async () => {
+  const { calls, restore } = mockGemini(() => new Response("{}", { status: 403 }));
+  const env = {
+    GEMINI_API_KEY: "bad",
+    AI: { async run() { return { response: JSON.stringify(GOOD) }; } }
+  };
+  try {
+    const out = await detectProducts(env, new Uint8Array([1]));
+    assert.equal(calls.length, 1, "no point retrying other models with a bad key");
+    assert.equal(out.model, VISION_MODELS.scout);
+  } finally {
+    restore();
+  }
+});
+
+await test("GEMINI_MODELS overrides the model list", async () => {
+  const { calls, restore } = mockGemini(() => geminiOk(GOOD));
+  try {
+    const out = await detectProducts(
+      { GEMINI_API_KEY: "k", GEMINI_MODELS: "gemini-3-flash-preview, gemini-2.5-flash" },
+      new Uint8Array([1])
+    );
+    assert.match(calls[0].url, /gemini-3-flash-preview/);
+    assert.equal(out.model, "gemini-3-flash-preview");
+  } finally {
+    restore();
+  }
+});
+
+await test("Gemini junk detections are filtered like any other model's", async () => {
+  const { restore } = mockGemini(() =>
+    geminiOk({
+      videoTitle: null,
+      products: [
+        { title: "TikTok", confidence: 90, matchReason: "logo", box_2d: [0, 0, 100, 100] },
+        { title: "Sony WH-1000XM5 Headphones", brand: "Sony", price: 349.99, confidence: 88, matchReason: "earcup shape, logo", box_2d: [200, 300, 600, 700] }
+      ]
+    })
+  );
+  try {
+    const out = await detectProducts({ GEMINI_API_KEY: "k" }, new Uint8Array([1]));
+    assert.equal(out.detections.length, 1);
+    assert.equal(out.detections[0].title, "Sony WH-1000XM5 Headphones");
+    assert.equal(out.detections[0].estimatedPrice, 349.99);
+  } finally {
+    restore();
+  }
+});
+
+await test("without a key and without an AI binding the error says so", async () => {
+  await assert.rejects(() => detectProducts({}, new Uint8Array([1])), /no vision backend configured/);
+});
+
 console.log(`\n${failed === 0 ? "✓" : "✗"} ${passed} passed, ${failed} failed\n`);
 process.exit(failed === 0 ? 0 : 1);

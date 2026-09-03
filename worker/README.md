@@ -33,13 +33,14 @@ extension  ──POST /resolve { image, installId }──►  Worker
                                         cache result, return
 ```
 
-## Workers AI engine (no Bright Data key)
+## Vision engine (no Bright Data key)
 
 When `BRIGHTDATA_API_KEY` / `BRIGHTDATA_ZONE` are not set — the mobile live-scan
-deployment — `/resolve` uses the `[ai]` binding instead of Lens:
+deployment — `/resolve` recognises products with a vision model instead of Lens:
 
 ```text
-frame ──► Llama 4 Scout (fallback: Llama 3.2 Vision → LLaVA)      src/vision.js
+frame ──► Gemini 2.5 Flash            (GEMINI_API_KEY, or X-Gemini-Key header)   src/vision.js
+            └─ fallback: Llama 4 Scout → Llama 3.2 Vision → LLaVA  ([ai] binding)
               │  names + locates physical products only; UI / app / body-part
               │  "products" and generic single nouns are filtered out
               ▼
@@ -53,6 +54,23 @@ frame ──► Llama 4 Scout (fallback: Llama 3.2 Vision → LLaVA)      src/vi
 The model is never allowed to invent ASINs, catalog images or "Amazon" prices;
 those only come from the listing lookup. `priceEstimated: true` marks prices
 that are still a model guess.
+
+**Set `GEMINI_API_KEY`.** Gemini 2.5 Flash is the model the Chrome extension
+runs on and is where its recognition quality comes from; the Workers AI models
+are a degraded fallback that frequently misreads brands and model numbers on a
+video frame. Gemini is called with `responseSchema` (guaranteed JSON), thinking
+disabled, and the native `box_2d` convention it was trained on. Cost is roughly
+1,000 input tokens per frame (≈ $0.0003 at the paid tier); the free tier is
+enough for development. `GEMINI_MODELS` can override the model list
+(default `gemini-2.5-flash,gemini-flash-latest`). A client may also send its
+own key in `X-Gemini-Key`, which takes precedence over the server secret.
+
+```bash
+wrangler secret put GEMINI_API_KEY     # from https://aistudio.google.com/apikey
+```
+
+The response reports which engine produced a result: `engine` is `lens`,
+`gemini` or `workers-ai`, and `visionModel` names the exact model.
 
 ## Endpoints
 

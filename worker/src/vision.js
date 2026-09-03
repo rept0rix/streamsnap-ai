@@ -1,19 +1,53 @@
 /**
- * StreamSnap Worker — frame → product detections via Workers AI.
+ * StreamSnap Worker — frame → product detections.
  *
  * Used when Bright Data / Google Lens is not configured (the mobile live scan
  * path). The model is only asked to *name and locate* physical products; the
  * Amazon listing itself is resolved afterwards by amazon_lookup.js, so nothing
  * here is allowed to invent ASINs, catalog images or "found on Amazon" prices.
  *
- * Model ladder: Llama 4 Scout (natively multimodal, far better at reading brand
- * text than Llama 3.2 Vision) → Llama 3.2 11B Vision → LLaVA 1.5.
+ * Model ladder:
+ *   1. Gemini 2.5 Flash — the same model the Chrome extension uses, which is
+ *      where its recognition quality comes from. Needs GEMINI_API_KEY (secret)
+ *      or a per-request X-Gemini-Key header. Structured output via
+ *      responseSchema; thinking disabled for latency; Gemini is trained on the
+ *      exact box_2d [ymin, xmin, ymax, xmax] 0–1000 convention we use.
+ *   2. Llama 4 Scout on Workers AI (natively multimodal).
+ *   3. Llama 3.2 11B Vision → LLaVA 1.5 as last resorts.
  */
 
 export const VISION_MODELS = {
+  gemini: "gemini-2.5-flash",
   scout: "@cf/meta/llama-4-scout-17b-16e-instruct",
   llama32: "@cf/meta/llama-3.2-11b-vision-instruct",
   llava: "@cf/llava-hf/llava-1.5-7b-hf"
+};
+
+export const DEFAULT_GEMINI_MODELS = ["gemini-2.5-flash", "gemini-flash-latest"];
+const GEMINI_TIMEOUT_MS = 15000;
+
+/** Gemini structured-output schema (OpenAPI subset). Mirrors VISION_SYSTEM_PROMPT. */
+export const GEMINI_RESPONSE_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    videoTitle: { type: "STRING", nullable: true },
+    products: {
+      type: "ARRAY",
+      items: {
+        type: "OBJECT",
+        properties: {
+          title: { type: "STRING" },
+          brand: { type: "STRING", nullable: true },
+          price: { type: "NUMBER", nullable: true },
+          confidence: { type: "INTEGER" },
+          matchReason: { type: "STRING" },
+          box_2d: { type: "ARRAY", items: { type: "INTEGER" } }
+        },
+        required: ["title", "confidence", "matchReason", "box_2d"]
+      }
+    }
+  },
+  required: ["products"]
 };
 
 export const MIN_CONFIDENCE = 65;
@@ -297,34 +331,134 @@ async function runLlava(env, bytes) {
   });
 }
 
+export function geminiModelList(env) {
+  const raw = String(env?.GEMINI_MODELS || "").trim();
+  if (!raw) return DEFAULT_GEMINI_MODELS;
+  const list = raw.split(",").map((m) => m.trim()).filter(Boolean);
+  return list.length ? list : DEFAULT_GEMINI_MODELS;
+}
+
+/**
+ * Gemini generateContent with structured output. Tries each configured model in
+ * order; auth failures abort immediately (a bad key won't get better on the
+ * next model), quota/5xx errors move to the next model. Returns
+ * { text, model } or throws.
+ */
+async function runGemini(env, bytes, apiKey) {
+  const body = JSON.stringify({
+    systemInstruction: { parts: [{ text: VISION_SYSTEM_PROMPT }] },
+    contents: [
+      {
+        role: "user",
+        parts: [
+          { text: VISION_USER_PROMPT },
+          { inlineData: { mimeType: detectMime(bytes), data: bytesToBase64(bytes) } }
+        ]
+      }
+    ],
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: GEMINI_RESPONSE_SCHEMA,
+      temperature: 0.1,
+      maxOutputTokens: 1024,
+      thinkingConfig: { thinkingBudget: 0 }
+    }
+  });
+
+  const errors = [];
+  for (const model of geminiModelList(env)) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
+    let response;
+    try {
+      response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+          body,
+          signal: controller.signal
+        }
+      );
+    } catch (err) {
+      errors.push(`${model}: ${err?.name === "AbortError" ? "timeout" : err?.message || err}`);
+      continue;
+    } finally {
+      clearTimeout(timer);
+    }
+
+    if (response.status === 401 || response.status === 403) {
+      throw new Error("Gemini rejected the API key");
+    }
+    if (!response.ok) {
+      errors.push(`${model}: HTTP ${response.status}`);
+      continue;
+    }
+
+    let json;
+    try {
+      json = await response.json();
+    } catch {
+      errors.push(`${model}: invalid JSON envelope`);
+      continue;
+    }
+    const finish = json?.candidates?.[0]?.finishReason;
+    if (json?.promptFeedback?.blockReason) {
+      errors.push(`${model}: blocked (${json.promptFeedback.blockReason})`);
+      continue;
+    }
+    const text = (json?.candidates?.[0]?.content?.parts || [])
+      .map((p) => (typeof p?.text === "string" ? p.text : ""))
+      .join("")
+      .trim();
+    if (!text) {
+      errors.push(`${model}: empty response${finish ? ` (${finish})` : ""}`);
+      continue;
+    }
+    return { text, model };
+  }
+  throw new Error(errors.join(" | ") || "no Gemini models configured");
+}
+
 /**
  * Run the vision ladder on a frame. Resolves to
  * { videoTitle, detections, model, rawText }. Throws only if every model fails.
+ *
+ * options.geminiKey overrides env.GEMINI_API_KEY (per-request key from the
+ * X-Gemini-Key header). Without either, the ladder starts at Workers AI.
  */
 export async function detectProducts(env, bytes, options = {}) {
-  const ladder = [
-    ["scout", runScout],
-    ["llama32", runLlama32],
-    ["llava", runLlava]
-  ];
+  const geminiKey = String(options.geminiKey || env?.GEMINI_API_KEY || "").trim();
+  const ladder = [];
+  if (geminiKey) {
+    ladder.push(["gemini", async () => runGemini(env, bytes, geminiKey)]);
+  }
+  if (env?.AI) {
+    ladder.push(
+      ["scout", async () => ({ text: responseText(await runScout(env, bytes)), model: VISION_MODELS.scout })],
+      ["llama32", async () => ({ text: responseText(await runLlama32(env, bytes)), model: VISION_MODELS.llama32 })],
+      ["llava", async () => ({ text: responseText(await runLlava(env, bytes)), model: VISION_MODELS.llava })]
+    );
+  }
   const errors = [];
 
   for (const [name, run] of ladder) {
     let text;
+    let model;
     try {
-      text = responseText(await run(env, bytes));
+      ({ text, model } = await run());
     } catch (err) {
       errors.push(`${name}: ${err?.message || err}`);
       console.log(`[vision] ${name} failed:`, err?.message || err);
       continue;
     }
-    if (!text.trim()) {
+    if (!text || !text.trim()) {
       errors.push(`${name}: empty response`);
       continue;
     }
     const { videoTitle, detections } = normalizeDetections(parseModelJson(text), options);
-    return { videoTitle, detections, model: VISION_MODELS[name], rawText: text };
+    return { videoTitle, detections, model, rawText: text };
   }
 
-  throw new Error(`Vision models unavailable (${errors.join(" | ")})`);
+  throw new Error(`Vision models unavailable (${errors.join(" | ") || "no vision backend configured"})`);
 }

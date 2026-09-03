@@ -148,7 +148,7 @@ function corsHeaders(request, env) {
 
   const base = {
     "Access-Control-Allow-Methods": "POST, GET, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Gemini-Key",
     "Access-Control-Max-Age": "86400",
     Vary: "Origin"
   };
@@ -335,8 +335,8 @@ function normalizeLensProduct(p) {
  * (verified); the rest stay in `others` with a plain search link and no image,
  * so the client never shows a random picture as the "match".
  */
-async function resolveWithVision(bytes, env) {
-  const { videoTitle, detections, model, rawText } = await detectProducts(env, bytes);
+async function resolveWithVision(bytes, env, options = {}) {
+  const { videoTitle, detections, model, rawText } = await detectProducts(env, bytes, options);
 
   let videoUrl = "https://www.tiktok.com";
   const creatorMatch = videoTitle.match(/@([a-zA-Z0-9._]+)/);
@@ -499,12 +499,15 @@ async function handleResolve(request, env, ctx) {
     others = lens.others.map(normalizeLensProduct);
   } else {
     try {
-      const res = await resolveWithVision(bytes, env);
+      // A caller-supplied Gemini key (mobile settings) takes precedence over the
+      // server secret so a user can bring their own quota, exactly like the extension.
+      const geminiKey = (request.headers.get("X-Gemini-Key") || "").trim() || undefined;
+      const res = await resolveWithVision(bytes, env, { geminiKey });
       amazon = res.amazon;
       others = res.others;
       rawVisionText = res.rawText;
-      engine = "workers-ai";
       visionModel = res.model;
+      engine = String(visionModel || "").startsWith("gemini") ? "gemini" : "workers-ai";
     } catch (err) {
       console.log("[resolve] vision error on frame:", err.message);
       amazon = [];

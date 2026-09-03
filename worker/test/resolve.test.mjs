@@ -71,21 +71,29 @@ function makeEnv(aiReply = MODEL_REPLY) {
 const ctx = { waitUntil() {} };
 const TINY_JPEG = "data:image/jpeg;base64," + Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 16, 74, 70, 73, 70]).toString("base64");
 
-async function callResolve(env) {
+async function callResolve(env, extraHeaders = {}) {
   const request = new Request("https://worker.test/resolve", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...extraHeaders },
     body: JSON.stringify({ image: TINY_JPEG, installId: "test-install-0001" })
   });
   const response = await worker.fetch(request, env, ctx);
   return { status: response.status, body: await response.json() };
 }
 
+const geminiCalls = [];
 const realFetch = globalThis.fetch;
-globalThis.fetch = async (url) => {
+globalThis.fetch = async (url, init) => {
   const href = String(url);
   if (href.startsWith("https://www.amazon.com/s?k=")) {
     return new Response(FIXTURE, { status: 200, headers: { "Content-Type": "text/html" } });
+  }
+  if (href.startsWith("https://generativelanguage.googleapis.com/")) {
+    geminiCalls.push({ href, headers: init.headers });
+    return new Response(
+      JSON.stringify({ candidates: [{ content: { parts: [{ text: JSON.stringify(MODEL_REPLY) }] } }] }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
   }
   throw new Error(`unexpected fetch: ${href}`);
 };
@@ -148,6 +156,41 @@ await test("an empty frame yields an empty, successful result", async () => {
   assert.equal(body.ok, true);
   assert.equal(body.count, 0);
   assert.deepEqual(body.products, []);
+});
+
+console.log("\nPOST /resolve (Gemini engine)");
+
+await test("with GEMINI_API_KEY the frame goes to Gemini and the same verified listing comes back", async () => {
+  geminiCalls.length = 0;
+  const env = { ...makeEnv(), GEMINI_API_KEY: "server-key" };
+  env.AI.run = async () => { throw new Error("Workers AI must not be called when Gemini succeeds"); };
+  const { status, body } = await callResolve(env);
+  assert.equal(status, 200);
+  assert.equal(body.engine, "gemini");
+  assert.equal(body.visionModel, "gemini-2.5-flash");
+  assert.equal(geminiCalls.length, 1);
+  assert.equal(geminiCalls[0].headers["x-goog-api-key"], "server-key");
+  assert.equal(body.amazon[0].asin, "B0BS4D5C8D");
+  assert.equal(body.amazon[0].verified, true);
+  assert.equal(body.others.length, 1);
+});
+
+await test("X-Gemini-Key lets a caller bring their own key (and is CORS-allowed)", async () => {
+  geminiCalls.length = 0;
+  const env = { ...makeEnv(), GEMINI_API_KEY: "server-key" };
+  const { body } = await callResolve(env, { "X-Gemini-Key": "user-key" });
+  assert.equal(body.engine, "gemini");
+  assert.equal(geminiCalls[0].headers["x-goog-api-key"], "user-key");
+
+  const preflight = await worker.fetch(
+    new Request("https://worker.test/resolve", {
+      method: "OPTIONS",
+      headers: { Origin: "https://example.com", "Access-Control-Request-Headers": "x-gemini-key" }
+    }),
+    env,
+    ctx
+  );
+  assert.match(preflight.headers.get("Access-Control-Allow-Headers") || "", /X-Gemini-Key/);
 });
 
 globalThis.fetch = realFetch;
