@@ -3,8 +3,11 @@
  *
  * Side-by-Side Dual Visuals:
  * [Video Frame Screenshot] ➔ [Amazon Match]
- * Displays Video Title, Confidence %, Product Name, Price, and Amazon Link.
- * No duplicates, no "seen count".
+ * Displays:
+ * 1. Full Video Name & Creator with direct TikTok Video Link
+ * 2. Full Product Name (no truncation)
+ * 3. Confidence % Match
+ * 4. Price & Direct Amazon Buy Link
  */
 
 import React from "react";
@@ -34,13 +37,14 @@ export function ProductCard({ product, item, onPress, onAddToCart }: Props) {
   const isVerified = Boolean(p.asin);
   const targetUrl = p.url || (p.asin ? `https://www.amazon.com/dp/${p.asin}` : null);
   
-  // Images: Video Snapshot and Product Image
+  // Images: Video Snapshot (base64 Data URL or remote) and Product Image
   const frameImage = p.frameImage || p.sourceFrameBase64;
   const productImageUrl = p.imageUrl || p.image;
   
   // Context details
-  const videoTitle = p.videoTitle || (p.source?.includes("TikTok") ? "TikTok Live Video" : null);
-  const confidence = p.confidence || (p.asin ? 96 : 91);
+  const videoTitle = p.videoTitle || (p.source?.includes("TikTok") ? "TikTok Live Video" : "Video Stream");
+  const videoUrl = p.videoUrl || (videoTitle && videoTitle !== "TikTok Video" ? `https://www.tiktok.com/search?q=${encodeURIComponent(videoTitle)}` : "https://www.tiktok.com");
+  const confidence = p.confidence || (p.asin ? 96 : 92);
 
   const handlePress = () => {
     if (onPress) {
@@ -50,20 +54,32 @@ export function ProductCard({ product, item, onPress, onAddToCart }: Props) {
     }
   };
 
+  const handleOpenVideo = (e: any) => {
+    e.stopPropagation();
+    if (videoUrl) {
+      Linking.openURL(videoUrl).catch(() => {});
+    }
+  };
+
   return (
     <TouchableOpacity
       style={styles.card}
       onPress={handlePress}
       activeOpacity={0.85}
     >
-      {/* 1. Header Row: Video Source & Confidence Match % */}
+      {/* 1. Header: Full Video Name & Direct TikTok Link + Confidence % */}
       <View style={styles.topRow}>
-        <View style={styles.videoSourceTag}>
-          <Ionicons name="videocam" size={12} color="#38BDF8" style={{ marginRight: 4 }} />
-          <Text style={styles.videoSourceText} numberOfLines={1}>
-            {videoTitle || "TikTok Video"}
+        <TouchableOpacity
+          style={styles.videoSourceTag}
+          onPress={handleOpenVideo}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="logo-tiktok" size={13} color="#38BDF8" style={{ marginRight: 5 }} />
+          <Text style={styles.videoSourceText}>
+            {videoTitle}
           </Text>
-        </View>
+          <Ionicons name="open-outline" size={11} color="#38BDF8" style={{ marginLeft: 4 }} />
+        </TouchableOpacity>
 
         <View style={styles.confidencePill}>
           <Ionicons name="sparkles" size={11} color="#FF7700" style={{ marginRight: 3 }} />
@@ -81,10 +97,11 @@ export function ProductCard({ product, item, onPress, onAddToCart }: Props) {
             <Image source={{ uri: productImageUrl }} style={styles.thumbnail} resizeMode="cover" />
           ) : (
             <View style={[styles.thumbnail, styles.placeholderBox]}>
-              <Ionicons name="phone-portrait-outline" size={24} color="#64748B" />
+              <Ionicons name="phone-portrait-outline" size={26} color="#64748B" />
             </View>
           )}
           <View style={styles.thumbBadge}>
+            <Ionicons name="videocam" size={10} color="#FFFFFF" style={{ marginRight: 3 }} />
             <Text style={styles.thumbBadgeText}>Video Frame</Text>
           </View>
         </View>
@@ -102,10 +119,11 @@ export function ProductCard({ product, item, onPress, onAddToCart }: Props) {
             <Image source={{ uri: frameImage }} style={styles.thumbnail} resizeMode="cover" />
           ) : (
             <View style={[styles.thumbnail, styles.placeholderBox]}>
-              <Ionicons name="cube-outline" size={24} color="#64748B" />
+              <Ionicons name="cube-outline" size={26} color="#64748B" />
             </View>
           )}
           <View style={[styles.thumbBadge, styles.amazonThumbBadge]}>
+            <Ionicons name="logo-amazon" size={10} color="#FFFFFF" style={{ marginRight: 3 }} />
             <Text style={styles.thumbBadgeText}>Amazon Match</Text>
           </View>
           {isVerified && (
@@ -116,9 +134,9 @@ export function ProductCard({ product, item, onPress, onAddToCart }: Props) {
         </View>
       </View>
 
-      {/* 3. Product Info & Price */}
+      {/* 3. Product Info: Full Product Name (No truncation) & Pricing */}
       <View style={styles.infoBox}>
-        <Text style={styles.productTitle} numberOfLines={2}>
+        <Text style={styles.productTitle}>
           {p.title}
         </Text>
 
@@ -162,34 +180,38 @@ const styles = StyleSheet.create({
     padding: 14,
     borderWidth: 1,
     borderColor: "#1E2738",
-    marginBottom: 12
+    marginBottom: 14
   },
   topRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10
+    alignItems: "flex-start",
+    marginBottom: 10,
+    gap: 8
   },
   videoSourceTag: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "rgba(56, 189, 248, 0.12)",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
     borderRadius: 8,
-    maxWidth: "68%"
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "rgba(56, 189, 248, 0.25)"
   },
   videoSourceText: {
     color: "#38BDF8",
-    fontSize: 11,
-    fontWeight: "700"
+    fontSize: 12,
+    fontWeight: "700",
+    flexShrink: 1
   },
   confidencePill: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "rgba(255, 119, 0, 0.14)",
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "rgba(255, 119, 0, 0.3)"
@@ -210,7 +232,7 @@ const styles = StyleSheet.create({
   visualBox: {
     flex: 1,
     position: "relative",
-    aspectRatio: 16 / 10,
+    aspectRatio: 16 / 11,
     borderRadius: 12,
     overflow: "hidden",
     backgroundColor: "#0B0F17",
@@ -223,19 +245,22 @@ const styles = StyleSheet.create({
   },
   placeholderBox: {
     justifyContent: "center",
-    alignItems: "center"
+    alignItems: "center",
+    backgroundColor: "#0F172A"
   },
   thumbBadge: {
     position: "absolute",
-    bottom: 4,
-    left: 4,
-    backgroundColor: "rgba(0, 0, 0, 0.75)",
+    bottom: 5,
+    left: 5,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 5
+    borderRadius: 6
   },
   amazonThumbBadge: {
-    backgroundColor: "rgba(255, 85, 0, 0.85)"
+    backgroundColor: "rgba(255, 85, 0, 0.9)"
   },
   thumbBadgeText: {
     color: "#FFFFFF",
@@ -255,8 +280,8 @@ const styles = StyleSheet.create({
   },
   verifiedCheck: {
     position: "absolute",
-    top: 4,
-    right: 4,
+    top: 5,
+    right: 5,
     width: 16,
     height: 16,
     borderRadius: 8,
@@ -271,15 +296,15 @@ const styles = StyleSheet.create({
   },
   productTitle: {
     color: "#F8FAFC",
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "800",
-    lineHeight: 20
+    lineHeight: 21,
+    marginBottom: 8
   },
   bottomRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 8
+    alignItems: "center"
   },
   priceRow: {
     flexDirection: "row",

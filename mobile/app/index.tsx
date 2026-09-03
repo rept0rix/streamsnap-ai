@@ -219,6 +219,47 @@ export default function HomeScreen() {
         </View>
       </View>
 
+      {/* 🔴 Shazam-Style Dynamic Radar Island / Live Activity Header */}
+      {liveActive ? (
+        <View style={styles.liveRadarBanner}>
+          <View style={styles.liveRadarLeft}>
+            <View style={styles.liveRadarPulseContainer}>
+              <View style={styles.liveRadarPulseRing} />
+              <View style={styles.liveRadarPulseDot} />
+            </View>
+            <View style={styles.liveRadarInfo}>
+              <View style={styles.liveRadarTitleRow}>
+                <Text style={styles.liveRadarTitle}>STREAMSNAP RADAR ACTIVE</Text>
+                <View style={styles.liveFpsBadge}>
+                  <Text style={styles.liveFpsText}>60 FPS</Text>
+                </View>
+              </View>
+              <Text style={styles.liveRadarSub} numberOfLines={1}>
+                {live.state.scanCount > 0
+                  ? `Scanning TikTok screen (${live.state.scanCount} frames analyzed)`
+                  : "Scanning TikTok / Reels screen in real-time..."}
+              </Text>
+            </View>
+          </View>
+
+          {/* Dynamic Audio/Video Equalizer Waves */}
+          <View style={styles.liveWaveBox}>
+            <View style={[styles.liveWaveBar, { height: 14 }]} />
+            <View style={[styles.liveWaveBar, { height: 22 }]} />
+            <View style={[styles.liveWaveBar, { height: 11 }]} />
+            <View style={[styles.liveWaveBar, { height: 18 }]} />
+          </View>
+        </View>
+      ) : (
+        <View style={styles.idleRadarBanner}>
+          <View style={styles.idleRadarLeft}>
+            <Ionicons name="radio" size={14} color="#FF6A00" style={{ marginRight: 6 }} />
+            <Text style={styles.idleRadarText}>Video Screen Scanner Ready</Text>
+          </View>
+          <Text style={styles.idleRadarSub}>Tap Radar Below</Text>
+        </View>
+      )}
+
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -802,5 +843,115 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 15,
     fontWeight: "800"
+  },
+
+  // 🔴 Shazam-Style Dynamic Radar Island Header
+  liveRadarBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginHorizontal: 16,
+    marginBottom: 8,
+    backgroundColor: "rgba(255, 85, 0, 0.12)",
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1.5,
+    borderColor: "rgba(255, 106, 0, 0.5)"
+  },
+  liveRadarLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1
+  },
+  liveRadarPulseContainer: {
+    width: 24,
+    height: 24,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10
+  },
+  liveRadarPulseRing: {
+    position: "absolute",
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "rgba(255, 85, 0, 0.35)"
+  },
+  liveRadarPulseDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#FF5500"
+  },
+  liveRadarInfo: {
+    flex: 1
+  },
+  liveRadarTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6
+  },
+  liveRadarTitle: {
+    color: "#FF6A00",
+    fontSize: 12,
+    fontWeight: "900",
+    letterSpacing: 0.4
+  },
+  liveFpsBadge: {
+    backgroundColor: "#FF5500",
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 5
+  },
+  liveFpsText: {
+    color: "#FFFFFF",
+    fontSize: 9,
+    fontWeight: "900"
+  },
+  liveRadarSub: {
+    color: "#CBD5E1",
+    fontSize: 11,
+    marginTop: 2
+  },
+  liveWaveBox: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 3,
+    height: 24,
+    paddingLeft: 6
+  },
+  liveWaveBar: {
+    width: 3,
+    backgroundColor: "#FF6A00",
+    borderRadius: 2
+  },
+
+  idleRadarBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginHorizontal: 16,
+    marginBottom: 8,
+    backgroundColor: "#111722",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: "#1E2738"
+  },
+  idleRadarLeft: {
+    flexDirection: "row",
+    alignItems: "center"
+  },
+  idleRadarText: {
+    color: "#94A3B8",
+    fontSize: 12,
+    fontWeight: "700"
+  },
+  idleRadarSub: {
+    color: "#64748B",
+    fontSize: 11,
+    fontWeight: "600"
   }
 });

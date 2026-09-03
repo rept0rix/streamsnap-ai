@@ -150,13 +150,18 @@ final class SampleHandler: RPBroadcastSampleHandler {
           }
         }
 
+        let base64DataUrl = "data:image/jpeg;base64,\(jpeg.base64EncodedString())"
+
         products = products.map { item in
           var updated = item
+          // Provide base64 Data URL so React Native renders it with 100% reliability
+          updated["frameImage"] = base64DataUrl
           if updated["imageUrl"] == nil || (updated["imageUrl"] as? String)?.isEmpty == true {
-            updated["imageUrl"] = frameImageUrl
+            updated["imageUrl"] = base64DataUrl
           }
-          updated["frameImage"] = frameImageUrl
-          updated["source"] = "TikTok / Live Video"
+          if updated["source"] == nil {
+            updated["source"] = "TikTok / Live Video"
+          }
           return updated
         }
       }
