@@ -24,6 +24,7 @@ import { EmptyState } from "../components/EmptyState";
 import { resolve } from "../services/api";
 import { compressToBase64 } from "../services/imageUtils";
 import { getInstallId } from "../services/storage";
+import { useLiveScan } from "../hooks/useLiveScan";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -38,6 +39,8 @@ export default function HomeScreen() {
     saveProduct,
     sessionToken
   } = useStore();
+  const live = useLiveScan();
+  const liveActive = live.state.broadcasting || live.state.screenCaptured;
 
   // ---------------------------------------------------------------------------
   // Scan from gallery (quick scan without camera)
@@ -128,37 +131,54 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Hero scan section */}
+        {/* Live background scan — primary path */}
         <View style={styles.heroSection}>
           <ScanButton
-            onPress={() => router.push("/scan")}
-            loading={scanStatus === "scanning"}
+            onPress={async () => {
+              try {
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+                await live.start();
+              } catch (err) {
+                const message = err instanceof Error ? err.message : "Could not start live scan";
+                Alert.alert("Live scan", message);
+              }
+            }}
+            loading={liveActive}
+            label={liveActive ? "Scanning" : "Live Scan"}
+            emoji="📡"
           />
           <Text style={styles.heroHint}>
-            Open your camera, or pick a screenshot below
+            {liveActive
+              ? `${live.state.scanCount} frames · ${live.state.findCount} finds — open TikTok or YouTube, come back later`
+              : "Start once, then open TikTok or YouTube. StreamSnap scans in the background and stacks finds here."}
           </Text>
+          {live.state.lastError ? (
+            <Text style={styles.liveError}>{live.state.lastError}</Text>
+          ) : null}
+          <TouchableOpacity style={styles.galleryButton} onPress={() => router.push("/scan")}>
+            <Text style={styles.galleryButtonText}>📷 Camera snap</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.galleryButton} onPress={handlePickImage}>
-            <Text style={styles.galleryButtonText}>📷 Scan from Gallery</Text>
+            <Text style={styles.galleryButtonText}>🖼 Scan from Gallery</Text>
           </TouchableOpacity>
         </View>
 
-        {/* How to use */}
         <View style={styles.howToSection}>
-          <Text style={styles.sectionTitle}>How to use</Text>
+          <Text style={styles.sectionTitle}>How live scan works</Text>
           <View style={styles.stepRow}>
             <View style={styles.step}>
-              <Text style={styles.stepEmoji}>📱</Text>
-              <Text style={styles.stepText}>See something on TikTok or YouTube</Text>
+              <Text style={styles.stepEmoji}>📡</Text>
+              <Text style={styles.stepText}>Tap Live Scan and start StreamSnap</Text>
             </View>
             <View style={styles.stepArrow}><Text style={styles.stepArrowText}>→</Text></View>
             <View style={styles.step}>
-              <Text style={styles.stepEmoji}>📤</Text>
-              <Text style={styles.stepText}>Tap Share → StreamSnap AI</Text>
+              <Text style={styles.stepEmoji}>📱</Text>
+              <Text style={styles.stepText}>Switch to TikTok, Reels, or YouTube</Text>
             </View>
             <View style={styles.stepArrow}><Text style={styles.stepArrowText}>→</Text></View>
             <View style={styles.step}>
               <Text style={styles.stepEmoji}>🛒</Text>
-              <Text style={styles.stepText}>Get the Amazon link instantly</Text>
+              <Text style={styles.stepText}>Finds accumulate — no Share needed</Text>
             </View>
           </View>
         </View>
@@ -178,7 +198,7 @@ export default function HomeScreen() {
             <EmptyState
               emoji="🔍"
               title="No finds yet"
-              subtitle="Share a screenshot from TikTok or YouTube to get started"
+              subtitle="Start Live Scan, then open TikTok or YouTube. Finds land here automatically."
             />
           ) : (
             recentItems.map((item) => (
@@ -223,7 +243,8 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 40 },
   heroSection: { alignItems: "center", paddingVertical: 32, paddingHorizontal: 24 },
-  heroHint: { color: "#64748B", fontSize: 13, marginTop: 16, textAlign: "center" },
+  heroHint: { color: "#64748B", fontSize: 13, marginTop: 16, textAlign: "center", lineHeight: 18 },
+  liveError: { color: "#F87171", fontSize: 12, marginTop: 8, textAlign: "center" },
   galleryButton: {
     marginTop: 12,
     backgroundColor: "#1E2533",

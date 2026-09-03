@@ -10,9 +10,11 @@ import { View, Text, StyleSheet, TouchableOpacity, Animated } from "react-native
 interface Props {
   onPress: () => void;
   loading?: boolean;
+  label?: string;
+  emoji?: string;
 }
 
-export function ScanButton({ onPress, loading }: Props) {
+export function ScanButton({ onPress, loading, label = "Snap It", emoji = "⚡" }: Props) {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(0.6)).current;
 
@@ -48,8 +50,8 @@ export function ScanButton({ onPress, loading }: Props) {
         activeOpacity={0.85}
         disabled={loading}
       >
-        <Text style={styles.emoji}>⚡</Text>
-        <Text style={styles.label}>{loading ? "Scanning..." : "Snap It"}</Text>
+        <Text style={styles.emoji}>{emoji}</Text>
+        <Text style={styles.label}>{loading ? "Scanning..." : label}</Text>
       </TouchableOpacity>
     </View>
   );

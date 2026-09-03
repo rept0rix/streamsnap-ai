@@ -15,7 +15,35 @@
 		B18059E884C0ABDD17F3DC3D /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAC715A2D49A985799AEE119 /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		DAF8018805A760B55D0C9CDF /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = BF695673347F3AEF9C56E437 /* PrivacyInfo.xcprivacy */; };
+		DB31A9CF544B422EBBB6B5BD /* BroadcastExtension.appex in Copy Files */ = {isa = PBXBuildFile; fileRef = 2C5413504722437D9813A60D /* BroadcastExtension.appex */; };
+		EECE71C25A4840AD830EB45C /* SampleHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF50CD6928DF4F4D844D94B1 /* SampleHandler.swift */; };
+		F35EB399AD64407DBA230662 /* ReplayKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F2555D3EBF5F4896846A9FDB /* ReplayKit.framework */; };
+		FA750AD0A17F4C8FA5A9C534 /* LiveScanStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 601A972983C5489B94F83CB5 /* LiveScanStore.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		BCASTPROXY000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 07497F6670354A7F809B71E4;
+			remoteInfo = BroadcastExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		83C6B17383914473A50C5E7D /* Copy Files */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				DB31A9CF544B422EBBB6B5BD /* BroadcastExtension.appex in Copy Files */,
+			);
+			name = "Copy Files";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		13B07F961A680F5B00A75B9A /* StreamSnapAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StreamSnapAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -24,13 +52,17 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = StreamSnapAI/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = StreamSnapAI/Info.plist; sourceTree = "<group>"; };
 		13B07FB71A68108700A75B9A /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = StreamSnapAI/main.m; sourceTree = "<group>"; };
+		2C5413504722437D9813A60D /* BroadcastExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = undefined; name = BroadcastExtension.appex; path = BroadcastExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		58EEBF8E8E6FB1BC6CAF49B5 /* libPods-StreamSnapAI.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-StreamSnapAI.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		601A972983C5489B94F83CB5 /* LiveScanStore.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = LiveScanStore.swift; path = "../modules/live-scan/ios/LiveScanStore.swift"; sourceTree = "<group>"; };
 		6C2E3173556A471DD304B334 /* Pods-StreamSnapAI.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-StreamSnapAI.debug.xcconfig"; path = "Target Support Files/Pods-StreamSnapAI/Pods-StreamSnapAI.debug.xcconfig"; sourceTree = "<group>"; };
 		7A4D352CD337FB3A3BF06240 /* Pods-StreamSnapAI.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-StreamSnapAI.release.xcconfig"; path = "Target Support Files/Pods-StreamSnapAI/Pods-StreamSnapAI.release.xcconfig"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = StreamSnapAI/SplashScreen.storyboard; sourceTree = "<group>"; };
+		AF50CD6928DF4F4D844D94B1 /* SampleHandler.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = SampleHandler.swift; path = BroadcastExtension/SampleHandler.swift; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
 		BF695673347F3AEF9C56E437 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = StreamSnapAI/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		F2555D3EBF5F4896846A9FDB /* ReplayKit.framework */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = wrapper.framework; name = ReplayKit.framework; path = System/Library/Frameworks/ReplayKit.framework; sourceTree = SDKROOT; };
 		FAC715A2D49A985799AEE119 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-StreamSnapAI/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -40,6 +72,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				96905EF65AED1B983A6B3ABC /* libPods-StreamSnapAI.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		997EA28BA43B4D228C1F41E1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F35EB399AD64407DBA230662 /* ReplayKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -66,6 +106,7 @@
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
 				58EEBF8E8E6FB1BC6CAF49B5 /* libPods-StreamSnapAI.a */,
+				F2555D3EBF5F4896846A9FDB /* ReplayKit.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -96,6 +137,7 @@
 			isa = PBXGroup;
 			children = (
 				13B07F961A680F5B00A75B9A /* StreamSnapAI.app */,
+				2C5413504722437D9813A60D /* BroadcastExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -137,6 +179,22 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		07497F6670354A7F809B71E4 /* BroadcastExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1D6C919DE50E465CABAAA519 /* Build configuration list for PBXNativeTarget "BroadcastExtension" */;
+			buildPhases = (
+				F87BD6E9ACA34AB2837EA770 /* Sources */,
+				997EA28BA43B4D228C1F41E1 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = BroadcastExtension;
+			productName = BroadcastExtension;
+			productReference = 2C5413504722437D9813A60D /* BroadcastExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		13B07F861A680F5B00A75B9A /* StreamSnapAI */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "StreamSnapAI" */;
@@ -149,10 +207,12 @@
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
 				E260C47E199681F181E3F5EC /* [CP] Embed Pods Frameworks */,
+				83C6B17383914473A50C5E7D /* Copy Files */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				BCASTDEP0000000000001 /* PBXTargetDependency */,
 			);
 			name = StreamSnapAI;
 			productName = StreamSnapAI;
@@ -168,9 +228,13 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 2660;
 				TargetAttributes = {
+					07497F6670354A7F809B71E4 = {
+						DevelopmentTeam = CM9QNMLQMQ;
+						ProvisioningStyle = Automatic;
+					};
 					13B07F861A680F5B00A75B9A = {
+						DevelopmentTeam = CM9QNMLQMQ;
 						LastSwiftMigration = 1250;
-						DevelopmentTeam = "CM9QNMLQMQ";
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -189,6 +253,7 @@
 			projectRoot = "";
 			targets = (
 				13B07F861A680F5B00A75B9A /* StreamSnapAI */,
+				07497F6670354A7F809B71E4 /* BroadcastExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -331,7 +396,24 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F87BD6E9ACA34AB2837EA770 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EECE71C25A4840AD830EB45C /* SampleHandler.swift in Sources */,
+				FA750AD0A17F4C8FA5A9C534 /* LiveScanStore.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		BCASTDEP0000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 07497F6670354A7F809B71E4 /* BroadcastExtension */;
+			targetProxy = BCASTPROXY000000000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
@@ -340,7 +422,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CODE_SIGN_ENTITLEMENTS = StreamSnapAI/StreamSnapAI.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = CM9QNMLQMQ;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -364,9 +450,6 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
-				DEVELOPMENT_TEAM = "CM9QNMLQMQ";
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
 			};
 			name = Debug;
 		};
@@ -376,7 +459,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CODE_SIGN_ENTITLEMENTS = StreamSnapAI/StreamSnapAI.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = CM9QNMLQMQ;
 				INFOPLIST_FILE = StreamSnapAI/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -394,9 +481,30 @@
 				PRODUCT_NAME = StreamSnapAI;
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
-				DEVELOPMENT_TEAM = "CM9QNMLQMQ";
-				CODE_SIGN_IDENTITY = "Apple Development";
+			};
+			name = Release;
+		};
+		38EBEA0752B54ACD89B39440 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = BroadcastExtension/BroadcastExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = CM9QNMLQMQ;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = BroadcastExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
+				PRODUCT_BUNDLE_IDENTIFIER = org.name.StreamSnapAI.BroadcastExtension;
+				PRODUCT_NAME = BroadcastExtension;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -458,7 +566,10 @@
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -517,7 +628,10 @@
 				);
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
 				MTL_ENABLE_DEBUG_INFO = NO;
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -527,6 +641,34 @@
 			};
 			name = Release;
 		};
+		91CF599224294AF5918D35FD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = BroadcastExtension/BroadcastExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = CM9QNMLQMQ;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = BroadcastExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
+				PRODUCT_BUNDLE_IDENTIFIER = org.name.StreamSnapAI.BroadcastExtension;
+				PRODUCT_NAME = BroadcastExtension;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -535,6 +677,15 @@
 			buildConfigurations = (
 				13B07F941A680F5B00A75B9A /* Debug */,
 				13B07F951A680F5B00A75B9A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1D6C919DE50E465CABAAA519 /* Build configuration list for PBXNativeTarget "BroadcastExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				91CF599224294AF5918D35FD /* Debug */,
+				38EBEA0752B54ACD89B39440 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

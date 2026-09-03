@@ -1,0 +1,178 @@
+import ReplayKit
+import UIKit
+import UserNotifications
+
+/// Receives the device screen while the user is in TikTok / YouTube / Instagram.
+/// Samples a frame every few seconds, skips near-duplicates, and POSTs to /resolve.
+/// Finds are written to the App Group so the main app accumulates them.
+final class SampleHandler: RPBroadcastSampleHandler {
+  private let minInterval: TimeInterval = 5
+  private let maxEdge: CGFloat = 960
+  private let jpegQuality: CGFloat = 0.55
+
+  private var lastSampleAt: Date = .distantPast
+  private var inFlight = false
+  private var lastHash: UInt64 = 0
+  private lazy var ciContext: CIContext = {
+    CIContext(options: [
+      .useSoftwareRenderer: false,
+      .cacheIntermediates: false
+    ])
+  }()
+
+  override func broadcastStarted(withSetupInfo setupInfo: [String: NSObject]?) {
+    LiveScanStore.beginSession()
+  }
+
+  override func broadcastPaused() {}
+
+  override func broadcastResumed() {}
+
+  override func broadcastFinished() {
+    LiveScanStore.endSession()
+  }
+
+  override func processSampleBuffer(_ sampleBuffer: CMSampleBuffer, with sampleBufferType: RPSampleBufferType) {
+    guard sampleBufferType == .video else { return }
+    guard !inFlight else { return }
+    let now = Date()
+    guard now.timeIntervalSince(lastSampleAt) >= minInterval else { return }
+    guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+
+    lastSampleAt = now
+    inFlight = true
+
+    var jpeg: Data?
+    var hash: UInt64 = 0
+    autoreleasepool {
+      let image = CIImage(cvPixelBuffer: pixelBuffer)
+      hash = Self.averageHash(image)
+      if lastHash != 0 && Self.hamming(lastHash, hash) < 6 {
+        return
+      }
+      jpeg = encodeJPEG(image)
+    }
+
+    guard let jpeg, !jpeg.isEmpty else {
+      inFlight = false
+      return
+    }
+    lastHash = hash
+    resolve(jpeg: jpeg)
+  }
+
+  private func encodeJPEG(_ image: CIImage) -> Data? {
+    let extent = image.extent.integral
+    guard extent.width > 8, extent.height > 8 else { return nil }
+    let longest = max(extent.width, extent.height)
+    let scale = min(1, maxEdge / longest)
+    let scaled = image.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
+    guard let cgImage = ciContext.createCGImage(scaled, from: scaled.extent) else { return nil }
+    return UIImage(cgImage: cgImage).jpegData(compressionQuality: jpegQuality)
+  }
+
+  private func resolve(jpeg: Data) {
+    let creds = LiveScanStore.credentials()
+    let payload: [String: Any] = [
+      "image": "data:image/jpeg;base64,\(jpeg.base64EncodedString())",
+      "installId": creds.installId
+    ]
+    guard let body = try? JSONSerialization.data(withJSONObject: payload) else {
+      inFlight = false
+      LiveScanStore.recordScan(error: "Could not encode frame")
+      return
+    }
+
+    var request = URLRequest(url: URL(string: "\(creds.workerUrl)/resolve")!)
+    request.httpMethod = "POST"
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    request.timeoutInterval = 20
+    if let token = creds.token, !token.isEmpty {
+      request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+    }
+    request.httpBody = body
+
+    URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+      defer { self?.inFlight = false }
+      if let error {
+        LiveScanStore.recordScan(error: error.localizedDescription)
+        return
+      }
+      let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+      guard let data, (200...299).contains(status) else {
+        LiveScanStore.recordScan(error: "Worker error \(status)")
+        return
+      }
+      guard
+        let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+        json["ok"] as? Bool == true
+      else {
+        LiveScanStore.recordScan(error: "Scan failed")
+        return
+      }
+
+      let products = (json["products"] as? [[String: Any]] ?? [])
+        + (json["others"] as? [[String: Any]] ?? [])
+      LiveScanStore.recordScan()
+      if !products.isEmpty {
+        let before = LiveScanStore.products().count
+        LiveScanStore.upsertProducts(products)
+        let after = LiveScanStore.products().count
+        if after > before {
+          Self.notifyNewFinds(products)
+        }
+      }
+    }.resume()
+  }
+
+  private static func notifyNewFinds(_ products: [[String: Any]]) {
+    let titles = products.compactMap { $0["title"] as? String }.prefix(2)
+    guard !titles.isEmpty else { return }
+    let content = UNMutableNotificationContent()
+    content.title = "StreamSnap found \(products.count) item\(products.count == 1 ? "" : "s")"
+    content.body = titles.joined(separator: " · ")
+    content.sound = .default
+    let request = UNNotificationRequest(
+      identifier: "ss-live-\(Int(Date().timeIntervalSince1970))",
+      content: content,
+      trigger: nil
+    )
+    UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
+  }
+
+  private static func averageHash(_ image: CIImage) -> UInt64 {
+    let filter = CIFilter(name: "CILanczosScaleTransform")
+    filter?.setValue(image, forKey: kCIInputImageKey)
+    let scale = 8 / max(image.extent.width, 1)
+    filter?.setValue(scale, forKey: kCIInputScaleKey)
+    filter?.setValue(1.0, forKey: kCIInputAspectRatioKey)
+    guard
+      let output = filter?.outputImage,
+      let cgImage = CIContext(options: [.useSoftwareRenderer: true])
+        .createCGImage(output, from: CGRect(x: 0, y: 0, width: 8, height: 8)),
+      let data = cgImage.dataProvider?.data,
+      let ptr = CFDataGetBytePtr(data)
+    else { return 0 }
+
+    var sum = 0
+    var pixels = [Int](repeating: 0, count: 64)
+    let bpp = max(cgImage.bitsPerPixel / 8, 1)
+    for i in 0..<64 {
+      let r = Int(ptr[i * bpp])
+      pixels[i] = r
+      sum += r
+    }
+    let avg = sum / 64
+    var hash: UInt64 = 0
+    for i in 0..<64 {
+      if pixels[i] >= avg {
+        hash |= (1 << i)
+      }
+    }
+    return hash
+  }
+
+  private static func hamming(_ a: UInt64, _ b: UInt64) -> Int {
+    (a ^ b).nonzeroBitCount
+  }
+}
