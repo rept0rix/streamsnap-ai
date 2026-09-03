@@ -33,11 +33,32 @@ extension  ──POST /resolve { image, installId }──►  Worker
                                         cache result, return
 ```
 
+## Workers AI engine (no Bright Data key)
+
+When `BRIGHTDATA_API_KEY` / `BRIGHTDATA_ZONE` are not set — the mobile live-scan
+deployment — `/resolve` uses the `[ai]` binding instead of Lens:
+
+```text
+frame ──► Llama 4 Scout (fallback: Llama 3.2 Vision → LLaVA)      src/vision.js
+              │  names + locates physical products only; UI / app / body-part
+              │  "products" and generic single nouns are filtered out
+              ▼
+        amazon.com/s?k=<title>  (per detection, cached in KV)      src/amazon_lookup.js
+              │  keep the organic listing whose title overlaps the detection
+              ▼
+   amazon[]  = verified listings: asin, dp url, catalog image, live price
+   others[]  = honest misses: search url, model's price estimate, no image
+```
+
+The model is never allowed to invent ASINs, catalog images or "Amazon" prices;
+those only come from the listing lookup. `priceEstimated: true` marks prices
+that are still a model guess.
+
 ## Endpoints
 
 | Method | Path | Purpose |
 | :--- | :--- | :--- |
-| `POST` | `/resolve` | `{ image: dataUrl, installId }` → `{ ok, products, others, count, cached }` |
+| `POST` | `/resolve` | `{ image: dataUrl, installId }` → `{ ok, products, others, count, cached, engine }` |
 | `GET` | `/img/:hash` | Serves the temporary crop so Google can fetch it |
 | `GET` | `/health` | Liveness check |
 

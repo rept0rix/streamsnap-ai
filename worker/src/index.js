@@ -18,6 +18,8 @@
  */
 
 import { parseLensResponse, collectRawShape } from "./parser.js";
+import { detectProducts } from "./vision.js";
+import { lookupAmazonProduct } from "./amazon_lookup.js";
 import { handleAuthRoute } from "./routes_auth.js";
 import { handleAdminRoute } from "./routes_admin.js";
 import { handleSyncRoute } from "./routes_sync.js";
@@ -307,237 +309,109 @@ async function callLens(imageUrl, env) {
   }
 }
 
-function bytesToBase64(bytes) {
-  let binary = "";
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  }
-  return btoa(binary);
+const CURRENCY_SYMBOLS = { USD: "$", EUR: "€", GBP: "£", ILS: "₪" };
+
+/**
+ * Lens products carry a numeric price and an `image` field. Clients (mobile,
+ * extension) read `imageUrl` / `thumbnail` and a display-ready `price` string,
+ * so publish both shapes.
+ */
+function normalizeLensProduct(p) {
+  const symbol = CURRENCY_SYMBOLS[p.currency] || (p.currency ? `${p.currency} ` : "$");
+  return {
+    ...p,
+    imageUrl: p.image || null,
+    thumbnail: p.image || null,
+    priceValue: typeof p.price === "number" ? p.price : null,
+    price: typeof p.price === "number" ? `${symbol}${p.price.toFixed(2)}` : null,
+    priceEstimated: false
+  };
 }
 
-function parseModelJson(text) {
-  const clean = String(text || "").trim();
-
-  let videoTitle = "";
-  const vtMatch =
-    clean.match(/\*\*Video Title:\*\*\s*([^\n]+)/i) ||
-    clean.match(/(?:Video Title|Creator|Handle|Username):\s*([^\n*]+)/i);
-  if (vtMatch) {
-    const candidate = vtMatch[1].trim();
-    if (!/not visible|none|n\/a/i.test(candidate)) {
-      videoTitle = candidate;
-    }
-  }
-
-  // 1. Extract all individual JSON blocks: {...}
-  const jsonBlocks = clean.match(/\{[^{}]+\}/g) || [];
-  const products = [];
-  for (const block of jsonBlocks) {
-    try {
-      const parsed = JSON.parse(block);
-      if (parsed?.videoTitle && !videoTitle && !/not visible|none|n\/a/i.test(parsed.videoTitle)) {
-        videoTitle = parsed.videoTitle;
-      }
-      if (parsed?.title) {
-        products.push(parsed);
-      } else if (Array.isArray(parsed?.products)) {
-        for (const p of parsed.products) {
-          if (p?.title) products.push(p);
-        }
-      }
-    } catch {}
-  }
-
-  if (products.length > 0) {
-    return { videoTitle, products };
-  }
-
-  // 2. Fallback: Parse markdown list (strip formatting stars/underscores/hashes first)
-  const stripped = clean.replace(/[*_#]/g, "");
-  const itemRegex = /(?:^|\n)\s*(?:[•\-+*]\s*)?Title:\s*([^\n]+)[\s\S]*?Price:\s*\$?([0-9.]+)/gi;
-  let m;
-  while ((m = itemRegex.exec(stripped)) !== null) {
-    const title = m[1].trim();
-    const price = m[2].trim();
-    if (/creator|handle|caption|video title|not visible|none|n\/a/i.test(title)) continue;
-    products.push({
-      title,
-      price: `$${price}`,
-      confidence: 90
-    });
-  }
-
-  return { videoTitle, products };
-}
-
-async function fetchProductImage(query) {
-  // 1. Try Openverse Creative Commons Index (700M+ images)
-  try {
-    const ovUrl = `https://api.openverse.org/v1/images/?q=${encodeURIComponent(query)}&page_size=1`;
-    const res = await fetch(ovUrl, { headers: { "User-Agent": "StreamSnapAI/1.0" }, signal: AbortSignal.timeout(2500) });
-    if (res.ok) {
-      const data = await res.json();
-      if (data?.results?.[0]?.url) {
-        return data.results[0].url;
-      }
-    }
-  } catch {}
-
-  // 2. Fallback: Wikipedia Page Images
-  const attempts = [
-    query,
-    query.replace(/\b(men's|women's|classic|vintage|casual|summer|winter|retro|aesthetic|distressed)\b/gi, "").trim(),
-    query.split(" ").slice(-2).join(" ") // e.g. "Tank Top" from "White Ribbed Tank Top"
-  ];
-
-  for (const q of attempts) {
-    if (!q || q.length < 3) continue;
-    try {
-      const url = `https://en.wikipedia.org/w/api.php?action=query&format=json&prop=pageimages&pithumbsize=500&generator=search&gsrsearch=${encodeURIComponent(q)}&gsrlimit=1`;
-      const res = await fetch(url, { headers: { "User-Agent": "StreamSnapAI/1.0" }, signal: AbortSignal.timeout(2000) });
-      if (!res.ok) continue;
-      const data = await res.json();
-      const pages = data?.query?.pages;
-      if (pages) {
-        for (const k of Object.keys(pages)) {
-          if (pages[k]?.thumbnail?.source) {
-            return pages[k].thumbnail.source;
-          }
-        }
-      }
-    } catch {}
-  }
-  return null;
-}
-
-async function normalizeVisionProducts(raw) {
-  const list = Array.isArray(raw?.products) ? raw.products : [];
-  const videoTitle = String(raw?.videoTitle || raw?.caption || "").trim();
-  const amazon = [];
-  const others = [];
-  const JUNK_TITLES = /^(table|plate|table plate|tableplate|wall|floor|ceiling|room|door|window|person|human|man|woman|background|scenery|sky|cloud|water|hand|finger|hair|face|body|building|road|street)$/i;
+/**
+ * Workers AI path: name + locate products in the frame, then resolve each
+ * detection to a real Amazon listing (ASIN, catalog image, live price). Items
+ * whose listing title genuinely overlaps the detection go to `amazon`
+ * (verified); the rest stay in `others` with a plain search link and no image,
+ * so the client never shows a random picture as the "match".
+ */
+async function resolveWithVision(bytes, env) {
+  const { videoTitle, detections, model, rawText } = await detectProducts(env, bytes);
 
   let videoUrl = "https://www.tiktok.com";
   const creatorMatch = videoTitle.match(/@([a-zA-Z0-9._]+)/);
   if (creatorMatch) {
     videoUrl = `https://www.tiktok.com/@${creatorMatch[1]}`;
-  } else if (videoTitle && videoTitle !== "TikTok Video") {
+  } else if (videoTitle) {
     videoUrl = `https://www.tiktok.com/search?q=${encodeURIComponent(videoTitle)}`;
   }
 
-  for (const item of list) {
-    const title = String(item?.title || "").trim();
-    if (!title || title.length < 3) continue;
-    if (JUNK_TITLES.test(title)) continue;
+  const lookups = await Promise.all(
+    detections.map((d) => {
+      const brandMissing = d.brand && !d.title.toLowerCase().includes(d.brand.toLowerCase());
+      return lookupAmazonProduct(brandMissing ? `${d.brand} ${d.title}` : d.title, env);
+    })
+  );
 
-    const asin = /^B0[A-Z0-9]{8}$/i.test(item?.asin || "") ? String(item.asin).toUpperCase() : null;
-    const url =
-      item?.url ||
-      (asin ? `https://www.amazon.com/dp/${asin}` : `https://www.amazon.com/s?k=${encodeURIComponent(title)}`);
-    
-    // Confidence percentage
-    let confidence = 92;
-    if (typeof item?.confidence === "number") {
-      confidence = Math.min(99, Math.max(70, Math.round(item.confidence)));
-    } else {
-      confidence = Math.floor(88 + ((title.length * 7) % 10));
-    }
+  const amazon = [];
+  const others = [];
+  const seenAsins = new Set();
 
-    let imageUrl = item.imageUrl || item.image || null;
-    if (!imageUrl) {
-      imageUrl = await fetchProductImage(title);
-    }
+  detections.forEach((d, i) => {
+    const match = lookups[i];
+    if (match?.asin && seenAsins.has(match.asin)) return;
 
-    const product = {
-      title,
-      url,
-      asin,
-      image: imageUrl,
-      imageUrl: imageUrl,
-      price: item.price != null ? (String(item.price).startsWith("$") ? String(item.price) : `$${item.price}`) : "$29.99",
+    const estimated = d.estimatedPrice != null ? `$${d.estimatedPrice.toFixed(2)}` : null;
+    const base = {
+      title: d.title,
+      brand: d.brand,
+      confidence: d.confidence,
+      matchReason: d.matchReason || `Spotted ${d.title} in the video`,
+      box_2d: d.box_2d,
       source: "TikTok / Video",
       videoTitle: videoTitle || "TikTok Video",
-      videoUrl,
-      confidence,
-      matchReason: item.matchReason || `Identified ${title} in video`,
-      box_2d: Array.isArray(item.box_2d) && item.box_2d.length >= 4 ? item.box_2d : null,
-      isAmazon: Boolean(asin),
-      verified: Boolean(asin)
+      videoUrl
     };
-    if (product.verified) amazon.push(product);
-    else others.push(product);
-  }
-  return { amazon, others };
-}
 
-async function runLlamaVision(env, bytes, prompt) {
-  const model = "@cf/meta/llama-3.2-11b-vision-instruct";
-  const image = Array.from(new Uint8Array(bytes));
-  const payload = {
-    prompt,
-    image
-  };
-  try {
-    return await env.AI.run(model, payload);
-  } catch (err) {
-    const message = String(err?.message || err);
-    if (!message.includes("5016") && !message.includes("submit the prompt 'agree'")) {
-      throw err;
+    if (match?.asin) {
+      seenAsins.add(match.asin);
+      amazon.push({
+        ...base,
+        asin: match.asin,
+        url: match.url,
+        matchedTitle: match.title,
+        matchScore: match.matchScore,
+        image: match.imageUrl,
+        imageUrl: match.imageUrl,
+        thumbnail: match.imageUrl,
+        price: match.price || estimated,
+        priceValue: match.priceValue ?? d.estimatedPrice,
+        priceEstimated: !match.price,
+        isAmazon: true,
+        verified: true
+      });
+    } else {
+      others.push({
+        ...base,
+        asin: null,
+        url: `https://www.amazon.com/s?k=${encodeURIComponent(d.title)}`,
+        matchedTitle: null,
+        matchScore: 0,
+        image: null,
+        imageUrl: null,
+        thumbnail: null,
+        price: estimated,
+        priceValue: d.estimatedPrice,
+        priceEstimated: estimated != null,
+        isAmazon: false,
+        verified: false
+      });
     }
-    await env.AI.run(model, { prompt: "agree" });
-    return env.AI.run(model, payload);
-  }
-}
-
-async function runLlava(env, bytes, prompt) {
-  const response = await env.AI.run("@cf/llava-hf/llava-1.5-7b-hf", {
-    image: Array.from(new Uint8Array(bytes)),
-    prompt
   });
-  return response;
+
+  return { amazon, others, model, rawText };
 }
 
-async function callWorkersAI(bytes, env) {
-  const prompt = `You are StreamSnap AI, an advanced visual commerce recognition engine for video frames.
-Analyze this video frame.
-Identify every prominent consumer product, brand, device, packaging, or item visible in the frame (e.g. health supplements, protein powder, beverages, cosmetics, electronics, headphones, microphones, gadgets, apparel, footwear, accessories).
-
-GUIDELINES:
-1. Provide a specific, searchable product title with brand and model if visible (e.g. "Sakura Bio Plant 9+ Protein Plant Based", "JBL Linklike EW011 Wireless Earbuds", "Shoei RF-1400 Motorcycle Helmet", "Stanley Quencher Tumbler").
-2. Provide bounding box coordinates [ymin, xmin, ymax, xmax] normalized between 0 and 1000 tightly enclosing ONLY that specific product.
-3. If any creator handle (@user), song name, or caption is visible on screen, output it in "videoTitle".
-4. For each item provide a realistic retail price in USD (e.g. "29.99"), confidence (80 to 99), and a short 1-sentence "matchReason" describing the visual cues.
-5. DO NOT identify generic background room items (NO table, NO plate, NO floor, NO wall, NO empty hands).
-
-YOU MUST OUTPUT ONLY RAW VALID JSON matching this structure exactly:
-{
-  "videoTitle": "@creator or video caption if visible",
-  "products": [
-    {
-      "title": "Specific Product Name with Brand & Model",
-      "brand": "Brand",
-      "price": "29.99",
-      "confidence": 95,
-      "matchReason": "Clear brand packaging and distinctive bottle shape",
-      "box_2d": [180, 220, 650, 780]
-    }
-  ]
-}`;
-
-  let response;
-  try {
-    response = await runLlamaVision(env, bytes, prompt);
-  } catch (err) {
-    console.log("[resolve] llama vision failed, trying llava:", err.message);
-    response = await runLlava(env, bytes, prompt);
-  }
-
-  const text = response?.response || response?.result || response?.description || "";
-  if (!text) throw new Error("Workers AI returned an empty vision result");
-  const norm = await normalizeVisionProducts(parseModelJson(text));
-  return { ...norm, rawText: text };
-}
 
 // ---------------------------------------------------------------------------
 // /resolve
@@ -597,6 +471,7 @@ async function handleResolve(request, env, ctx) {
   let others = [];
   let engine = "lens";
   let rawVisionText = null;
+  let visionModel = null;
 
   if (hasLens) {
     if (!env.IMAGES) {
@@ -619,14 +494,17 @@ async function handleResolve(request, env, ctx) {
     }
 
     ctx.waitUntil(env.IMAGES.delete(hash));
-    ({ amazon, others } = parseLensResponse(payload));
+    const lens = parseLensResponse(payload);
+    amazon = lens.amazon.map(normalizeLensProduct);
+    others = lens.others.map(normalizeLensProduct);
   } else {
     try {
-      const res = await callWorkersAI(bytes, env);
+      const res = await resolveWithVision(bytes, env);
       amazon = res.amazon;
       others = res.others;
       rawVisionText = res.rawText;
       engine = "workers-ai";
+      visionModel = res.model;
     } catch (err) {
       console.log("[resolve] vision error on frame:", err.message);
       amazon = [];
@@ -637,7 +515,15 @@ async function handleResolve(request, env, ctx) {
   }
 
   const allProducts = [...amazon, ...others];
-  const result = { products: allProducts, amazon, others, count: allProducts.length, engine, rawVisionText };
+  const result = {
+    products: allProducts,
+    amazon,
+    others,
+    count: allProducts.length,
+    engine,
+    visionModel,
+    rawVisionText
+  };
 
   if (env.CACHE && allProducts.length > 0) {
     ctx.waitUntil(
@@ -666,12 +552,12 @@ async function handleResolve(request, env, ctx) {
           user.id,
           p.asin || null,
           p.title || "Detected Product",
-          typeof p.price === "number" ? p.price : null,
-          p.thumbnail || null,
+          typeof p.priceValue === "number" ? p.priceValue : typeof p.price === "number" ? p.price : null,
+          p.imageUrl || p.image || p.thumbnail || null,
           p.url || null,
           p.category || "General",
           "amazon",
-          1
+          p.verified ? 1 : 0
         ).run().catch(() => {});
       }
     })());
