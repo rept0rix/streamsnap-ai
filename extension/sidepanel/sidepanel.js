@@ -64,8 +64,42 @@ document.addEventListener("DOMContentLoaded", () => {
 async function initVersionGate() {
   const overlay = byId("update-required-overlay");
   const recheckBtn = byId("update-recheck-btn");
+  const banner = byId("update-available-banner");
+  const bannerTitle = byId("update-banner-title");
+  const bannerDesc = byId("update-banner-desc");
+  const bannerBtn = byId("update-banner-action-btn");
+  const bannerDismiss = byId("update-banner-dismiss-btn");
+
+  bannerDismiss?.addEventListener("click", () => {
+    if (banner) banner.style.display = "none";
+    sessionStorage.setItem("dismissedUpdate", "true");
+  });
 
   async function run() {
+    // 1. Check if an update was already staged in background
+    const { updateReady, stagedVersion } = await chrome.storage.local.get([
+      "updateReady",
+      "stagedVersion"
+    ]);
+
+    if (updateReady) {
+      if (banner) {
+        banner.style.display = "flex";
+        if (bannerTitle) bannerTitle.textContent = "🎉 Update ready to install!";
+        if (bannerDesc) bannerDesc.textContent = `StreamSnap v${stagedVersion || "new"} is downloaded.`;
+        if (bannerBtn) {
+          bannerBtn.textContent = "Restart Now ↺";
+          bannerBtn.removeAttribute("href");
+          bannerBtn.removeAttribute("target");
+          bannerBtn.onclick = (e) => {
+            e.preventDefault();
+            chrome.runtime.sendMessage({ action: "RELOAD_EXTENSION" });
+          };
+        }
+      }
+      return;
+    }
+
     let result;
     try {
       result = await checkVersionGate();
@@ -73,22 +107,44 @@ async function initVersionGate() {
       return; // never brick the panel on an unexpected error
     }
 
-    if (!result.blocked) {
-      if (overlay) overlay.style.display = "none";
+    // Sync action badge
+    chrome.runtime.sendMessage({ action: "SYNC_BADGE" }).catch(() => {});
+
+    // Hard block
+    if (result.blocked) {
+      if (banner) banner.style.display = "none";
+      const cur = byId("update-current-version");
+      const min = byId("update-min-version");
+      const text = byId("update-required-text");
+      const link = byId("update-site-link");
+      if (cur) cur.textContent = `v${result.currentVersion}`;
+      if (min) min.textContent = `v${result.minVersion || "?"}`;
+      if (text) {
+        text.textContent = `This copy of StreamSnap (v${result.currentVersion}) is no longer supported. Update to v${result.minVersion} or newer to keep scanning.`;
+      }
+      if (link && result.updateUrl) link.href = result.updateUrl;
+      if (overlay) overlay.style.display = "flex";
       return;
     }
 
-    const cur = byId("update-current-version");
-    const min = byId("update-min-version");
-    const text = byId("update-required-text");
-    const link = byId("update-site-link");
-    if (cur) cur.textContent = `v${result.currentVersion}`;
-    if (min) min.textContent = `v${result.minVersion || "?"}`;
-    if (text) {
-      text.textContent = `This copy of StreamSnap (v${result.currentVersion}) is no longer supported. Update to v${result.minVersion} or newer to keep scanning.`;
+    if (overlay) overlay.style.display = "none";
+
+    // Soft update notification
+    if (result.updateAvailable && sessionStorage.getItem("dismissedUpdate") !== "true") {
+      if (banner) {
+        banner.style.display = "flex";
+        if (bannerTitle) bannerTitle.textContent = `StreamSnap v${result.latestVersion} available! 🚀`;
+        if (bannerDesc) bannerDesc.textContent = "New models and live detection features ready.";
+        if (bannerBtn) {
+          bannerBtn.textContent = "Update ↗";
+          bannerBtn.href = result.updateUrl || "https://streamsnap.online";
+          bannerBtn.target = "_blank";
+          bannerBtn.onclick = null;
+        }
+      }
+    } else {
+      if (banner) banner.style.display = "none";
     }
-    if (link && result.updateUrl) link.href = result.updateUrl;
-    if (overlay) overlay.style.display = "flex";
   }
 
   recheckBtn?.addEventListener("click", async () => {
@@ -397,6 +453,32 @@ function renderHeaderAccount(profile) {
 
 function updateAuthGates(signedIn) {
   state.signedIn = Boolean(signedIn);
+
+  // 0. Live Scan Gate: Must sign in before use, unless already signed in
+  const scanGate = byId("scan-auth-gate");
+  const scanEmpty = byId("scan-empty-state");
+  const scanResults = byId("scan-results-view");
+  const scanLoading = byId("scan-loading-state");
+
+  if (scanGate) scanGate.style.display = signedIn ? "none" : "flex";
+  if (!signedIn) {
+    if (scanEmpty) scanEmpty.style.display = "none";
+    if (scanResults) scanResults.style.display = "none";
+    if (scanLoading) scanLoading.style.display = "none";
+  } else {
+    // When signed in, restore standard scanner display state
+    const hasResults = Boolean(
+      (state.latestScan?.items?.exactMatches?.length || 0) +
+      (state.latestScan?.items?.lookAlikes?.length || 0) > 0
+    );
+    if (hasResults) {
+      if (scanResults) scanResults.style.display = "block";
+      if (scanEmpty) scanEmpty.style.display = "none";
+    } else {
+      if (scanEmpty) scanEmpty.style.display = "block";
+      if (scanResults) scanResults.style.display = "none";
+    }
+  }
 
   // 1. Catalog / History Gate
   const catalogGate = byId("catalog-auth-gate");

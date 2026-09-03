@@ -38,7 +38,7 @@ const LIMITS = {
  * not require a code deploy.
  */
 const FALLBACK_MIN_EXTENSION_VERSION = "1.6.0";
-const LATEST_EXTENSION_VERSION = "1.6.1";
+const LATEST_EXTENSION_VERSION = "1.6.2";
 
 export function minExtensionVersion(env) {
   const raw = String(env?.MIN_EXTENSION_VERSION || "").trim();
@@ -307,22 +307,95 @@ function bytesToBase64(bytes) {
 }
 
 function parseModelJson(text) {
-  const clean = String(text || "")
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/i, "")
-    .trim();
-  const start = clean.indexOf("{");
-  const end = clean.lastIndexOf("}");
-  if (start === -1 || end === -1) throw new Error("Vision model returned no JSON");
-  return JSON.parse(clean.slice(start, end + 1));
+  const clean = String(text || "").trim();
+
+  let videoTitle = "";
+  const vtMatch =
+    clean.match(/\*\*Video Title:\*\*\s*([^\n]+)/i) ||
+    clean.match(/(?:Video Title|Creator|Handle|Username):\s*([^\n*]+)/i);
+  if (vtMatch) {
+    videoTitle = vtMatch[1].trim();
+  }
+
+  // 1. Extract all individual JSON blocks: {...}
+  const jsonBlocks = clean.match(/\{[^{}]+\}/g) || [];
+  const products = [];
+  for (const block of jsonBlocks) {
+    try {
+      const parsed = JSON.parse(block);
+      if (parsed?.title) {
+        products.push(parsed);
+      } else if (Array.isArray(parsed?.products)) {
+        for (const p of parsed.products) {
+          if (p?.title) products.push(p);
+        }
+      }
+    } catch {}
+  }
+
+  if (products.length > 0) {
+    return { videoTitle, products };
+  }
+
+  // 2. Fallback: Parse markdown list (strip formatting stars/underscores/hashes first)
+  const stripped = clean.replace(/[*_#]/g, "");
+  const itemRegex = /Title:\s*([^\n]+)[\s\S]*?Price:\s*\$?([0-9.]+)/gi;
+  let m;
+  while ((m = itemRegex.exec(stripped)) !== null) {
+    const title = m[1].trim();
+    const price = m[2].trim();
+    if (/creator|handle|caption|n\/a/i.test(title)) continue;
+    products.push({
+      title,
+      price: `$${price}`,
+      confidence: 92
+    });
+  }
+
+  return { videoTitle, products };
 }
 
-function normalizeVisionProducts(raw) {
+async function fetchProductImage(query) {
+  const attempts = [
+    query,
+    query.replace(/\b(men's|women's|classic|vintage|casual|summer|winter|retro|aesthetic|distressed)\b/gi, "").trim(),
+    query.split(" ").slice(-2).join(" ") // e.g. "Tank Top" from "White Ribbed Tank Top"
+  ];
+
+  for (const q of attempts) {
+    if (!q || q.length < 3) continue;
+    try {
+      const url = `https://en.wikipedia.org/w/api.php?action=query&format=json&prop=pageimages&pithumbsize=500&generator=search&gsrsearch=${encodeURIComponent(q)}&gsrlimit=1`;
+      const res = await fetch(url, { headers: { "User-Agent": "StreamSnapAI/1.0" }, signal: AbortSignal.timeout(2000) });
+      if (!res.ok) continue;
+      const data = await res.json();
+      const pages = data?.query?.pages;
+      if (pages) {
+        for (const k of Object.keys(pages)) {
+          if (pages[k]?.thumbnail?.source) {
+            return pages[k].thumbnail.source;
+          }
+        }
+      }
+    } catch {}
+  }
+  return null;
+}
+
+async function normalizeVisionProducts(raw) {
   const list = Array.isArray(raw?.products) ? raw.products : [];
   const videoTitle = String(raw?.videoTitle || raw?.caption || "").trim();
   const amazon = [];
   const others = [];
   const JUNK_TITLES = /^(table|plate|table plate|tableplate|wall|floor|ceiling|room|door|window|person|human|man|woman|background|scenery|sky|cloud|water|hand|finger|hair|face|body|building|road|street)$/i;
+
+  let videoUrl = "https://www.tiktok.com";
+  const creatorMatch = videoTitle.match(/@([a-zA-Z0-9._]+)/);
+  if (creatorMatch) {
+    videoUrl = `https://www.tiktok.com/@${creatorMatch[1]}`;
+  } else if (videoTitle && videoTitle !== "TikTok Video") {
+    videoUrl = `https://www.tiktok.com/search?q=${encodeURIComponent(videoTitle)}`;
+  }
 
   for (const item of list) {
     const title = String(item?.title || "").trim();
@@ -342,15 +415,21 @@ function normalizeVisionProducts(raw) {
       confidence = Math.floor(88 + ((title.length * 7) % 10));
     }
 
+    let imageUrl = item.imageUrl || item.image || null;
+    if (!imageUrl) {
+      imageUrl = await fetchProductImage(title);
+    }
+
     const product = {
       title,
       url,
       asin,
-      image: item.imageUrl || item.image || null,
-      imageUrl: item.imageUrl || item.image || null,
+      image: imageUrl,
+      imageUrl: imageUrl,
       price: item.price != null ? (String(item.price).startsWith("$") ? String(item.price) : `$${item.price}`) : "$29.99",
       source: "TikTok / Video",
       videoTitle: videoTitle || "TikTok Video",
+      videoUrl,
       confidence,
       isAmazon: Boolean(asin),
       verified: Boolean(asin)
@@ -389,29 +468,26 @@ async function runLlava(env, bytes, prompt) {
 }
 
 async function callWorkersAI(bytes, env) {
-  const prompt = `You are StreamSnap, an AI product scout for TikTok and Instagram Reels videos.
-Analyze this video screenshot and:
-1. Extract the video caption, hashtags, or creator username if visible (e.g. "@username: video title").
-2. Extract ONLY real shoppable consumer goods featured in the video (fashion, shoes, tech, accessories, cosmetics).
+  const prompt = `You are a high-speed fashion and product recognition engine for TikTok video frames.
+Your task is to identify clothing, apparel, accessories, tech, and creator items in this frame.
 
-STRICT RULES:
-- NO generic background objects (NO "table", NO "plate", NO "wall", NO "floor", NO "door", NO "room").
-- Write specific, descriptive titles suitable for searching on Amazon.
-- Provide estimated retail price in USD.
-- Assign a confidence score from 75 to 98 based on visibility.
+GUIDELINES:
+1. Identify all visible clothing or apparel items even if unbranded (e.g. "Men's Classic White Ribbed Tank Top", "Oversized Cotton T-Shirt", "Black Cargo Pants", "Silver Chain Necklace").
+2. Look for any visible text on screen: creator handle (@username), song name, or video caption, and put it in "videoTitle".
+3. For each item provide a realistic retail price in USD (e.g. "24.99") and confidence score (75 to 98).
+4. DO NOT return background room furniture (NO table, NO plate, NO wall, NO floor).
 
-Return ONLY valid JSON in this shape:
+YOU MUST OUTPUT ONLY RAW JSON matching this structure exactly, with NO other text:
 {
-  "videoTitle": "Creator name or caption from video",
+  "videoTitle": "@creator or video caption if visible",
   "products": [
     {
-      "title": "Descriptive Product Name",
-      "price": "29.99",
-      "confidence": 94
+      "title": "Descriptive Fashion or Product Name",
+      "price": "24.99",
+      "confidence": 92
     }
   ]
-}
-If no shoppable items are visible, return {"products":[]}.`;
+}`;
 
   let response;
   try {
@@ -423,7 +499,8 @@ If no shoppable items are visible, return {"products":[]}.`;
 
   const text = response?.response || response?.result || response?.description || "";
   if (!text) throw new Error("Workers AI returned an empty vision result");
-  return normalizeVisionProducts(parseModelJson(text));
+  const norm = await normalizeVisionProducts(parseModelJson(text));
+  return { ...norm, rawText: text };
 }
 
 // ---------------------------------------------------------------------------
@@ -467,10 +544,10 @@ async function handleResolve(request, env, ctx) {
 
   const hash = await sha256Hex(bytes);
 
-  // Cache first — a repeated crop costs nothing and returns instantly.
+  // Cache first — only use cache if products were found
   if (env.CACHE) {
     const cached = await env.CACHE.get(`lens:${hash}`, "json");
-    if (cached) {
+    if (cached && Array.isArray(cached.products) && cached.products.length > 0) {
       return json({ ok: true, cached: true, ...cached }, 200, request, env);
     }
   }
@@ -483,6 +560,7 @@ async function handleResolve(request, env, ctx) {
   let amazon = [];
   let others = [];
   let engine = "lens";
+  let rawVisionText = null;
 
   if (hasLens) {
     if (!env.IMAGES) {
@@ -508,20 +586,24 @@ async function handleResolve(request, env, ctx) {
     ({ amazon, others } = parseLensResponse(payload));
   } else {
     try {
-      ({ amazon, others } = await callWorkersAI(bytes, env));
+      const res = await callWorkersAI(bytes, env);
+      amazon = res.amazon;
+      others = res.others;
+      rawVisionText = res.rawText;
       engine = "workers-ai";
     } catch (err) {
       console.log("[resolve] vision error on frame:", err.message);
       amazon = [];
       others = [];
       engine = "none";
+      rawVisionText = err.message;
     }
   }
 
   const allProducts = [...amazon, ...others];
-  const result = { products: allProducts, amazon, others, count: allProducts.length, engine };
+  const result = { products: allProducts, amazon, others, count: allProducts.length, engine, rawVisionText };
 
-  if (env.CACHE) {
+  if (env.CACHE && allProducts.length > 0) {
     ctx.waitUntil(
       env.CACHE.put(`lens:${hash}`, JSON.stringify(result), {
         expirationTtl: LIMITS.CACHE_TTL_SECONDS

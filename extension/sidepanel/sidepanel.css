@@ -324,6 +324,168 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   justify-content: center;
 }
 
+/* Update Available Soft Notification Banner */
+.update-available-banner {
+  background: linear-gradient(135deg, rgba(255, 153, 0, 0.15) 0%, rgba(20, 26, 40, 0.95) 100%);
+  border: 1px solid rgba(255, 153, 0, 0.4);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  margin: 10px 14px 4px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: bannerSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 0 10px rgba(255, 153, 0, 0.1);
+}
+
+@keyframes bannerSlideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.update-banner-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.update-banner-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.update-banner-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #FFB340;
+  line-height: 1.3;
+}
+
+.update-banner-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.update-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.update-banner-btn {
+  background: #FF9900;
+  color: #111827;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+}
+
+.update-banner-btn:hover {
+  background: #FFAA2B;
+  transform: translateY(-1px);
+}
+
+.update-banner-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.update-banner-close:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Scan Auth Gate with 100 Free Scans Promotion */
+.scan-auth-gate {
+  position: relative;
+  background: radial-gradient(circle at top, rgba(255, 153, 0, 0.12) 0%, rgba(14, 19, 30, 0.85) 75%);
+  border: 1px solid rgba(255, 153, 0, 0.25);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+  padding: 36px 20px 30px 20px;
+}
+
+.scan-auth-gift-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 153, 0, 0.18);
+  border: 1px solid rgba(255, 153, 0, 0.45);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #FFB340;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.scan-auth-tagline {
+  max-width: 290px !important;
+  font-size: 12.5px !important;
+  line-height: 1.55 !important;
+  color: #D1D5DB !important;
+  margin-bottom: 16px !important;
+}
+
+.scan-auth-tagline strong {
+  color: #FFB340;
+}
+
+.scan-auth-perks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 270px;
+  margin: 0 auto 22px auto;
+  text-align: left;
+}
+
+.scan-auth-perks .perk-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+
+.scan-auth-perks .perk-check {
+  color: #10B981;
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.primary-google-btn {
+  background: #FFFFFF !important;
+  color: #1F2937 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+  transition: all 0.2s ease !important;
+}
+
+.primary-google-btn:hover {
+  background: #F3F4F6 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(255, 153, 0, 0.25) !important;
+}
+
 .auth-gate-icon {
   font-size: 36px;
   margin-bottom: 14px;

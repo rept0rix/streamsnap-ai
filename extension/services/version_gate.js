@@ -60,12 +60,15 @@ export async function checkVersionGate() {
 
     const blocked =
       Boolean(minVersion) && compareVersions(currentVersion, minVersion) < 0;
+    const updateAvailable =
+      Boolean(latestVersion) && compareVersions(currentVersion, latestVersion) < 0;
 
     // Remember the verdict so an outdated build stays blocked even if the
     // network later disappears.
     await chrome.storage.local.set({
       [GATE_CACHE_KEY]: {
         blocked,
+        updateAvailable,
         minVersion,
         latestVersion,
         updateUrl,
@@ -75,6 +78,7 @@ export async function checkVersionGate() {
 
     return {
       blocked,
+      updateAvailable,
       currentVersion,
       minVersion,
       latestVersion,
@@ -92,9 +96,13 @@ export async function checkVersionGate() {
       Boolean(cached?.blocked) &&
       Boolean(cached?.minVersion) &&
       compareVersions(currentVersion, cached.minVersion) < 0;
+    const updateAvailable =
+      Boolean(cached?.latestVersion) &&
+      compareVersions(currentVersion, cached.latestVersion) < 0;
 
     return {
       blocked,
+      updateAvailable,
       currentVersion,
       minVersion: cached?.minVersion || null,
       latestVersion: cached?.latestVersion || null,
