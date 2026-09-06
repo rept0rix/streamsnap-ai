@@ -390,6 +390,19 @@ async function runGemini(env, bytes, apiKey) {
     if (response.status === 401 || response.status === 403) {
       throw new Error("Gemini rejected the API key");
     }
+    if (response.status === 400) {
+      // Google answers a malformed/revoked key with 400 + API_KEY_INVALID, not 401.
+      const detail = await response.text().catch(() => "");
+      if (/API_KEY_INVALID|API key not valid/i.test(detail)) {
+        throw new Error("Gemini rejected the API key");
+      }
+      errors.push(`${model}: HTTP 400`);
+      continue;
+    }
+    if (response.status === 429) {
+      errors.push(`${model}: rate limited (429)`);
+      continue;
+    }
     if (!response.ok) {
       errors.push(`${model}: HTTP ${response.status}`);
       continue;
@@ -426,6 +439,10 @@ async function runGemini(env, bytes, apiKey) {
  *
  * options.geminiKey overrides env.GEMINI_API_KEY (per-request key from the
  * X-Gemini-Key header). Without either, the ladder starts at Workers AI.
+ *
+ * options.geminiOnly skips the Workers AI rungs. Used for bring-your-own-key
+ * callers: their scans are not metered, so a bad key must surface as an error
+ * rather than quietly run on our compute for free.
  */
 export async function detectProducts(env, bytes, options = {}) {
   const geminiKey = String(options.geminiKey || env?.GEMINI_API_KEY || "").trim();
@@ -433,7 +450,7 @@ export async function detectProducts(env, bytes, options = {}) {
   if (geminiKey) {
     ladder.push(["gemini", async () => runGemini(env, bytes, geminiKey)]);
   }
-  if (env?.AI) {
+  if (env?.AI && !options.geminiOnly) {
     ladder.push(
       ["scout", async () => ({ text: responseText(await runScout(env, bytes)), model: VISION_MODELS.scout })],
       ["llama32", async () => ({ text: responseText(await runLlama32(env, bytes)), model: VISION_MODELS.llama32 })],

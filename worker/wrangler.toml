@@ -23,6 +23,18 @@ ALLOWED_ORIGINS = "https://streamsnap.online,https://www.streamsnap.online"
 # code deploy. Must be a bare semver (e.g. "1.6.0").
 MIN_EXTENSION_VERSION = "1.6.0"
 
+# Metering (see src/quota.js). Scans that run on OUR Gemini key are counted;
+# scans sent with the caller's own key (X-Gemini-Key) never are.
+#   ANON_TRIAL_SCANS  lifetime scans per install before sign-in is required.
+#                     Tiny on purpose: the install id is client-minted.
+#   FREE_TRIAL_SCANS  lifetime scans after Google sign-in. When they run out the
+#                     user buys a scan pack (src/billing.js PACKAGES) or adds a key.
+ANON_TRIAL_SCANS = "10"
+FREE_TRIAL_SCANS = "100"
+
+# Where 402 responses and the account page send people to buy scans.
+PUBLIC_SITE_URL = "https://streamsnap.online"
+
 # Cached Lens results and rate-limit counters.
 [[kv_namespaces]]
 binding = "CACHE"
@@ -51,6 +63,13 @@ migrations_dir = "migrations"
 #   GOOGLE_CLIENT_ID
 #   GOOGLE_CLIENT_SECRET
 #   ADMIN_EMAILS      comma-separated; these accounts become admin on first login
+#   STRIPE_SECRET_KEY     enables POST /billing/checkout (Stripe Checkout, one-off scan packs).
+#                         Without it checkout answers 503 PURCHASES_DISABLED and packs can
+#                         still be granted by hand via POST /api/admin/users/:id/credits.
+#   STRIPE_WEBHOOK_SECRET signing secret of the endpoint  <worker>/billing/webhook
+#                         (event: checkout.session.completed). Optional but recommended;
+#                         the account page also confirms via /billing/confirm on return.
+#   SUPPORT_EMAIL         shown to users when purchases are disabled.
 
 [observability]
 enabled = true

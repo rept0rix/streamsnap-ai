@@ -7,6 +7,7 @@
  */
 
 import { requireAdmin, audit, AuthError } from "./auth.js";
+import { grantPurchase, findPackage } from "./billing.js";
 
 export async function handleAdminRoute(request, env, url, json) {
   const path = url.pathname;
@@ -125,7 +126,7 @@ export async function handleAdminRoute(request, env, url, json) {
     const totalCount = (await env.DB.prepare(totalCountQuery).bind(...params).first())?.count || 0;
 
     const usersQuery = `
-      SELECT u.id, u.email, u.name, u.avatar_url, u.role, u.plan, u.quota_override,
+      SELECT u.id, u.email, u.name, u.avatar_url, u.role, u.plan, u.quota_override, u.scan_credits,
              u.affiliate_tag, u.is_streamer, u.streamer_verified, u.blocked_at, u.blocked_reason,
              u.created_at, u.last_seen_at,
              (SELECT COUNT(*) FROM usage_events e WHERE e.user_id = u.id) as scan_count,
@@ -246,6 +247,44 @@ export async function handleAdminRoute(request, env, url, json) {
     });
 
     return json({ ok: true, id: targetUserId, plan: planToSet, quotaOverride: quotaToSet }, 200, request, env);
+  }
+
+  // ---------------------------------------------------------------------------
+  // 5b. POST /api/admin/users/:id/credits { credits, note }
+  //     Manual scan-pack grant (or revoke with a negative number). This is how
+  //     packs are sold before Stripe is wired up, and how support makes good.
+  // ---------------------------------------------------------------------------
+  const creditsMatch = path.match(/^\/api\/admin\/users\/([^/]+)\/credits$/);
+  if (creditsMatch && request.method === "POST") {
+    const targetUserId = creditsMatch[1];
+    const body = await request.json().catch(() => ({}));
+    const credits = Math.trunc(Number(body.credits));
+    if (!Number.isFinite(credits) || credits === 0 || Math.abs(credits) > 1_000_000) {
+      return json({ ok: false, error: "credits must be a non-zero integer." }, 400, request, env);
+    }
+
+    const targetUser = await env.DB.prepare("SELECT id, email, scan_credits FROM users WHERE id = ?").bind(targetUserId).first();
+    if (!targetUser) return json({ ok: false, error: "User not found." }, 404, request, env);
+
+    const pkg = findPackage(body.packageId);
+    const result = await grantPurchase(env, {
+      userId: targetUserId,
+      packageId: pkg?.id || (credits > 0 ? "manual_grant" : "manual_revoke"),
+      credits,
+      amountCents: Number.isFinite(Number(body.amountCents)) ? Math.trunc(Number(body.amountCents)) : 0,
+      currency: "usd",
+      provider: "manual",
+      grantedBy: admin.id,
+      note: typeof body.note === "string" ? body.note.slice(0, 500) : null
+    });
+
+    await audit(env, admin.id, "user.credits_grant", {
+      targetType: "user",
+      targetId: targetUserId,
+      detail: { credits, before: Number(targetUser.scan_credits) || 0, after: result.credits, note: body.note || null, userEmail: targetUser.email }
+    });
+
+    return json({ ok: true, id: targetUserId, credits: result.credits, granted: credits }, 200, request, env);
   }
 
   // ---------------------------------------------------------------------------

@@ -82,11 +82,32 @@ The response reports which engine produced a result: `engine` is `lens`,
 
 | Method | Path | Purpose |
 | :--- | :--- | :--- |
-| `POST` | `/resolve` | `{ image: dataUrl, installId }` → `{ ok, products, others, count, cached, engine }` |
+| `POST` | `/resolve` | `{ image: dataUrl, installId }` → `{ ok, products, others, count, cached, engine, quota, byoKey }` |
 | `GET` | `/img/:hash` | Serves the temporary crop so Google can fetch it |
 | `GET` | `/health` | Liveness check |
+| `GET` | `/billing/packages` | Scan packs on sale, `purchasesEnabled`, `freeTrialScans` |
+| `POST` | `/billing/checkout` | `{ packageId }` → `{ url }` Stripe Checkout (signed-in) |
+| `POST` | `/billing/confirm` | `{ sessionId }` grants the pack after the redirect (idempotent) |
+| `POST` | `/billing/webhook` | Stripe `checkout.session.completed` (signature-checked) |
+| `GET` | `/billing/history` | The caller's purchases and current quota |
+| `POST` | `/api/admin/users/:id/credits` | `{ credits, note }` manual grant/revoke (admin) |
 
 A product in `products` always carries a real ASIN. `others` holds non-Amazon retailers, kept for the case where an item genuinely is not sold on Amazon.
+
+### Metering: free trial → scan packs → your own key
+
+Every `/resolve` that runs on the Worker's own `GEMINI_API_KEY` is counted (`src/quota.js`):
+
+1. **Anonymous teaser** — `ANON_TRIAL_SCANS` (10) lifetime scans per install, then `402` with `code: "TRIAL_EXHAUSTED_SIGN_IN"`.
+2. **Free trial** — `FREE_TRIAL_SCANS` (100) lifetime scans after Google sign-in.
+3. **Scan credits** — bought as packs (`src/billing.js` → `PACKAGES`) or granted by an admin; spent one per scan once the trial is gone.
+4. When everything is spent: `402` with `code: "QUOTA_EXHAUSTED"`, `needsUpgrade: true`, `upgradeUrl`, `canUseOwnKey: true`.
+
+Cache hits are never counted. Every successful response carries `quota: { plan, period, used, limit, remaining, credits, available, exhausted }` so clients can render the balance without a second call.
+
+**Bring your own key.** A request with header `X-Gemini-Key: <user's Gemini key>` is never metered (`byoKey: true`, `quota: null`), runs Gemini only (no fall-back onto our Workers AI or Bright Data budget), and answers `401 BYO_KEY_REJECTED` if Google refuses the key.
+
+**Selling packs.** Set `STRIPE_SECRET_KEY` (and ideally `STRIPE_WEBHOOK_SECRET` for `<worker>/billing/webhook`) and the account page's *Buy* buttons start working. Without Stripe, checkout answers `503 PURCHASES_DISABLED` and you can still grant packs by hand from the admin API after taking payment elsewhere. Run the migration first: `npm run migrate`.
 
 ## Deploy
 

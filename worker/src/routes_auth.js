@@ -26,7 +26,7 @@ import {
   clearCookie,
   audit
 } from "./auth.js";
-import { quotaFor, getUsage } from "./quota.js";
+import { quotaSummary, getUsage } from "./quota.js";
 import { minExtensionVersion } from "./index.js";
 
 /** Only these return targets may ever receive a session token. */
@@ -169,8 +169,7 @@ export async function handleAuthRoute(request, env, url, json) {
     const user = await getCurrentUser(env, request);
     if (!user) return json({ ok: true, signedIn: false }, 200, request, env);
 
-    const used = await getUsage(env, user, null);
-    const limit = quotaFor(user);
+    const quota = await quotaSummary(env, user, null);
 
     return json(
       {
@@ -186,7 +185,7 @@ export async function handleAuthRoute(request, env, url, json) {
           affiliateTag: user.affiliate_tag,
           blocked: Boolean(user.blocked_at)
         },
-        quota: { used, limit, remaining: Math.max(0, limit - used) },
+        quota,
         minVersion: minExtensionVersion(env)
       },
       200,
@@ -360,29 +359,6 @@ export async function handleAuthRoute(request, env, url, json) {
     }
 
     return json({ ok: true, affiliateTag: tag || null, channels: body.channels || {} }, 200, request, env);
-  }
-
-  // --- Subscription & Billing Management -----------------------------------
-  if (path === "/billing/upgrade" && request.method === "POST") {
-    let user;
-    try {
-      user = await requireUser(env, request);
-    } catch (err) {
-      return json({ ok: false, error: err.message }, err.status || 401, request, env);
-    }
-
-    const body = await request.json().catch(() => ({}));
-    const targetPlan = body.plan === "pro" ? "pro" : "free";
-
-    await env.DB.prepare("UPDATE users SET plan = ? WHERE id = ?")
-      .bind(targetPlan, user.id)
-      .run();
-
-    return json({
-      ok: true,
-      plan: targetPlan,
-      message: targetPlan === "pro" ? "Successfully upgraded to Pro Tier!" : "Switched to Free Tier."
-    }, 200, request, env);
   }
 
   return null; // not an auth route

@@ -24,7 +24,9 @@ import { cropJpegByBox, cropToDataUrl } from "./crop.js";
 import { handleAuthRoute } from "./routes_auth.js";
 import { handleAdminRoute } from "./routes_admin.js";
 import { handleSyncRoute } from "./routes_sync.js";
+import { handleBillingRoute, upgradeUrl } from "./billing.js";
 import { getCurrentUser } from "./auth.js";
+import { checkQuota, consumeQuota, quotaSummary, recordUsage } from "./quota.js";
 
 const LIMITS = {
   MAX_IMAGE_BYTES: 3 * 1024 * 1024,
@@ -86,6 +88,8 @@ export default {
           auth: "/auth/start",
           me: "/auth/me",
           resolve: "POST /resolve",
+          packages: "GET /billing/packages",
+          checkout: "POST /billing/checkout",
           admin: "/api/admin/stats"
         }
       }, 200, request, env);
@@ -100,12 +104,16 @@ export default {
       if (response) return response;
     }
 
+    if (url.pathname.startsWith("/billing/")) {
+      const response = await handleBillingRoute(request, env, url, json);
+      if (response) return response;
+    }
+
     if (
       url.pathname.startsWith("/auth/") ||
       url.pathname.startsWith("/account") ||
       url.pathname.startsWith("/user/") ||
-      url.pathname.startsWith("/creator/") ||
-      url.pathname.startsWith("/billing/")
+      url.pathname.startsWith("/creator/")
     ) {
       const response = await handleAuthRoute(request, env, url, json);
       if (response) return response;
@@ -590,18 +598,57 @@ async function handleResolve(request, env, ctx) {
   }
 
   const hash = await sha256Hex(bytes);
+  const startedAt = Date.now();
 
-  // Cache first — only use cache if products were found
+  // A caller-supplied Gemini key means the upstream call costs us nothing, so
+  // the scan is not metered. It also pins the ladder to Gemini: a bad key must
+  // surface as an error, not silently run on our Workers AI budget.
+  const geminiKey = (request.headers.get("X-Gemini-Key") || "").trim() || undefined;
+  const byoKey = Boolean(geminiKey);
+
+  const user = await getCurrentUser(env, request).catch(() => null);
+  if (user?.blocked) {
+    return json({ ok: false, code: "ACCOUNT_BLOCKED", error: user.blocked_reason || "This account has been suspended." }, 403, request, env);
+  }
+
+  // Cache first — only use cache if products were found. Cache hits are free
+  // for us, so they are never counted against anyone's quota.
   if (env.CACHE) {
     const cached = await env.CACHE.get(`resolve:v3:${hash}`, "json");
     if (cached && Array.isArray(cached.products) && cached.products.length > 0) {
-      return json({ ok: true, cached: true, ...reattachSourceCrops(bytes, cached) }, 200, request, env);
+      const quota = byoKey ? null : await quotaSummary(env, user, installId);
+      ctx.waitUntil(recordUsage(env, { user, anonId: installId, kind: "resolve", cached: true, byoKey, engine: cached.engine, resultCount: cached.products.length, latencyMs: Date.now() - startedAt }));
+      return json({ ok: true, cached: true, byoKey, quota, ...reattachSourceCrops(bytes, cached) }, 200, request, env);
     }
   }
 
+  // Free trial → purchased credits → (pro) monthly allowance. See quota.js.
+  let quota = null;
+  if (!byoKey) {
+    quota = await checkQuota(env, user, installId);
+    if (!quota.allowed) {
+      const { allowed, source, reason, ...summary } = quota;
+      return json(
+        {
+          ok: false,
+          error: reason,
+          ...summary,
+          canUseOwnKey: true,
+          upgradeUrl: upgradeUrl(env),
+          quota: summary
+        },
+        402,
+        request,
+        env
+      );
+    }
+  }
+
+  // Abuse brake, independent of billing: even a paid or BYO caller cannot
+  // hammer the upstreams from one install.
   const limit = await checkRateLimit(installId, env);
   if (!limit.allowed) {
-    return json({ ok: false, error: limit.error }, 429, request, env);
+    return json({ ok: false, code: "RATE_LIMITED", error: limit.error }, 429, request, env);
   }
 
   let amazon = [];
@@ -616,15 +663,15 @@ async function handleResolve(request, env, ctx) {
   // face, logos). When Bright Data is also set we Lens the per-product crops.
   if (hasVision) {
     try {
-      const geminiKey = (request.headers.get("X-Gemini-Key") || "").trim() || undefined;
-      const res = await resolveWithVision(bytes, env, { geminiKey });
+      const res = await resolveWithVision(bytes, env, { geminiKey, geminiOnly: byoKey });
       amazon = res.amazon;
       others = res.others;
       rawVisionText = res.rawText;
       visionModel = res.model;
       engine = String(visionModel || "").startsWith("gemini") ? "gemini" : "workers-ai";
 
-      if (hasLens && (amazon.length || others.length)) {
+      // Lens runs on our Bright Data quota, so it is reserved for metered scans.
+      if (hasLens && !byoKey && (amazon.length || others.length)) {
         const enriched = await enrichWithLensCrops(bytes, amazon, others, env, ctx);
         amazon = enriched.amazon;
         others = enriched.others;
@@ -633,6 +680,23 @@ async function handleResolve(request, env, ctx) {
       }
     } catch (err) {
       console.log("[resolve] vision error on frame:", err.message);
+      if (byoKey) {
+        // Their key, their error. Nothing to fall back to and nothing metered.
+        const rejected = /rejected the API key/i.test(err.message);
+        ctx.waitUntil(recordUsage(env, { user, anonId: installId, kind: "resolve", byoKey: true, engine: "gemini", resultCount: 0, latencyMs: Date.now() - startedAt, error: err.message }));
+        return json(
+          {
+            ok: false,
+            code: rejected ? "BYO_KEY_REJECTED" : "BYO_KEY_FAILED",
+            error: rejected
+              ? "Google rejected your Gemini API key. Check it in Setup, or remove it to use your StreamSnap scans."
+              : `Your Gemini key could not complete the scan: ${err.message}`
+          },
+          rejected ? 401 : 502,
+          request,
+          env
+        );
+      }
       // Fall through to full-frame Lens if we have it; otherwise empty.
       if (!hasLens) {
         amazon = [];
@@ -690,6 +754,33 @@ async function handleResolve(request, env, ctx) {
     rawVisionText
   };
 
+  // The upstream call happened, so it is paid for — with or without results.
+  // (engine === "none" means every model failed before answering.)
+  let quotaAfter = null;
+  if (!byoKey) {
+    if (engine !== "none") {
+      await consumeQuota(env, user, installId, quota?.source);
+    }
+    const freshUser = user && quota?.source === "credits"
+      ? await env.DB.prepare("SELECT * FROM users WHERE id = ?").bind(user.id).first().catch(() => user)
+      : user;
+    quotaAfter = await quotaSummary(env, freshUser || user, installId);
+  }
+  ctx.waitUntil(
+    recordUsage(env, {
+      user,
+      anonId: installId,
+      kind: "resolve",
+      cached: false,
+      byoKey,
+      engine,
+      resultCount: allProducts.length,
+      category: allProducts[0]?.category || null,
+      latencyMs: Date.now() - startedAt,
+      error: engine === "none" ? String(rawVisionText || "").slice(0, 200) : null
+    })
+  );
+
   if (env.CACHE && allProducts.length > 0) {
     // Persist without bulky sourceCrop data URLs; reattach from box_2d on hit.
     ctx.waitUntil(
@@ -700,7 +791,6 @@ async function handleResolve(request, env, ctx) {
   }
 
   // Auto-sync products into user's cloud wishlist if authenticated
-  const user = await getCurrentUser(env, request).catch(() => null);
   if (user && allProducts.length > 0 && env.DB) {
     ctx.waitUntil((async () => {
       for (const p of allProducts.slice(0, 5)) {
@@ -735,7 +825,7 @@ async function handleResolve(request, env, ctx) {
     console.log("[resolve] no products via", engine);
   }
 
-  return json({ ok: true, cached: false, ...result }, 200, request, env);
+  return json({ ok: true, cached: false, byoKey, quota: quotaAfter, ...result }, 200, request, env);
   } catch (err) {
     console.error("[resolve fatal error]", err);
     return json({ ok: false, error: err.message || "Internal server error" }, 500, request, env);
