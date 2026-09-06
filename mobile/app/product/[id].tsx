@@ -12,15 +12,14 @@ import {
   TouchableOpacity,
   Linking
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "react-native-router-flux"; // Actually Expo router uses this under the hood, but let's use expo-router
-import { useLocalSearchParams as useExpoParams, useRouter as useExpoRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useStore } from "../../store/useStore";
 import type { CatalogItem } from "../../services/storage";
 
 export default function ProductScreen() {
-  const { id } = useExpoParams<{ id: string }>();
-  const router = useExpoRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { catalog, addProductToCart } = useStore();
 
@@ -42,14 +41,20 @@ export default function ProductScreen() {
     );
   }
 
-  const isVerified = Boolean(product.asin);
+  const isVerified = Boolean(product.asin) && product.verified !== false;
+  const sourceFrame = product.sourceCrop || product.frameImage || product.sourceFrameBase64 || null;
+  const listingImage =
+    product.imageUrl && !product.imageUrl.startsWith("data:") && product.imageUrl !== sourceFrame
+      ? product.imageUrl
+      : null;
+  const priceLabel = product.price ? (product.priceEstimated ? `~${product.price}` : product.price) : null;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
       {/* Product Image */}
       <View style={styles.imageHeader}>
-        {product.imageUrl ? (
-          <Image source={{ uri: product.imageUrl }} style={styles.mainImage} resizeMode="contain" />
+        {listingImage ? (
+          <Image source={{ uri: listingImage }} style={styles.mainImage} resizeMode="contain" />
         ) : (
           <View style={[styles.mainImage, styles.placeholder]}>
             <Text style={{ fontSize: 64 }}>📦</Text>
@@ -69,7 +74,7 @@ export default function ProductScreen() {
         )}
 
         <Text style={styles.title}>{product.title}</Text>
-        {product.price && <Text style={styles.price}>{product.price}</Text>}
+        {priceLabel && <Text style={styles.price}>{priceLabel}</Text>}
 
         <View style={styles.actions}>
           <TouchableOpacity
@@ -92,17 +97,17 @@ export default function ProductScreen() {
         </View>
       </View>
 
-      {/* Source Frame (Traceability) */}
-      {product.sourceFrameBase64 && (
+      {/* Source Frame (Traceability) — only the captured frame, never the listing image */}
+      {sourceFrame && (
         <View style={styles.sourceSection}>
-          <Text style={styles.sectionTitle}>Source Frame</Text>
+          <Text style={styles.sectionTitle}>Captured Video Snapshot</Text>
           <Text style={styles.sectionSubtitle}>
-            This is the image snippet that StreamSnap used to identify the product.
+            This is the exact frame from TikTok / Live Video that StreamSnap used to spot this product.
           </Text>
           <Image
-            source={{ uri: product.sourceFrameBase64 }}
+            source={{ uri: sourceFrame }}
             style={styles.sourceImage}
-            resizeMode="contain"
+            resizeMode="cover"
           />
         </View>
       )}
@@ -114,7 +119,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#0B0F17" },
   centered: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#0B0F17" },
   errorText: { color: "#F8FAFC", fontSize: 18, marginBottom: 12 },
-  backLink: { color: "#6366F1", fontSize: 16 },
+  backLink: { color: "#FF5500", fontSize: 16 },
   imageHeader: {
     backgroundColor: "#fff",
     width: "100%",
@@ -147,7 +152,7 @@ const styles = StyleSheet.create({
   price: { color: "#FF9900", fontSize: 22, fontWeight: "800", marginTop: 12 },
   actions: { marginTop: 24, gap: 12 },
   primaryButton: {
-    backgroundColor: "#6366F1",
+    backgroundColor: "#FF5500",
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: "center"

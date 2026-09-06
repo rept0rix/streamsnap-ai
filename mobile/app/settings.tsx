@@ -113,7 +113,7 @@ export default function SettingsScreen() {
               style={{ marginTop: 16 }}
               onPress={() => router.push("/login")}
             >
-              <Text style={{ color: "#6366F1", fontSize: 14, fontWeight: "600" }}>Sign In with Google</Text>
+              <Text style={{ color: "#FF5500", fontSize: 14, fontWeight: "600" }}>Sign In with Google</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -160,10 +160,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12
   },
   hint: { color: "#64748B", fontSize: 12, marginTop: 8, lineHeight: 18 },
-  link: { color: "#6366F1", fontSize: 13, marginTop: 8 },
+  link: { color: "#FF5500", fontSize: 13, marginTop: 8 },
   signedIn: { color: "#22C55E", fontSize: 14 },
   saveButton: {
-    backgroundColor: "#6366F1",
+    backgroundColor: "#FF5500",
     marginHorizontal: 16,
     marginTop: 24,
     borderRadius: 12,

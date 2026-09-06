@@ -2652,10 +2652,14 @@ body.studio-dark {
   }
 
   .terminal-viewport {
-    height: 230px !important;
+    /* On phones the landscape desktop capture looked cropped and unclear.
+       Use the real portrait mobile screenshot so the hero example matches
+       what a phone user actually sees. */
+    height: 420px !important;
     padding: 10px !important;
-    background-size: cover !important;
-    background-position: center top !important;
+    background:
+      linear-gradient(180deg, rgba(3, 5, 8, 0.15) 0%, rgba(3, 5, 8, 0.8) 100%),
+      url("assets/streamsnap_live_mobile.png") center top / cover no-repeat !important;
   }
 
   .optical-bounding-box {

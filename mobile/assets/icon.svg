@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" fill="none">
+  <defs>
+    <linearGradient id="bolt" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFB800"/>
+      <stop offset="60%" stop-color="#FF9900"/>
+      <stop offset="100%" stop-color="#FF5500"/>
+    </linearGradient>
+    <linearGradient id="ring" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00A8E1"/>
+      <stop offset="100%" stop-color="#FF9900"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="#0B0F19"/>
+  <g transform="translate(132, 132)">
+    <rect x="0" y="0" width="760" height="760" rx="196" fill="#101622" stroke="url(#ring)" stroke-width="28"/>
+    <path d="M174 282 L174 174 L282 174" fill="none" stroke="#00A8E1" stroke-width="28" stroke-linecap="round"/>
+    <path d="M586 282 L586 174 L478 174" fill="none" stroke="#00A8E1" stroke-width="28" stroke-linecap="round"/>
+    <path d="M174 478 L174 586 L282 586" fill="none" stroke="#00A8E1" stroke-width="28" stroke-linecap="round"/>
+    <path d="M586 478 L586 586 L478 586" fill="none" stroke="#00A8E1" stroke-width="28" stroke-linecap="round"/>
+    <circle cx="380" cy="380" r="196" fill="rgba(0,168,225,0.16)"/>
+    <polygon points="412 163 249 413 369 413 347 597 521 326 391 326" fill="url(#bolt)"/>
+  </g>
+</svg>

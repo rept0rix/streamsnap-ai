@@ -94,6 +94,8 @@ export async function fetchProfile() {
       await chrome.storage.local.set({
         [PROFILE_KEY]: { ...data.user, quota: data.quota, fetchedAt: Date.now() }
       });
+      registerDevice().catch(() => {});
+      syncCloudState().catch(() => {});
     }
     return data;
   } catch (err) {
@@ -157,4 +159,133 @@ export async function saveAffiliateTag(tag) {
   });
 
   return response.json().catch(() => ({ ok: false, error: "Unexpected server response." }));
+}
+
+export async function getDeviceId() {
+  const { deviceId } = await chrome.storage.local.get(["deviceId"]);
+  return deviceId || null;
+}
+
+export async function registerDevice() {
+  const token = await getToken();
+  if (!token) return null;
+
+  try {
+    const apiBase = await getApiBase();
+    let { deviceId } = await chrome.storage.local.get(["deviceId"]);
+    const platformOs = typeof navigator !== "undefined" && navigator.userAgent
+      ? (navigator.userAgent.includes("Mac")
+        ? "macOS"
+        : navigator.userAgent.includes("Win")
+        ? "Windows"
+        : navigator.userAgent.includes("Linux")
+        ? "Linux"
+        : "Desktop")
+      : "Desktop";
+
+    const response = await fetch(`${apiBase}/auth/device/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        deviceId: deviceId || undefined,
+        deviceType: "extension",
+        deviceName: `Chrome Extension v1.6.0 (${platformOs})`,
+        platformOs
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.deviceId) {
+        await chrome.storage.local.set({ deviceId: data.deviceId });
+        return data.deviceId;
+      }
+    }
+  } catch (err) {
+    console.warn("[StreamSnap] Device registration failed:", err);
+  }
+  return null;
+}
+
+export async function sendHeartbeat() {
+  const token = await getToken();
+  const deviceId = await getDeviceId();
+  if (!token || !deviceId) return;
+
+  try {
+    const apiBase = await getApiBase();
+    await fetch(`${apiBase}/auth/device/heartbeat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ deviceId })
+    });
+  } catch (_) {}
+}
+
+export async function syncCloudState() {
+  const token = await getToken();
+  if (!token) return null;
+
+  try {
+    const apiBase = await getApiBase();
+    const response = await fetch(`${apiBase}/sync/state`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    if (response.ok) {
+      const state = await response.json();
+      if (state.ok) {
+        if (state.user?.isStreamer && state.user?.affiliateTag) {
+          await chrome.storage.local.set({
+            isStreamer: true,
+            creatorAffiliateTag: state.user.affiliateTag
+          });
+        }
+        return state;
+      }
+    }
+  } catch (err) {
+    console.warn("[StreamSnap] Cloud state sync failed:", err);
+  }
+  return null;
+}
+
+export async function recordSearchEvent(data) {
+  const token = await getToken();
+  if (!token) return;
+
+  try {
+    const apiBase = await getApiBase();
+    await fetch(`${apiBase}/sync/event`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        event: "search.record",
+        data: {
+          deviceType: "extension",
+          streamPlatform: data.streamPlatform || "web",
+          streamChannel: data.streamChannel || null,
+          query: data.query || data.title || "Visual Scan",
+          matchedAsin: data.asin || null,
+          productTitle: data.title || null,
+          confidenceScore: data.confidence || 85,
+          sourceFrameUrl: data.sourceFrameUrl || null
+        }
+      })
+    });
+  } catch (_) {}
+}
+
+export async function syncCartEvent(event, data) {
+  const token = await getToken();
+  if (!token) return;
+
+  try {
+    const apiBase = await getApiBase();
+    await fetch(`${apiBase}/sync/event`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ event, data })
+    });
+  } catch (_) {}
 }

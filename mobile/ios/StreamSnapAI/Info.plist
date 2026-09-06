@@ -39,6 +39,10 @@
 	<string>StreamSnap reads screenshots from your photo library to identify products.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>StreamSnap saves scan results to your photo library.</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+	<key>NSSupportsLiveActivitiesFrequentUpdates</key>
+	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>SplashScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>

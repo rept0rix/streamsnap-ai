@@ -18,8 +18,11 @@
  */
 
 import { parseLensResponse, collectRawShape } from "./parser.js";
+import { detectProducts } from "./vision.js";
+import { lookupAmazonProduct } from "./amazon_lookup.js";
 import { handleAuthRoute } from "./routes_auth.js";
 import { handleAdminRoute } from "./routes_admin.js";
+import { handleSyncRoute } from "./routes_sync.js";
 import { getCurrentUser } from "./auth.js";
 
 const LIMITS = {
@@ -38,7 +41,7 @@ const LIMITS = {
  * not require a code deploy.
  */
 const FALLBACK_MIN_EXTENSION_VERSION = "1.6.0";
-const LATEST_EXTENSION_VERSION = "1.6.1";
+const LATEST_EXTENSION_VERSION = "1.6.0";
 
 export function minExtensionVersion(env) {
   const raw = String(env?.MIN_EXTENSION_VERSION || "").trim();
@@ -85,6 +88,15 @@ export default {
           admin: "/api/admin/stats"
         }
       }, 200, request, env);
+    }
+
+    if (
+      url.pathname.startsWith("/sync/") ||
+      url.pathname.startsWith("/auth/device") ||
+      url.pathname.startsWith("/creator/gear")
+    ) {
+      const response = await handleSyncRoute(request, env, url, json);
+      if (response) return response;
     }
 
     if (
@@ -136,7 +148,7 @@ function corsHeaders(request, env) {
 
   const base = {
     "Access-Control-Allow-Methods": "POST, GET, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Gemini-Key",
     "Access-Control-Max-Age": "86400",
     Vary: "Origin"
   };
@@ -297,13 +309,128 @@ async function callLens(imageUrl, env) {
   }
 }
 
+const CURRENCY_SYMBOLS = { USD: "$", EUR: "€", GBP: "£", ILS: "₪" };
+
+/**
+ * Lens products carry a numeric price and an `image` field. Clients (mobile,
+ * extension) read `imageUrl` / `thumbnail` and a display-ready `price` string,
+ * so publish both shapes.
+ */
+function normalizeLensProduct(p) {
+  const symbol = CURRENCY_SYMBOLS[p.currency] || (p.currency ? `${p.currency} ` : "$");
+  return {
+    ...p,
+    imageUrl: p.image || null,
+    thumbnail: p.image || null,
+    priceValue: typeof p.price === "number" ? p.price : null,
+    price: typeof p.price === "number" ? `${symbol}${p.price.toFixed(2)}` : null,
+    priceEstimated: false
+  };
+}
+
+/**
+ * Workers AI path: name + locate products in the frame, then resolve each
+ * detection to a real Amazon listing (ASIN, catalog image, live price). Items
+ * whose listing title genuinely overlaps the detection go to `amazon`
+ * (verified); the rest stay in `others` with a plain search link and no image,
+ * so the client never shows a random picture as the "match".
+ */
+async function resolveWithVision(bytes, env, options = {}) {
+  const { videoTitle, detections, model, rawText } = await detectProducts(env, bytes, options);
+
+  let videoUrl = "https://www.tiktok.com";
+  const creatorMatch = videoTitle.match(/@([a-zA-Z0-9._]+)/);
+  if (creatorMatch) {
+    videoUrl = `https://www.tiktok.com/@${creatorMatch[1]}`;
+  } else if (videoTitle) {
+    videoUrl = `https://www.tiktok.com/search?q=${encodeURIComponent(videoTitle)}`;
+  }
+
+  const lookups = await Promise.all(
+    detections.map((d) => {
+      const brandMissing = d.brand && !d.title.toLowerCase().includes(d.brand.toLowerCase());
+      return lookupAmazonProduct(brandMissing ? `${d.brand} ${d.title}` : d.title, env);
+    })
+  );
+
+  const amazon = [];
+  const others = [];
+  const seenAsins = new Set();
+
+  detections.forEach((d, i) => {
+    const match = lookups[i];
+    if (match?.asin && seenAsins.has(match.asin)) return;
+
+    const estimated = d.estimatedPrice != null ? `$${d.estimatedPrice.toFixed(2)}` : null;
+    const base = {
+      title: d.title,
+      brand: d.brand,
+      confidence: d.confidence,
+      matchReason: d.matchReason || `Spotted ${d.title} in the video`,
+      box_2d: d.box_2d,
+      source: "TikTok / Video",
+      videoTitle: videoTitle || "TikTok Video",
+      videoUrl
+    };
+
+    if (match?.asin) {
+      seenAsins.add(match.asin);
+      amazon.push({
+        ...base,
+        asin: match.asin,
+        url: match.url,
+        matchedTitle: match.title,
+        matchScore: match.matchScore,
+        image: match.imageUrl,
+        imageUrl: match.imageUrl,
+        thumbnail: match.imageUrl,
+        price: match.price || estimated,
+        priceValue: match.priceValue ?? d.estimatedPrice,
+        priceEstimated: !match.price,
+        isAmazon: true,
+        verified: true
+      });
+    } else {
+      others.push({
+        ...base,
+        asin: null,
+        url: `https://www.amazon.com/s?k=${encodeURIComponent(d.title)}`,
+        matchedTitle: null,
+        matchScore: 0,
+        image: null,
+        imageUrl: null,
+        thumbnail: null,
+        price: estimated,
+        priceValue: d.estimatedPrice,
+        priceEstimated: estimated != null,
+        isAmazon: false,
+        verified: false
+      });
+    }
+  });
+
+  return { amazon, others, model, rawText };
+}
+
+
 // ---------------------------------------------------------------------------
 // /resolve
 // ---------------------------------------------------------------------------
 
 async function handleResolve(request, env, ctx) {
-  if (!env.BRIGHTDATA_API_KEY || !env.BRIGHTDATA_ZONE) {
-    return json({ ok: false, error: "Worker is not configured." }, 500, request, env);
+  try {
+    const hasLens = Boolean(env.BRIGHTDATA_API_KEY && env.BRIGHTDATA_ZONE);
+  const hasAI = Boolean(env.AI);
+  if (!hasLens && !hasAI) {
+    return json(
+      {
+        ok: false,
+        error: "Worker is not configured. Set BRIGHTDATA_API_KEY and BRIGHTDATA_ZONE, or enable Workers AI."
+      },
+      503,
+      request,
+      env
+    );
   }
 
   let body;
@@ -327,10 +454,10 @@ async function handleResolve(request, env, ctx) {
 
   const hash = await sha256Hex(bytes);
 
-  // Cache first — a repeated crop costs nothing and returns instantly.
+  // Cache first — only use cache if products were found
   if (env.CACHE) {
     const cached = await env.CACHE.get(`lens:${hash}`, "json");
-    if (cached) {
+    if (cached && Array.isArray(cached.products) && cached.products.length > 0) {
       return json({ ok: true, cached: true, ...cached }, 200, request, env);
     }
   }
@@ -340,32 +467,68 @@ async function handleResolve(request, env, ctx) {
     return json({ ok: false, error: limit.error }, 429, request, env);
   }
 
-  if (!env.IMAGES) {
-    return json({ ok: false, error: "Image storage is not configured." }, 500, request, env);
-  }
+  let amazon = [];
+  let others = [];
+  let engine = "lens";
+  let rawVisionText = null;
+  let visionModel = null;
 
-  // Lens fetches the image over HTTP, so it needs a public URL briefly.
-  await env.IMAGES.put(hash, bytes, {
-    httpMetadata: { contentType: "image/jpeg" }
-  });
-  const publicUrl = `${env.PUBLIC_BASE_URL.replace(/\/$/, "")}/img/${hash}`;
+  if (hasLens) {
+    if (!env.IMAGES) {
+      return json({ ok: false, error: "Image storage is not configured." }, 500, request, env);
+    }
 
-  let payload;
-  try {
-    payload = await callLens(publicUrl, env);
-  } catch (err) {
+    // Lens fetches the image over HTTP, so it needs a public URL briefly.
+    await env.IMAGES.put(hash, bytes, {
+      httpMetadata: { contentType: "image/jpeg" }
+    });
+    const publicUrl = `${env.PUBLIC_BASE_URL.replace(/\/$/, "")}/img/${hash}`;
+
+    let payload;
+    try {
+      payload = await callLens(publicUrl, env);
+    } catch (err) {
+      ctx.waitUntil(env.IMAGES.delete(hash));
+      const message = err.name === "AbortError" ? "Lens request timed out." : err.message;
+      return json({ ok: false, error: message }, 502, request, env);
+    }
+
     ctx.waitUntil(env.IMAGES.delete(hash));
-    const message = err.name === "AbortError" ? "Lens request timed out." : err.message;
-    return json({ ok: false, error: message }, 502, request, env);
+    const lens = parseLensResponse(payload);
+    amazon = lens.amazon.map(normalizeLensProduct);
+    others = lens.others.map(normalizeLensProduct);
+  } else {
+    try {
+      // A caller-supplied Gemini key (mobile settings) takes precedence over the
+      // server secret so a user can bring their own quota, exactly like the extension.
+      const geminiKey = (request.headers.get("X-Gemini-Key") || "").trim() || undefined;
+      const res = await resolveWithVision(bytes, env, { geminiKey });
+      amazon = res.amazon;
+      others = res.others;
+      rawVisionText = res.rawText;
+      visionModel = res.model;
+      engine = String(visionModel || "").startsWith("gemini") ? "gemini" : "workers-ai";
+    } catch (err) {
+      console.log("[resolve] vision error on frame:", err.message);
+      amazon = [];
+      others = [];
+      engine = "none";
+      rawVisionText = err.message;
+    }
   }
 
-  // The crop has served its purpose; do not retain user imagery.
-  ctx.waitUntil(env.IMAGES.delete(hash));
+  const allProducts = [...amazon, ...others];
+  const result = {
+    products: allProducts,
+    amazon,
+    others,
+    count: allProducts.length,
+    engine,
+    visionModel,
+    rawVisionText
+  };
 
-  const { amazon, others } = parseLensResponse(payload);
-  const result = { products: amazon, others, count: amazon.length };
-
-  if (env.CACHE) {
+  if (env.CACHE && allProducts.length > 0) {
     ctx.waitUntil(
       env.CACHE.put(`lens:${hash}`, JSON.stringify(result), {
         expirationTtl: LIMITS.CACHE_TTL_SECONDS
@@ -375,9 +538,9 @@ async function handleResolve(request, env, ctx) {
 
   // Auto-sync products into user's cloud wishlist if authenticated
   const user = await getCurrentUser(env, request).catch(() => null);
-  if (user && amazon.length > 0 && env.DB) {
+  if (user && allProducts.length > 0 && env.DB) {
     ctx.waitUntil((async () => {
-      for (const p of amazon.slice(0, 5)) {
+      for (const p of allProducts.slice(0, 5)) {
         const id = `prod_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
         await env.DB.prepare(`
           INSERT INTO saved_products (id, user_id, asin, title, price, image_url, product_url, category, source, verified, sighting_count, last_seen_at)
@@ -392,12 +555,12 @@ async function handleResolve(request, env, ctx) {
           user.id,
           p.asin || null,
           p.title || "Detected Product",
-          typeof p.price === "number" ? p.price : null,
-          p.thumbnail || null,
+          typeof p.priceValue === "number" ? p.priceValue : typeof p.price === "number" ? p.price : null,
+          p.imageUrl || p.image || p.thumbnail || null,
           p.url || null,
           p.category || "General",
           "amazon",
-          1
+          p.verified ? 1 : 0
         ).run().catch(() => {});
       }
     })());
@@ -406,10 +569,14 @@ async function handleResolve(request, env, ctx) {
   // Until the upstream schema is confirmed against live traffic, log the shape
   // (not the content) of any response we failed to parse.
   if (amazon.length === 0 && others.length === 0) {
-    console.log("[lens] unparsed response shape:", JSON.stringify(collectRawShape(payload)));
+    console.log("[resolve] no products via", engine);
   }
 
   return json({ ok: true, cached: false, ...result }, 200, request, env);
+  } catch (err) {
+    console.error("[resolve fatal error]", err);
+    return json({ ok: false, error: err.message || "Internal server error" }, 500, request, env);
+  }
 }
 
 // ---------------------------------------------------------------------------

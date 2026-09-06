@@ -33,11 +33,53 @@ extension  ──POST /resolve { image, installId }──►  Worker
                                         cache result, return
 ```
 
+## Vision engine (no Bright Data key)
+
+When `BRIGHTDATA_API_KEY` / `BRIGHTDATA_ZONE` are not set — the mobile live-scan
+deployment — `/resolve` recognises products with a vision model instead of Lens:
+
+```text
+frame ──► Gemini 2.5 Flash            (GEMINI_API_KEY, or X-Gemini-Key header)   src/vision.js
+            └─ fallback: Llama 4 Scout → Llama 3.2 Vision → LLaVA  ([ai] binding)
+              │  names + locates physical products only; UI / app / body-part
+              │  "products" and generic single nouns are filtered out
+              ▼
+        amazon.com/s?k=<title>  (per detection, cached in KV)      src/amazon_lookup.js
+              │  keep the organic listing whose title overlaps the detection
+              ▼
+   amazon[]  = verified listings: asin, dp url, catalog image, live price
+   others[]  = honest misses: search url, model's price estimate, no image
+```
+
+The model is never allowed to invent ASINs, catalog images or "Amazon" prices;
+those only come from the listing lookup. `priceEstimated: true` marks prices
+that are still a model guess.
+
+**Set `GEMINI_API_KEY`.** Gemini 2.5 Flash is the model the Chrome extension
+runs on and is where its recognition quality comes from; the Workers AI models
+are a degraded fallback that frequently misreads brands and model numbers on a
+video frame. Gemini is called with `responseSchema` (guaranteed JSON), thinking
+disabled, and the native `box_2d` convention it was trained on. Cost is roughly
+1,000 input tokens per frame (≈ $0.0003 at the paid tier); the free tier is
+enough for development. `GEMINI_MODELS` can override the model list
+(default `gemini-2.5-flash,gemini-flash-latest`). A client may also send its
+own key in `X-Gemini-Key`, which takes precedence over the server secret.
+
+```bash
+npm install                                # wrangler is a devDependency, not global
+npx wrangler login                         # once per machine
+npx wrangler secret put GEMINI_API_KEY     # from https://aistudio.google.com/apikey
+npm run deploy
+```
+
+The response reports which engine produced a result: `engine` is `lens`,
+`gemini` or `workers-ai`, and `visionModel` names the exact model.
+
 ## Endpoints
 
 | Method | Path | Purpose |
 | :--- | :--- | :--- |
-| `POST` | `/resolve` | `{ image: dataUrl, installId }` → `{ ok, products, others, count, cached }` |
+| `POST` | `/resolve` | `{ image: dataUrl, installId }` → `{ ok, products, others, count, cached, engine }` |
 | `GET` | `/img/:hash` | Serves the temporary crop so Google can fetch it |
 | `GET` | `/health` | Liveness check |
 

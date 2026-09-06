@@ -98,7 +98,7 @@ export const useStore = create<StreamSnapState>((set, get) => ({
         
         if (cloudData.ok && cloudData.products) {
           // Merge cloud products into local catalog
-          const cloudCatalog = cloudData.products.map(p => ({
+          const cloudCatalog = cloudData.products.map((p: any) => ({
             id: p.id,
             asin: p.asin,
             title: p.title,
@@ -130,10 +130,28 @@ export const useStore = create<StreamSnapState>((set, get) => ({
   },
 
   saveProduct: async (product, frameBase64) => {
+    // Persist the frame once, under sourceFrameBase64; the transient
+    // frameImage/sourceCrop fields would otherwise double the stored payload.
+    const { frameImage, sourceCrop, ...rest } = product;
     const item = await upsertCatalogItem({
-      ...product,
-      sourceFrameBase64: frameBase64
+      ...rest,
+      sourceFrameBase64: frameBase64 ?? sourceCrop ?? frameImage ?? undefined
     });
+    const token = get().sessionToken;
+    if (token) {
+      try {
+        const { sendSyncEvent } = require("../services/api");
+        sendSyncEvent(token, "product.save", {
+          id: item.id,
+          asin: item.asin,
+          title: item.title,
+          price: item.price ? parseFloat(item.price.replace(/[^0-9.]/g, "")) : null,
+          imageUrl: item.imageUrl,
+          productUrl: item.url,
+          source: item.source
+        }).catch(() => {});
+      } catch (_) {}
+    }
     set((s) => {
       const existing = s.catalog.find((c) => c.id === item.id);
       if (existing) {
@@ -146,7 +164,32 @@ export const useStore = create<StreamSnapState>((set, get) => ({
   },
 
   loadCart: async () => {
-    const cart = await getCart();
+    let cart = await getCart();
+    const token = get().sessionToken;
+    if (token) {
+      try {
+        const { getSyncState } = require("../services/api");
+        const cloudState = await getSyncState(token);
+        if (cloudState.ok && cloudState.cartItems) {
+          const cloudCart: CartItem[] = cloudState.cartItems.map((c: any) => ({
+            asin: c.asin,
+            title: c.title,
+            quantity: c.quantity || 1,
+            imageUrl: c.image_url,
+            price: c.price ? `$${c.price}` : undefined
+          }));
+          const merged = [...cart];
+          for (const item of cloudCart) {
+            if (!merged.find((m) => m.asin === item.asin)) {
+              merged.push(item);
+            }
+          }
+          cart = merged;
+        }
+      } catch (err) {
+        console.warn("Cloud cart sync error:", err);
+      }
+    }
     set({ cart });
   },
 
@@ -155,14 +198,34 @@ export const useStore = create<StreamSnapState>((set, get) => ({
     const cart = await addToCart({
       asin: product.asin,
       title: product.title,
-      imageUrl: product.imageUrl,
-      price: product.price
+      imageUrl: product.imageUrl ?? undefined,
+      price: product.price ?? undefined
     });
+    const token = get().sessionToken;
+    if (token) {
+      try {
+        const { sendSyncEvent } = require("../services/api");
+        sendSyncEvent(token, "cart.add", {
+          asin: product.asin,
+          title: product.title,
+          imageUrl: product.imageUrl,
+          price: product.price ? parseFloat(product.price.replace(/[^0-9.]/g, "")) : null,
+          productUrl: product.url
+        }).catch(() => {});
+      } catch (_) {}
+    }
     set({ cart });
   },
 
   removeProductFromCart: async (asin) => {
     const cart = await removeFromCart(asin);
+    const token = get().sessionToken;
+    if (token) {
+      try {
+        const { sendSyncEvent } = require("../services/api");
+        sendSyncEvent(token, "cart.remove", { asin }).catch(() => {});
+      } catch (_) {}
+    }
     set({ cart });
   },
 
@@ -183,9 +246,20 @@ export const useStore = create<StreamSnapState>((set, get) => ({
   },
 
   setSessionToken: (token) => {
-    const { setSessionToken: persistToken, clearSessionToken } = require("../services/storage");
+    const { setSessionToken: persistToken, clearSessionToken, getDeviceId, setDeviceId } = require("../services/storage");
     if (token) {
       persistToken(token);
+      // Register device in background
+      try {
+        const { registerMobileDevice } = require("../services/api");
+        const { Platform } = require("react-native");
+        const platformName = Platform ? Platform.OS : "mobile";
+        getDeviceId().then((existingId: string | null) => {
+          registerMobileDevice(token, platformName, existingId).then((res: any) => {
+            if (res?.deviceId) setDeviceId(res.deviceId);
+          });
+        });
+      } catch (_) {}
     } else {
       clearSessionToken();
     }

@@ -44,7 +44,8 @@ const KEYS = {
   SETTINGS: "ss:settings",
   CART: "ss:cart",
   SESSION_TOKEN: "ss:session_token",
-  INSTALL_ID: "ss:install_id"
+  INSTALL_ID: "ss:install_id",
+  DEVICE_ID: "ss:device_id"
 } as const;
 
 const CATALOG_MAX = 200;
@@ -94,15 +95,25 @@ export async function upsertCatalogItem(
   const catalog = await getCatalog();
   const now = Date.now();
 
-  // Key by ASIN if we have one, otherwise by URL
-  const key = item.asin || item.url;
-  const existing = catalog.find((c) => (c.asin || c.url) === key);
+  // Key by ASIN, URL, or normalized title to prevent duplicates
+  const cleanTitle = item.title?.trim().toLowerCase();
+  const existing = catalog.find(
+    (c) =>
+      (item.asin && c.asin === item.asin) ||
+      (item.url && c.url === item.url) ||
+      (cleanTitle && c.title?.trim().toLowerCase() === cleanTitle)
+  );
+
+  // A re-sighting must not wipe fields it does not carry (e.g. the frame).
+  const incoming = Object.fromEntries(
+    Object.entries(item).filter(([, value]) => value !== undefined)
+  ) as typeof item;
 
   let updated: CatalogItem;
   if (existing) {
     updated = {
       ...existing,
-      ...item,
+      ...incoming,
       seenCount: existing.seenCount + 1,
       lastSeenAt: now
     };
@@ -110,7 +121,7 @@ export async function upsertCatalogItem(
     catalog[idx] = updated;
   } else {
     updated = {
-      ...item,
+      ...incoming,
       id: item.id || `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       seenCount: 1,
       firstSeenAt: now,
@@ -218,4 +229,12 @@ export async function getInstallId(): Promise<string> {
   const id = `mob-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
   await AsyncStorage.setItem(KEYS.INSTALL_ID, id);
   return id;
+}
+
+export async function getDeviceId(): Promise<string | null> {
+  return AsyncStorage.getItem(KEYS.DEVICE_ID);
+}
+
+export async function setDeviceId(id: string): Promise<void> {
+  await AsyncStorage.setItem(KEYS.DEVICE_ID, id);
 }

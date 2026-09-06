@@ -1,0 +1,26 @@
+{
+  "name": "StreamSnap AI",
+  "install": "cd worker && npm install && cd ../mobile && npm install",
+  "terminals": [
+    {
+      "name": "worker",
+      "command": "cd worker && npx wrangler dev --port 8787 --ip 127.0.0.1",
+      "description": "Cloudflare Worker (Lens/vision backend) running locally via Miniflare. Health check: curl http://127.0.0.1:8787/health"
+    },
+    {
+      "name": "landing",
+      "command": "cd landing_page && python3 -m http.server 8080 --bind 127.0.0.1",
+      "description": "Static marketing/demo landing page with the interactive stream simulator, served at http://127.0.0.1:8080"
+    },
+    {
+      "name": "mobile",
+      "command": "cd mobile && npx expo start --port 8081",
+      "description": "Expo / Metro bundler for the React Native mobile app. Bundler at http://127.0.0.1:8081 (open in Expo Go, an iOS/Android simulator, or a native build)."
+    }
+  ],
+  "ports": [
+    { "name": "worker", "port": 8787 },
+    { "name": "landing", "port": 8080 },
+    { "name": "mobile-metro", "port": 8081 }
+  ]
+}

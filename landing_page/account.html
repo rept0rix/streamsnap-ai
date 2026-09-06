@@ -733,6 +733,12 @@
               </a>
             </li>
             <li>
+              <a class="nav-link" data-view="shopper-devices">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                <span>Connected Devices</span>
+              </a>
+            </li>
+            <li>
               <a class="nav-link" data-view="settings">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                 <span>Settings & Engine</span>
@@ -749,6 +755,12 @@
               <a class="nav-link" data-view="creator-overview">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
                 <span>Revenue & Analytics</span>
+              </a>
+            </li>
+            <li>
+              <a class="nav-link" data-view="creator-gear">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <span>Streamer Gear Bag</span>
               </a>
             </li>
             <li>
@@ -1036,6 +1048,66 @@
         </div>
       </section>
 
+      <!-- ==================== 5. CONNECTED DEVICES & SYNC ==================== -->
+      <section id="view-shopper-devices" class="view-pane">
+        <div class="view-header">
+          <div>
+            <h1 class="view-title">Connected Devices &amp; Real-Time Sync</h1>
+            <p class="view-desc">Your active Chrome Extension, Mobile App, and Web sessions are continuously synchronized.</p>
+          </div>
+          <button class="btn-hub-ghost" onclick="loadDevicesList()">Refresh Pings ↻</button>
+        </div>
+
+        <div id="devices-container" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px;">
+          <!-- Loaded by JS -->
+        </div>
+
+        <div class="settings-card">
+          <div class="settings-title">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+            Cross-Platform Instant Data Sync
+          </div>
+          <p class="settings-desc">Whenever you scan an item on YouTube with the Chrome Extension, or snap a stream on your iPhone/Android app, your wishlist, cart, and detections synchronize within milliseconds.</p>
+          <div style="margin-top:14px; display:flex; align-items:center; gap:10px; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--hub-green);">
+            <span class="telemetry-dot"></span>
+            <span>Cloudflare Edge Sync Hub: ACTIVE &amp; PAIRED</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== 6. STREAMER GEAR BAG ==================== -->
+      <section id="view-creator-gear" class="view-pane">
+        <div class="view-header">
+          <div>
+            <h1 class="view-title">Streamer Gear Bag</h1>
+            <p class="view-desc">Curate your verified streaming equipment (mic, camera, lighting, chair, apparel). Viewers scanning your stream will automatically see your gear and buy with your affiliate tag.</p>
+          </div>
+        </div>
+
+        <div class="settings-card" style="margin-bottom:24px;">
+          <div class="settings-title">Add Equipment to Gear Bag</div>
+          <form id="add-gear-form" onsubmit="addStreamerGear(event)" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-top:14px;">
+            <input type="text" id="inp-gear-title" class="hub-input" placeholder="Gear Item Name (e.g. Shure SM7B)" required />
+            <select id="inp-gear-category" class="hub-select">
+              <option value="Microphone">🎙️ Microphone</option>
+              <option value="Camera">📷 Camera &amp; Lens</option>
+              <option value="Headphones">🎧 Headphones</option>
+              <option value="Lighting">💡 Studio Lighting</option>
+              <option value="Chair">🪑 Gaming Chair</option>
+              <option value="Apparel">👕 Streamer Apparel</option>
+              <option value="Setup">⚡ Desk &amp; Setup</option>
+            </select>
+            <input type="text" id="inp-gear-asin" class="hub-input" placeholder="Amazon ASIN (e.g. B0002E4Z8M)" />
+            <input type="number" step="0.01" id="inp-gear-price" class="hub-input" placeholder="Price USD ($)" />
+            <button type="submit" class="btn-hub-primary" style="padding:10px;">Add Gear Item +</button>
+          </form>
+        </div>
+
+        <div id="gear-items-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+          <!-- Loaded by JS -->
+        </div>
+      </section>
+
       <!-- ==================== 7. COMPREHENSIVE SETTINGS ==================== -->
       <section id="view-settings" class="view-pane">
         <div class="view-header">
@@ -1297,6 +1369,9 @@
         p.classList.toggle("active", p.id === `view-${viewId}`);
       });
       history.replaceState(null, "", `#${viewId}`);
+
+      if (viewId === "shopper-devices") loadDevicesList();
+      if (viewId === "creator-gear") loadStreamerGear();
     }
 
     function renderUserProfile() {
@@ -1476,6 +1551,169 @@
           showToast("Failed to delete account", true);
         }
       }
+    }
+
+    async function loadDevicesList() {
+      const workerBase = typeof getWorkerBase === 'function' ? getWorkerBase() : "https://streamsnap-lens.na0ryank0.workers.dev";
+      const container = document.getElementById("devices-container");
+      if (!container) return;
+      container.innerHTML = `<div style="color:var(--hub-text-dim); font-size:13px;">Checking active devices...</div>`;
+
+      try {
+        const r = await authFetch(`${workerBase}/auth/devices`);
+        const data = r.ok ? await r.json() : null;
+        const devices = data?.devices || [];
+
+        if (devices.length === 0) {
+          container.innerHTML = `
+            <div style="grid-column:1/-1; padding:24px; text-align:center; background:var(--hub-card); border-radius:10px; color:var(--hub-text-dim); font-size:13px;">
+              No other active devices found. Open the StreamSnap Chrome Extension or Mobile App to link them automatically!
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = devices.map(d => {
+          let typeLabel = "💻 Web Portal";
+          if (d.device_type === "extension") typeLabel = "🧩 Chrome Extension";
+          if (d.device_type === "mobile") typeLabel = "📱 Mobile App";
+
+          const isOnline = d.is_online === 1 && d.status !== 'revoked';
+          const statusText = d.status === 'revoked'
+            ? `<span style="color:var(--hub-red); font-size:11px;">Revoked</span>`
+            : (isOnline
+              ? `<span style="color:var(--hub-green); font-size:11px; display:inline-flex; align-items:center; gap:5px;"><span class="telemetry-dot"></span> Online</span>`
+              : `<span style="color:var(--hub-text-dim); font-size:11px;">Offline</span>`);
+
+          return `
+            <div class="settings-card" style="margin:0; padding:18px;">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                <div>
+                  <div style="font-weight:700; font-size:14px; color:#FFF;">${escapeHtml(d.device_name || "Device")}</div>
+                  <div style="font-size:11px; color:var(--hub-text-dim);">${typeLabel} • ${escapeHtml(d.platform_os || "")}</div>
+                </div>
+                <div>${statusText}</div>
+              </div>
+              <div style="font-size:11px; color:var(--hub-text-muted); margin-bottom:14px;">
+                <div>IP: <code style="color:var(--hub-gold);">${escapeHtml(d.ip_address || "Unknown")}</code> (${escapeHtml(d.geo_country || "Global")})</div>
+                <div>Last Ping: ${new Date(d.last_active_at).toLocaleString()}</div>
+              </div>
+              ${d.status !== 'revoked' ? `
+                <button class="btn-hub-ghost" style="width:100%; border-color:rgba(255,51,75,0.4); color:var(--hub-red); font-size:12px; padding:6px 10px;" onclick="revokeUserDevice('${d.id}')">
+                  Disconnect Device
+                </button>
+              ` : `
+                <div style="text-align:center; font-size:11px; color:var(--hub-text-dim);">Session Terminated</div>
+              `}
+            </div>
+          `;
+        }).join("");
+      } catch (err) {
+        container.innerHTML = `<div style="color:var(--hub-red); font-size:13px;">Failed to load devices.</div>`;
+      }
+    }
+
+    async function revokeUserDevice(id) {
+      if (!confirm("Disconnect and revoke this device session?")) return;
+      const workerBase = typeof getWorkerBase === 'function' ? getWorkerBase() : "https://streamsnap-lens.na0ryank0.workers.dev";
+      try {
+        const r = await authFetch(`${workerBase}/auth/devices/${id}`, { method: "DELETE" });
+        if (r.ok) {
+          showToast("Device session disconnected.");
+          loadDevicesList();
+        }
+      } catch (_) {
+        showToast("Error disconnecting device", true);
+      }
+    }
+
+    async function loadStreamerGear() {
+      const workerBase = typeof getWorkerBase === 'function' ? getWorkerBase() : "https://streamsnap-lens.na0ryank0.workers.dev";
+      const grid = document.getElementById("gear-items-grid");
+      if (!grid) return;
+      grid.innerHTML = `<div style="color:var(--hub-text-dim); font-size:13px;">Loading streamer gear...</div>`;
+
+      try {
+        const r = await authFetch(`${workerBase}/creator/gear`);
+        const data = r.ok ? await r.json() : null;
+        const gear = data?.gear || [];
+
+        if (gear.length === 0) {
+          grid.innerHTML = `
+            <div style="grid-column:1/-1; padding:24px; text-align:center; background:var(--hub-card); border-radius:10px; color:var(--hub-text-dim); font-size:13px;">
+              No gear added to your showcase yet. Add your microphone, camera, or chair above to start earning commissions!
+            </div>
+          `;
+          return;
+        }
+
+        grid.innerHTML = gear.map(g => `
+          <div class="product-card">
+            <div class="product-thumb-wrap">
+              <span class="product-badge">${escapeHtml(g.category || "Gear")}</span>
+              <img src="${g.image_url || 'assets/branding/promo_small_440x280.svg'}" alt="${escapeHtml(g.title)}" class="product-thumb" onerror="this.src='assets/branding/promo_small_440x280.svg'">
+            </div>
+            <div class="product-body">
+              <h4 class="product-title">${escapeHtml(g.title)}</h4>
+              <div class="product-footer">
+                <div class="product-price">${g.price ? `$${g.price.toFixed(2)}` : (g.asin ? `ASIN: ${g.asin}` : 'Gear')}</div>
+                <button class="btn-action-icon del" onclick="deleteStreamerGear('${g.id}')" title="Remove Gear">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        `).join("");
+      } catch (err) {
+        grid.innerHTML = `<div style="color:var(--hub-red); font-size:13px;">Failed to load gear.</div>`;
+      }
+    }
+
+    async function addStreamerGear(e) {
+      e.preventDefault();
+      const workerBase = typeof getWorkerBase === 'function' ? getWorkerBase() : "https://streamsnap-lens.na0ryank0.workers.dev";
+      const title = document.getElementById("inp-gear-title").value.trim();
+      const category = document.getElementById("inp-gear-category").value;
+      const asin = document.getElementById("inp-gear-asin").value.trim() || null;
+      const priceVal = document.getElementById("inp-gear-price").value.trim();
+      const price = priceVal ? parseFloat(priceVal) : null;
+
+      try {
+        const r = await authFetch(`${workerBase}/creator/gear`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, category, asin, price })
+        });
+        const res = await r.json();
+        if (res.ok) {
+          showToast("Gear item added to showcase!");
+          document.getElementById("add-gear-form").reset();
+          loadStreamerGear();
+        } else {
+          showToast(res.error || "Failed to add gear", true);
+        }
+      } catch (_) {
+        showToast("Network error adding gear", true);
+      }
+    }
+
+    async function deleteStreamerGear(id) {
+      if (!confirm("Remove this item from your gear showcase?")) return;
+      const workerBase = typeof getWorkerBase === 'function' ? getWorkerBase() : "https://streamsnap-lens.na0ryank0.workers.dev";
+      try {
+        const r = await authFetch(`${workerBase}/creator/gear/${id}`, { method: "DELETE" });
+        if (r.ok) {
+          showToast("Gear item removed.");
+          loadStreamerGear();
+        }
+      } catch (_) {
+        showToast("Error deleting gear", true);
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
     }
 
     function showToast(msg, isError = false) {
