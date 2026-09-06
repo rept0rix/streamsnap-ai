@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.7.0] - 2026-09-06 (06:30 IDT)
+
+### Added
+- **Free trial → scan packs → your own key**: Every scan that runs on StreamSnap's Gemini key is now metered server-side (`worker/src/quota.js`). An anonymous install gets **10** lifetime scans, a Google-signed-in account gets **100** lifetime free scans (`FREE_TRIAL_SCANS`), and after that the user either buys a **scan pack** or adds their **own Gemini API key**, which is never counted. Cache hits are never counted.
+- **Paywall in the side panel**: A `402` from the Worker renders a dedicated card with the three ways forward — *Continue with Google*, *Buy a scan pack*, *Use my own Gemini key* — instead of a generic "Scan Failed". The on-video controls open the panel to it, even during silent auto-scans. Every scan response updates the balance shown in Settings (free scans left, purchased scans, own-key note).
+- **Scan packs & Stripe Checkout** (`worker/src/billing.js`): `GET /billing/packages`, `POST /billing/checkout` (Stripe Checkout, one-off packs), signature-verified `POST /billing/webhook`, idempotent `POST /billing/confirm` for the return redirect, `GET /billing/history`. Without `STRIPE_SECRET_KEY`, checkout answers `503 PURCHASES_DISABLED` and packs can be granted by hand via `POST /api/admin/users/:id/credits` (audited). Migration `0003` adds `users.scan_credits` and a `purchases` ledger.
+- **Account page → Scans & Packs**: pack cards with live prices, checkout, post-payment confirmation, purchase history, trial/credits balance. Deep link `account.html#shopper-plans` from the extension.
+- **Mobile**: own-key field in Settings (sent as `X-Gemini-Key`), balance line, and the same three-way paywall dialog on a `402`.
+
+### Changed
+- **One engine for Chrome and mobile**: The extension no longer calls Gemini from the browser. Every scan goes to the Worker's `/resolve` (Gemini 2.5 Flash → Workers AI ladder with Amazon listing verification). A personal key rides along as `X-Gemini-Key`; the Worker then runs on that key only (no fall-back onto StreamSnap's Workers AI or Bright Data budget) and reports `401 BYO_KEY_REJECTED` if Google refuses it.
+- **Server-verified listings are shown as verified**: The 11-item local ASIN whitelist now only guards *model-claimed* ASINs. A listing the Worker verified against Amazon keeps its ASIN, catalog image and "Verified listing" badge and opens the real `/dp/` page; it can also go into the remote cart.
+- The Worker code that has been running in production (Gemini/Llama vision ladder, Amazon lookup, per-product crops) is now in `master` (ported from `cursor/fix-live-scan-matching-8672`).
+
+### Fixed
+- **Product cards showed the full frame twice (Chrome, server path)**: the client dropped `box_2d`/`sourceCrop`/`verified`/catalog image from Worker products, then overwrote the catalog thumbnail with the full frame. All fields are now kept; the live crop and the catalog photo are distinct again.
+- **Unverified items appeared twice**: `products` (the union) was read as exact matches *and* `others` as look-alikes. Now `amazon` → exact, `others` → look-alikes.
+- **Anyone could upgrade themselves to Pro for free** via `POST /billing/upgrade`. Removed (`410`).
+
+---
+
 ## [1.6.1] - 2026-09-01 (13:15 IDT)
 
 ### Fixed

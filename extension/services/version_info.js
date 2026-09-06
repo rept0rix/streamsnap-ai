@@ -4,20 +4,33 @@
  */
 
 export const CURRENT_BUILD = {
-  version: "1.6.2",
-  buildDate: "2026-09-01",
-  buildTime: "19:40",
-  buildTimestamp: "2026-09-01 19:40:00 IDT",
-  title: "Setup Reordering & Guest Auth Gates for History/Cart",
+  version: "1.7.0",
+  buildDate: "2026-09-06",
+  buildTime: "06:30",
+  buildTimestamp: "2026-09-06 06:30:00 IDT",
+  title: "Free Trial, Scan Packs & Your Own Key",
   highlights: [
-    "🔒 Auth Gate for History & Cart: History, Cart, and Stats now require Google sign-in to prevent unauthorized access to local device traces.",
-    "⚙️ Setup Tab Reorganization: Placed Google Sign-in / Account & Quota as the primary #1 top card.",
-    "🔢 Clean Badge Counts: History & Cart badge counters show 0 when signed out instead of leaking stale counts."
+    "🎁 100 free scans after Google sign-in (10 before), then buy a scan pack — the panel shows exactly what is left.",
+    "🔑 Your own Gemini key = unlimited scans on the same StreamSnap engine, never counted.",
+    "🧠 One engine for Chrome and mobile: every scan runs on the StreamSnap server with Amazon verification; verified listings now open the real product page.",
+    "🖼️ Product cards show the real crop and the real catalog photo (no more full frame twice)."
   ]
 };
 
 export const VERSION_HISTORY = [
   CURRENT_BUILD,
+  {
+    version: "1.6.2",
+    buildDate: "2026-09-01",
+    buildTime: "19:40",
+    buildTimestamp: "2026-09-01 19:40:00 IDT",
+    title: "Setup Reordering & Guest Auth Gates for History/Cart",
+    highlights: [
+      "🔒 Auth Gate for History & Cart: History, Cart, and Stats now require Google sign-in to prevent unauthorized access to local device traces.",
+      "⚙️ Setup Tab Reorganization: Placed Google Sign-in / Account & Quota as the primary #1 top card.",
+      "🔢 Clean Badge Counts: History & Cart badge counters show 0 when signed out instead of leaking stale counts."
+    ]
+  },
   {
     version: "1.6.0",
     buildDate: "2026-09-01",

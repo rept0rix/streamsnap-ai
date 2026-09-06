@@ -44,7 +44,7 @@ const LIMITS = {
  * not require a code deploy.
  */
 const FALLBACK_MIN_EXTENSION_VERSION = "1.6.0";
-const LATEST_EXTENSION_VERSION = "1.6.0";
+const LATEST_EXTENSION_VERSION = "1.7.0";
 
 export function minExtensionVersion(env) {
   const raw = String(env?.MIN_EXTENSION_VERSION || "").trim();
