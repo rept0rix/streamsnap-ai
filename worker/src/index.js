@@ -18,8 +18,12 @@
  */
 
 import { parseLensResponse, collectRawShape } from "./parser.js";
+import { detectProducts } from "./vision.js";
+import { lookupAmazonProduct, scoreTitleMatch } from "./amazon_lookup.js";
+import { cropJpegByBox, cropToDataUrl } from "./crop.js";
 import { handleAuthRoute } from "./routes_auth.js";
 import { handleAdminRoute } from "./routes_admin.js";
+import { handleSyncRoute } from "./routes_sync.js";
 import { getCurrentUser } from "./auth.js";
 
 const LIMITS = {
@@ -38,7 +42,7 @@ const LIMITS = {
  * not require a code deploy.
  */
 const FALLBACK_MIN_EXTENSION_VERSION = "1.6.0";
-const LATEST_EXTENSION_VERSION = "1.6.1";
+const LATEST_EXTENSION_VERSION = "1.6.0";
 
 export function minExtensionVersion(env) {
   const raw = String(env?.MIN_EXTENSION_VERSION || "").trim();
@@ -85,6 +89,15 @@ export default {
           admin: "/api/admin/stats"
         }
       }, 200, request, env);
+    }
+
+    if (
+      url.pathname.startsWith("/sync/") ||
+      url.pathname.startsWith("/auth/device") ||
+      url.pathname.startsWith("/creator/gear")
+    ) {
+      const response = await handleSyncRoute(request, env, url, json);
+      if (response) return response;
     }
 
     if (
@@ -136,7 +149,7 @@ function corsHeaders(request, env) {
 
   const base = {
     "Access-Control-Allow-Methods": "POST, GET, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Gemini-Key",
     "Access-Control-Max-Age": "86400",
     Vary: "Origin"
   };
@@ -297,14 +310,265 @@ async function callLens(imageUrl, env) {
   }
 }
 
+function stripSourceCrops(result) {
+  const clean = (list) =>
+    (list || []).map(({ sourceCrop, ...rest }) => rest);
+  const amazon = clean(result.amazon);
+  const others = clean(result.others);
+  return {
+    ...result,
+    amazon,
+    others,
+    products: [...amazon, ...others]
+  };
+}
+
+function reattachSourceCrops(bytes, result) {
+  const attach = (list) =>
+    (list || []).map((p) => ({
+      ...p,
+      sourceCrop: Array.isArray(p.box_2d) ? cropToDataUrl(bytes, p.box_2d) : p.sourceCrop || null
+    }));
+  const amazon = attach(result.amazon);
+  const others = attach(result.others);
+  return {
+    ...result,
+    amazon,
+    others,
+    products: [...amazon, ...others],
+    count: amazon.length + others.length
+  };
+}
+
+const CURRENCY_SYMBOLS = { USD: "$", EUR: "€", GBP: "£", ILS: "₪" };
+
+/**
+ * Lens products carry a numeric price and an `image` field. Clients (mobile,
+ * extension) read `imageUrl` / `thumbnail` and a display-ready `price` string,
+ * so publish both shapes.
+ */
+function normalizeLensProduct(p) {
+  const symbol = CURRENCY_SYMBOLS[p.currency] || (p.currency ? `${p.currency} ` : "$");
+  return {
+    ...p,
+    imageUrl: p.image || null,
+    thumbnail: p.image || null,
+    priceValue: typeof p.price === "number" ? p.price : null,
+    price: typeof p.price === "number" ? `${symbol}${p.price.toFixed(2)}` : null,
+    priceEstimated: false
+  };
+}
+
+/**
+ * Workers AI path: name + locate products in the frame, then resolve each
+ * detection to a real Amazon listing (ASIN, catalog image, live price). Items
+ * whose listing title genuinely overlaps the detection go to `amazon`
+ * (verified); the rest stay in `others` with a plain search link and no image,
+ * so the client never shows a random picture as the "match".
+ */
+async function resolveWithVision(bytes, env, options = {}) {
+  const { videoTitle, detections, model, rawText } = await detectProducts(env, bytes, options);
+
+  let videoUrl = "https://www.tiktok.com";
+  const creatorMatch = videoTitle.match(/@([a-zA-Z0-9._]+)/);
+  if (creatorMatch) {
+    videoUrl = `https://www.tiktok.com/@${creatorMatch[1]}`;
+  } else if (videoTitle) {
+    videoUrl = `https://www.tiktok.com/search?q=${encodeURIComponent(videoTitle)}`;
+  }
+
+  const lookups = await Promise.all(
+    detections.map((d) => {
+      const brandMissing = d.brand && !d.title.toLowerCase().includes(d.brand.toLowerCase());
+      return lookupAmazonProduct(brandMissing ? `${d.brand} ${d.title}` : d.title, env);
+    })
+  );
+
+  const amazon = [];
+  const others = [];
+  const seenAsins = new Set();
+
+  detections.forEach((d, i) => {
+    const match = lookups[i];
+    if (match?.asin && seenAsins.has(match.asin)) return;
+
+    const estimated = d.estimatedPrice != null ? `$${d.estimatedPrice.toFixed(2)}` : null;
+    // Per-product crop so the mobile card can show the object itself, not the
+    // full stream chrome. Failure is fine — the client falls back to the frame.
+    const sourceCrop = d.box_2d ? cropToDataUrl(bytes, d.box_2d) : null;
+    const base = {
+      title: d.title,
+      brand: d.brand,
+      confidence: d.confidence,
+      matchReason: d.matchReason || `Spotted ${d.title} in the video`,
+      box_2d: d.box_2d,
+      sourceCrop,
+      source: "TikTok / Video",
+      videoTitle: videoTitle || "TikTok Video",
+      videoUrl
+    };
+
+    if (match?.asin) {
+      seenAsins.add(match.asin);
+      amazon.push({
+        ...base,
+        asin: match.asin,
+        url: match.url,
+        matchedTitle: match.title,
+        matchScore: match.matchScore,
+        image: match.imageUrl,
+        imageUrl: match.imageUrl,
+        thumbnail: match.imageUrl,
+        price: match.price || estimated,
+        priceValue: match.priceValue ?? d.estimatedPrice,
+        priceEstimated: !match.price,
+        isAmazon: true,
+        verified: true
+      });
+    } else {
+      others.push({
+        ...base,
+        asin: null,
+        url: `https://www.amazon.com/s?k=${encodeURIComponent(d.title)}`,
+        matchedTitle: null,
+        matchScore: 0,
+        image: null,
+        imageUrl: null,
+        thumbnail: null,
+        price: estimated,
+        priceValue: d.estimatedPrice,
+        priceEstimated: estimated != null,
+        isAmazon: false,
+        verified: false
+      });
+    }
+  });
+
+  return { amazon, others, detections, model, rawText };
+}
+
+/**
+ * When Bright Data is configured, run Lens on each product crop (not the full
+ * TikTok frame). A Lens Amazon hit that overlaps the detection title upgrades
+ * an unverified "Best Guess" — or replaces a weaker text match. Caps at
+ * MAX_LENS_CROPS to protect the free 5K/month quota.
+ */
+const MAX_LENS_CROPS = 2;
+
+async function enrichWithLensCrops(bytes, amazon, others, env, ctx) {
+  if (!env.IMAGES || !env.PUBLIC_BASE_URL) return { amazon, others, lensUsed: 0 };
+
+  const pool = [...amazon, ...others]
+    .filter((p) => Array.isArray(p.box_2d) && p.box_2d.length === 4)
+    // Prefer unverified detections — those benefit most from visual search.
+    .sort((a, b) => Number(Boolean(a.verified)) - Number(Boolean(b.verified)))
+    .slice(0, MAX_LENS_CROPS);
+
+  if (!pool.length) return { amazon, others, lensUsed: 0 };
+
+  let lensUsed = 0;
+  const seenAsins = new Set(amazon.map((p) => p.asin).filter(Boolean));
+  const upgraded = new Map(); // title key → Lens product
+
+  for (const product of pool) {
+    const cropBytes = cropJpegByBox(bytes, product.box_2d);
+    if (!cropBytes) continue;
+
+    const cropHash = await sha256Hex(cropBytes);
+    try {
+      await env.IMAGES.put(cropHash, cropBytes, {
+        httpMetadata: { contentType: "image/jpeg" }
+      });
+      const lensUrl = `${env.PUBLIC_BASE_URL.replace(/\/$/, "")}/img/${cropHash}`;
+
+      let payload;
+      try {
+        payload = await callLens(lensUrl, env);
+        lensUsed += 1;
+      } catch (err) {
+        console.log("[resolve] lens crop failed:", err?.message || err);
+        ctx.waitUntil(env.IMAGES.delete(cropHash));
+        continue;
+      }
+      ctx.waitUntil(env.IMAGES.delete(cropHash));
+
+      const lens = parseLensResponse(payload);
+      const best = (lens.amazon || [])
+        .map((item) => ({ item, score: scoreTitleMatch(product.title, item.title || "") }))
+        .filter((x) => x.score >= 0.5 && x.item?.asin)
+        .sort((a, b) => b.score - a.score)[0];
+
+      if (!best) continue;
+      if (seenAsins.has(best.item.asin) && product.asin !== best.item.asin) continue;
+
+      upgraded.set(product.title, {
+        ...product,
+        ...normalizeLensProduct(best.item),
+        title: product.title,
+        brand: product.brand,
+        confidence: product.confidence,
+        matchReason: product.matchReason,
+        box_2d: product.box_2d,
+        sourceCrop: product.sourceCrop,
+        matchedTitle: best.item.title,
+        matchScore: Math.round(best.score * 100),
+        videoTitle: product.videoTitle,
+        videoUrl: product.videoUrl,
+        source: product.source,
+        verified: true,
+        isAmazon: true,
+        priceEstimated: false
+      });
+      seenAsins.add(best.item.asin);
+    } catch (err) {
+      console.log("[resolve] lens crop error:", err?.message || err);
+    }
+  }
+
+  if (!upgraded.size) return { amazon, others, lensUsed };
+
+  const nextAmazon = [];
+  const nextOthers = [];
+  const consume = (list, bucket) => {
+    for (const p of list) {
+      const hit = upgraded.get(p.title);
+      if (hit) {
+        nextAmazon.push(hit);
+        upgraded.delete(p.title);
+      } else {
+        bucket.push(p);
+      }
+    }
+  };
+  consume(amazon, nextAmazon);
+  consume(others, nextOthers);
+  // Anything still in upgraded was only in others and got promoted.
+  for (const hit of upgraded.values()) nextAmazon.push(hit);
+
+  return { amazon: nextAmazon, others: nextOthers, lensUsed };
+}
+
+
 // ---------------------------------------------------------------------------
 // /resolve
 // ---------------------------------------------------------------------------
 
 async function handleResolve(request, env, ctx) {
-  if (!env.BRIGHTDATA_API_KEY || !env.BRIGHTDATA_ZONE) {
-    return json({ ok: false, error: "Worker is not configured." }, 500, request, env);
-  }
+  try {
+    const hasLens = Boolean(env.BRIGHTDATA_API_KEY && env.BRIGHTDATA_ZONE);
+    const hasVision = Boolean(env.AI) || Boolean(String(env.GEMINI_API_KEY || "").trim());
+    if (!hasLens && !hasVision) {
+      return json(
+        {
+          ok: false,
+          error:
+            "Worker is not configured. Set GEMINI_API_KEY (or enable Workers AI), and optionally BRIGHTDATA_API_KEY + BRIGHTDATA_ZONE for Lens verification."
+        },
+        503,
+        request,
+        env
+      );
+    }
 
   let body;
   try {
@@ -327,11 +591,11 @@ async function handleResolve(request, env, ctx) {
 
   const hash = await sha256Hex(bytes);
 
-  // Cache first — a repeated crop costs nothing and returns instantly.
+  // Cache first — only use cache if products were found
   if (env.CACHE) {
-    const cached = await env.CACHE.get(`lens:${hash}`, "json");
-    if (cached) {
-      return json({ ok: true, cached: true, ...cached }, 200, request, env);
+    const cached = await env.CACHE.get(`resolve:v3:${hash}`, "json");
+    if (cached && Array.isArray(cached.products) && cached.products.length > 0) {
+      return json({ ok: true, cached: true, ...reattachSourceCrops(bytes, cached) }, 200, request, env);
     }
   }
 
@@ -340,34 +604,96 @@ async function handleResolve(request, env, ctx) {
     return json({ ok: false, error: limit.error }, 429, request, env);
   }
 
-  if (!env.IMAGES) {
-    return json({ ok: false, error: "Image storage is not configured." }, 500, request, env);
+  let amazon = [];
+  let others = [];
+  let engine = "lens";
+  let rawVisionText = null;
+  let visionModel = null;
+  let lensCrops = 0;
+
+  // Prefer vision (Gemini) first when available — it names + locates products in
+  // a busy live-stream frame. Lens on the full frame alone is noisy (UI chrome,
+  // face, logos). When Bright Data is also set we Lens the per-product crops.
+  if (hasVision) {
+    try {
+      const geminiKey = (request.headers.get("X-Gemini-Key") || "").trim() || undefined;
+      const res = await resolveWithVision(bytes, env, { geminiKey });
+      amazon = res.amazon;
+      others = res.others;
+      rawVisionText = res.rawText;
+      visionModel = res.model;
+      engine = String(visionModel || "").startsWith("gemini") ? "gemini" : "workers-ai";
+
+      if (hasLens && (amazon.length || others.length)) {
+        const enriched = await enrichWithLensCrops(bytes, amazon, others, env, ctx);
+        amazon = enriched.amazon;
+        others = enriched.others;
+        lensCrops = enriched.lensUsed;
+        if (lensCrops > 0) engine = `${engine}+lens`;
+      }
+    } catch (err) {
+      console.log("[resolve] vision error on frame:", err.message);
+      // Fall through to full-frame Lens if we have it; otherwise empty.
+      if (!hasLens) {
+        amazon = [];
+        others = [];
+        engine = "none";
+        rawVisionText = err.message;
+      } else {
+        engine = "lens";
+      }
+    }
   }
 
-  // Lens fetches the image over HTTP, so it needs a public URL briefly.
-  await env.IMAGES.put(hash, bytes, {
-    httpMetadata: { contentType: "image/jpeg" }
-  });
-  const publicUrl = `${env.PUBLIC_BASE_URL.replace(/\/$/, "")}/img/${hash}`;
+  if ((!amazon.length && !others.length && hasLens && engine !== "none") || (!hasVision && hasLens)) {
+    if (!env.IMAGES) {
+      return json({ ok: false, error: "Image storage is not configured." }, 500, request, env);
+    }
 
-  let payload;
-  try {
-    payload = await callLens(publicUrl, env);
-  } catch (err) {
+    await env.IMAGES.put(hash, bytes, {
+      httpMetadata: { contentType: "image/jpeg" }
+    });
+    const publicUrl = `${env.PUBLIC_BASE_URL.replace(/\/$/, "")}/img/${hash}`;
+
+    let payload;
+    try {
+      payload = await callLens(publicUrl, env);
+    } catch (err) {
+      ctx.waitUntil(env.IMAGES.delete(hash));
+      // If vision already produced results we keep them; only fail hard when
+      // Lens was the sole engine.
+      if (!amazon.length && !others.length) {
+        const message = err.name === "AbortError" ? "Lens request timed out." : err.message;
+        return json({ ok: false, error: message }, 502, request, env);
+      }
+      payload = null;
+    }
+
     ctx.waitUntil(env.IMAGES.delete(hash));
-    const message = err.name === "AbortError" ? "Lens request timed out." : err.message;
-    return json({ ok: false, error: message }, 502, request, env);
+    if (payload) {
+      const lens = parseLensResponse(payload);
+      amazon = lens.amazon.map(normalizeLensProduct);
+      others = lens.others.map(normalizeLensProduct);
+      engine = "lens";
+    }
   }
 
-  // The crop has served its purpose; do not retain user imagery.
-  ctx.waitUntil(env.IMAGES.delete(hash));
+  const allProducts = [...amazon, ...others];
+  const result = {
+    products: allProducts,
+    amazon,
+    others,
+    count: allProducts.length,
+    engine,
+    visionModel,
+    lensCrops,
+    rawVisionText
+  };
 
-  const { amazon, others } = parseLensResponse(payload);
-  const result = { products: amazon, others, count: amazon.length };
-
-  if (env.CACHE) {
+  if (env.CACHE && allProducts.length > 0) {
+    // Persist without bulky sourceCrop data URLs; reattach from box_2d on hit.
     ctx.waitUntil(
-      env.CACHE.put(`lens:${hash}`, JSON.stringify(result), {
+      env.CACHE.put(`resolve:v3:${hash}`, JSON.stringify(stripSourceCrops(result)), {
         expirationTtl: LIMITS.CACHE_TTL_SECONDS
       })
     );
@@ -375,9 +701,9 @@ async function handleResolve(request, env, ctx) {
 
   // Auto-sync products into user's cloud wishlist if authenticated
   const user = await getCurrentUser(env, request).catch(() => null);
-  if (user && amazon.length > 0 && env.DB) {
+  if (user && allProducts.length > 0 && env.DB) {
     ctx.waitUntil((async () => {
-      for (const p of amazon.slice(0, 5)) {
+      for (const p of allProducts.slice(0, 5)) {
         const id = `prod_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
         await env.DB.prepare(`
           INSERT INTO saved_products (id, user_id, asin, title, price, image_url, product_url, category, source, verified, sighting_count, last_seen_at)
@@ -392,12 +718,12 @@ async function handleResolve(request, env, ctx) {
           user.id,
           p.asin || null,
           p.title || "Detected Product",
-          typeof p.price === "number" ? p.price : null,
-          p.thumbnail || null,
+          typeof p.priceValue === "number" ? p.priceValue : typeof p.price === "number" ? p.price : null,
+          p.imageUrl || p.image || p.thumbnail || null,
           p.url || null,
           p.category || "General",
           "amazon",
-          1
+          p.verified ? 1 : 0
         ).run().catch(() => {});
       }
     })());
@@ -406,10 +732,14 @@ async function handleResolve(request, env, ctx) {
   // Until the upstream schema is confirmed against live traffic, log the shape
   // (not the content) of any response we failed to parse.
   if (amazon.length === 0 && others.length === 0) {
-    console.log("[lens] unparsed response shape:", JSON.stringify(collectRawShape(payload)));
+    console.log("[resolve] no products via", engine);
   }
 
   return json({ ok: true, cached: false, ...result }, 200, request, env);
+  } catch (err) {
+    console.error("[resolve fatal error]", err);
+    return json({ ok: false, error: err.message || "Internal server error" }, 500, request, env);
+  }
 }
 
 // ---------------------------------------------------------------------------
