@@ -394,8 +394,13 @@ export function getAmazonSearchUrl(query, affiliateTag = DEFAULT_AFFILIATE_TAG) 
 }
 
 /** Direct product URL for a verified ASIN, otherwise a search URL. */
+/**
+ * Deep link for a *resolved* item. resolveDetection() nulls every ASIN it could
+ * not verify (locally or via the Worker), so any well-formed ASIN that reaches
+ * here is a real listing. Unresolved model output must never be passed in raw.
+ */
 export function getAmazonProductUrl(asin, title = "", affiliateTag = DEFAULT_AFFILIATE_TAG) {
-  if (isVerifiedAsin(asin)) {
+  if (isValidAsin(asin)) {
     return `https://www.amazon.com/dp/${asin}?tag=${encodeURIComponent(normalizeTag(affiliateTag))}`;
   }
   return getAmazonSearchUrl(title || asin, affiliateTag);
@@ -412,7 +417,7 @@ export function getAmazonCartUrl(items, affiliateTag = DEFAULT_AFFILIATE_TAG) {
 
   let index = 0;
   for (const item of list) {
-    if (!item || !isVerifiedAsin(item.asin)) continue;
+    if (!item || !isValidAsin(item.asin) || !(item.verified || isVerifiedAsin(item.asin))) continue;
     index += 1;
     params.set(`ASIN.${index}`, item.asin);
     params.set(`Quantity.${index}`, String(Math.max(1, parseInt(item.quantity, 10) || 1)));
