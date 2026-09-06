@@ -54,7 +54,28 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === "OPTIONS") return preflight(request, env);
-    if (url.pathname === "/health") return json({ ok: true }, 200, request, env);
+    if (url.pathname === "/health") {
+      const hasGemini = Boolean(String(env.GEMINI_API_KEY || "").trim());
+      const hasLens = Boolean(env.BRIGHTDATA_API_KEY && env.BRIGHTDATA_ZONE);
+      const hasWorkersAi = Boolean(env.AI);
+      return json(
+        {
+          ok: true,
+          service: "streamsnap-lens",
+          vision: {
+            gemini: hasGemini,
+            workersAi: hasWorkersAi,
+            primary: hasGemini ? "gemini-2.5-flash" : hasWorkersAi ? "workers-ai" : "none"
+          },
+          lens: hasLens,
+          // Pause-to-scan lives in the iOS Broadcast Extension, not on this Worker.
+          note: "Frame recognition runs here. Pause-to-scan is a mobile trigger that POSTs /resolve."
+        },
+        200,
+        request,
+        env
+      );
+    }
 
     // Version gate feed. The extension polls this on open and hard-blocks itself
     // when its installed version is older than minVersion. Kept public and
@@ -74,21 +95,34 @@ export default {
     }
 
     if (url.pathname === "/") {
-      return json({
-        name: "StreamSnap AI — Lens Resolution Worker & Platform API",
-        status: "Operational",
-        version: LATEST_EXTENSION_VERSION,
-        minVersion: minExtensionVersion(env),
-        website: "https://streamsnap.online",
-        endpoints: {
-          health: "/health",
-          version: "/version",
-          auth: "/auth/start",
-          me: "/auth/me",
-          resolve: "POST /resolve",
-          admin: "/api/admin/stats"
-        }
-      }, 200, request, env);
+      const hasGemini = Boolean(String(env.GEMINI_API_KEY || "").trim());
+      const hasLens = Boolean(env.BRIGHTDATA_API_KEY && env.BRIGHTDATA_ZONE);
+      return json(
+        {
+          name: "StreamSnap AI — Lens Resolution Worker & Platform API",
+          status: "Operational",
+          version: LATEST_EXTENSION_VERSION,
+          minVersion: minExtensionVersion(env),
+          website: "https://streamsnap.online",
+          recognition: {
+            gemini: hasGemini,
+            lens: hasLens,
+            workersAi: Boolean(env.AI),
+            activeEngine: hasGemini ? "gemini" : hasLens ? "lens" : env.AI ? "workers-ai" : "none"
+          },
+          endpoints: {
+            health: "/health",
+            version: "/version",
+            auth: "/auth/start",
+            me: "/auth/me",
+            resolve: "POST /resolve",
+            admin: "/api/admin/stats"
+          }
+        },
+        200,
+        request,
+        env
+      );
     }
 
     if (
