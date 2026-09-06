@@ -615,6 +615,38 @@
       font-weight: 400;
     }
 
+    .pricing-box .pack-credits {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--hub-text-muted);
+      margin: -10px 0 14px;
+    }
+    .pricing-box .pack-per-scan {
+      font-size: 11px;
+      color: var(--hub-text-dim);
+      margin-bottom: 18px;
+    }
+    .pricing-box .pack-badge {
+      position: absolute; top: 12px; right: 12px;
+      background: var(--hub-gold); color: #000;
+      font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 800;
+      padding: 2px 8px; border-radius: 4px;
+    }
+    .hub-inline-notice {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #A7F3D0;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+    .hub-inline-notice.warn {
+      background: rgba(245, 158, 11, 0.12);
+      border-color: rgba(245, 158, 11, 0.4);
+      color: #FDE68A;
+    }
+
     /* Toast */
     .toast-tray {
       position: fixed;
@@ -804,14 +836,14 @@
         <div class="kpi-grid">
           <div class="kpi-card">
             <div class="kpi-label">
-              <span>Monthly Scans</span>
+              <span id="kpi-quota-label">Free Scans Used</span>
               <span id="kpi-quota-pct" style="color:var(--hub-gold);">0%</span>
             </div>
             <div class="kpi-value" id="kpi-quota-val">0 / 100</div>
             <div class="hub-progress-track">
               <div class="hub-progress-fill" id="kpi-quota-bar" style="width: 0%;"></div>
             </div>
-            <div class="kpi-sub" style="margin-top:8px;">Resets at the 1st of next month</div>
+            <div class="kpi-sub" id="kpi-quota-sub" style="margin-top:8px;">Lifetime trial · <a href="#" onclick="switchView('shopper-plans'); return false;" style="color:var(--hub-gold); text-decoration:none;">Buy more ↗</a></div>
           </div>
 
           <div class="kpi-card">
@@ -834,11 +866,11 @@
 
           <div class="kpi-card">
             <div class="kpi-label">
-              <span>Current Tier</span>
+              <span>Purchased Scans</span>
               <span id="kpi-plan-tag" style="color:var(--hub-gold);">FREE</span>
             </div>
-            <div class="kpi-value" id="kpi-plan-name" style="font-size:20px;">Starter</div>
-            <div class="kpi-sub"><a href="#" onclick="switchView('shopper-plans')" style="color:var(--hub-gold); text-decoration:none;">Manage Plan ↗</a></div>
+            <div class="kpi-value" id="kpi-credits-val" style="font-size:20px;">0</div>
+            <div class="kpi-sub"><a href="#" onclick="switchView('shopper-plans'); return false;" style="color:var(--hub-gold); text-decoration:none;">Scans &amp; Packs ↗</a></div>
           </div>
         </div>
 
@@ -879,40 +911,43 @@
       <section id="view-shopper-plans" class="view-pane">
         <div class="view-header">
           <div>
-            <h1 class="view-title">Subscription & Usage Plans</h1>
-            <p class="view-desc">Choose the right scanning tier for your optical shopping needs.</p>
+            <h1 class="view-title">Scans &amp; Packs</h1>
+            <p class="view-desc">Every account starts with <span class="trial-size">100</span> free scans. When they run out, buy a pack — or add your own Gemini key in the extension for unlimited scans.</p>
           </div>
         </div>
 
-        <div class="pricing-table-grid">
-          <!-- Free Tier -->
-          <div class="pricing-box" id="tier-card-free">
-            <h3>Free Starter</h3>
-            <div class="price">$0 <span>/ month</span></div>
-            <p style="font-size:13px; color:var(--hub-text-muted); margin-bottom:20px;">Ideal for casual stream viewers.</p>
-            <ul style="list-style:none; display:flex; flex-direction:column; gap:10px; margin-bottom:24px; font-size:13px; color:#CBD5E1; flex:1;">
-              <li>✓ 100 AI Visual Scans / Month</li>
-              <li>✓ YouTube, Twitch, TikTok, Kick HUD</li>
-              <li>✓ 1-Click Amazon Cart Integration</li>
-              <li>✓ Cloud Wishlist Sync</li>
-            </ul>
-            <button class="btn-hub-ghost" id="btn-tier-free" onclick="updatePlan('free')">CURRENT PLAN</button>
+        <div class="kpi-grid" style="margin-bottom:24px;">
+          <div class="kpi-card">
+            <div class="kpi-label"><span>Free trial</span><span id="plans-trial-pct" style="color:var(--hub-gold);">0%</span></div>
+            <div class="kpi-value" id="plans-trial-val">0 / 100</div>
+            <div class="hub-progress-track"><div class="hub-progress-fill" id="plans-trial-bar" style="width:0%;"></div></div>
+            <div class="kpi-sub" id="plans-trial-sub" style="margin-top:8px;">Lifetime — never resets</div>
           </div>
+          <div class="kpi-card">
+            <div class="kpi-label"><span>Purchased scans</span><span style="color:var(--hub-green);">NEVER EXPIRE</span></div>
+            <div class="kpi-value" id="plans-credits-val">0</div>
+            <div class="kpi-sub">Spent one per scan once the trial is gone</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label"><span>Own Gemini key</span><span style="color:var(--hub-cyan);">UNLIMITED</span></div>
+            <div class="kpi-value" style="font-size:16px; line-height:1.4;">Not counted</div>
+            <div class="kpi-sub">Extension → Settings → <em>Use your own Gemini key</em>. Same engine, your Google account pays Google directly.</div>
+          </div>
+        </div>
 
-          <!-- Pro Tier -->
-          <div class="pricing-box active-tier" id="tier-card-pro">
-            <div style="position:absolute; top:12px; right:12px; background:var(--hub-gold); color:#000; font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:800; padding:2px 8px; border-radius:4px;">POPULAR</div>
-            <h3>Pro Shopper</h3>
-            <div class="price">$9 <span>/ month</span></div>
-            <p style="font-size:13px; color:var(--hub-text-muted); margin-bottom:20px;">For frequent live shopping enthusiasts.</p>
-            <ul style="list-style:none; display:flex; flex-direction:column; gap:10px; margin-bottom:24px; font-size:13px; color:#CBD5E1; flex:1;">
-              <li>✓ <strong>Unlimited AI Visual Scans</strong></li>
-              <li>✓ Priority Low-Latency Recognition</li>
-              <li>✓ Automated Price Drop Alerts</li>
-              <li>✓ Gemini 2.0 Flash Vision Pipeline</li>
-            </ul>
-            <button class="btn-hub-primary" id="btn-tier-pro" onclick="updatePlan('pro')" style="justify-content:center;">UPGRADE TO PRO</button>
-          </div>
+        <div id="purchase-notice" class="hub-inline-notice" style="display:none;"></div>
+
+        <div class="pricing-table-grid" id="packages-grid">
+          <div class="pricing-box"><h3>Loading packs…</h3></div>
+        </div>
+
+        <p class="kpi-sub" style="margin-top:18px;">
+          Payments are handled by Stripe. Your card never touches our servers. Scans are added to your account within seconds of checkout.
+        </p>
+
+        <div style="margin-top:28px;">
+          <h3 style="font-size:14px; font-weight:700; margin-bottom:10px;">Purchase history</h3>
+          <div id="purchase-history" class="kpi-sub">No purchases yet.</div>
         </div>
       </section>
 
@@ -1264,6 +1299,12 @@
           renderUserProfile();
           loadProducts();
           loadCreatorStats();
+
+          // Deep links from the extension's paywall land on #shopper-plans.
+          const requested = (window.location.hash || "").replace(/^#/, "").split("&")[0];
+          if (requested && document.getElementById(`view-${requested}`)) switchView(requested);
+
+          loadPackages().then(() => { loadPurchaseHistory(); confirmPurchaseFromUrl(); });
         } else {
           authWall.style.display = "flex";
           mainApp.style.display = "none";
@@ -1309,25 +1350,168 @@
       
       document.getElementById("set-email").textContent = currentUser.email || "";
 
-      // Quotas
-      if (currentQuota) {
-        const used = currentQuota.used || 0;
-        const limit = currentQuota.limit || 100;
-        const pct = Math.min(100, Math.round((used / limit) * 100));
+      renderQuota();
+    }
 
-        document.getElementById("kpi-quota-val").textContent = `${used} / ${limit}`;
-        document.getElementById("kpi-quota-pct").textContent = `${pct}%`;
-        document.getElementById("kpi-quota-bar").style.width = `${pct}%`;
+    // Quota from /auth/me and /billing/*: { plan, period, used, limit, remaining, credits, available, exhausted }
+    function renderQuota() {
+      const q = currentQuota || {};
+      const used = q.used || 0;
+      const limit = q.limit || 100;
+      const credits = q.credits || 0;
+      const lifetime = (q.period || "lifetime") === "lifetime";
+      const pct = Math.min(100, Math.round((used / limit) * 100));
+      const plan = (q.plan || currentUser?.plan || "free").toUpperCase();
+
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      set("kpi-quota-label", lifetime ? "Free Scans Used" : "Scans This Month");
+      set("kpi-quota-val", `${used} / ${limit}`);
+      set("kpi-quota-pct", `${pct}%`);
+      document.getElementById("kpi-quota-bar").style.width = `${pct}%`;
+      set("kpi-plan-tag", plan);
+      set("kpi-credits-val", credits.toLocaleString());
+
+      set("plans-trial-val", `${used} / ${limit}`);
+      set("plans-trial-pct", `${pct}%`);
+      document.getElementById("plans-trial-bar").style.width = `${pct}%`;
+      set("plans-trial-sub", lifetime ? "Lifetime — never resets" : "Monthly allowance");
+      set("plans-credits-val", credits.toLocaleString());
+      document.querySelectorAll(".trial-size").forEach((el) => { if (lifetime) el.textContent = limit; });
+
+      if (q.exhausted) {
+        showNotice("You're out of scans. Pick a pack below, or add your own Gemini key in the extension for unlimited scans.", true);
       }
+    }
 
-      const plan = currentUser.plan || "free";
-      document.getElementById("kpi-plan-tag").textContent = plan.toUpperCase();
-      document.getElementById("kpi-plan-name").textContent = plan === "pro" ? "Pro Shopper" : "Starter";
+    function showNotice(msg, warn = false) {
+      const box = document.getElementById("purchase-notice");
+      if (!box) return;
+      box.textContent = msg;
+      box.className = "hub-inline-notice" + (warn ? " warn" : "");
+      box.style.display = "block";
+    }
 
-      if (plan === "pro") {
-        document.getElementById("btn-tier-free").textContent = "DOWNGRADE TO FREE";
-        document.getElementById("btn-tier-pro").textContent = "ACTIVE PLAN";
+    let purchasesEnabled = false;
+    async function loadPackages() {
+      const workerBase = typeof getWorkerBase === 'function' ? getWorkerBase() : "https://streamsnap-lens.na0ryank0.workers.dev";
+      const grid = document.getElementById("packages-grid");
+      try {
+        const r = await fetch(`${workerBase}/billing/packages`);
+        const data = await r.json();
+        if (!data.ok) throw new Error(data.error || "Could not load packs");
+        purchasesEnabled = Boolean(data.purchasesEnabled);
+        document.querySelectorAll(".trial-size").forEach((el) => { el.textContent = data.freeTrialScans; });
+
+        grid.innerHTML = "";
+        for (const pkg of data.packages) {
+          const box = document.createElement("div");
+          box.className = "pricing-box" + (pkg.popular ? " active-tier" : "");
+          const price = (pkg.amountCents / 100).toLocaleString("en-US", { style: "currency", currency: pkg.currency.toUpperCase() });
+          const perScan = (pkg.amountCents / pkg.credits).toFixed(1);
+          box.innerHTML = `
+            ${pkg.popular ? '<div class="pack-badge">BEST VALUE</div>' : ""}
+            <h3></h3>
+            <div class="price">${price}</div>
+            <div class="pack-credits">${pkg.credits.toLocaleString()} scans</div>
+            <div class="pack-per-scan">≈ ${perScan}¢ per scan · never expires</div>
+            <p style="font-size:13px; color:var(--hub-text-muted); margin-bottom:20px; flex:1;"></p>
+            <button class="${pkg.popular ? "btn-hub-primary" : "btn-hub-ghost"}" style="justify-content:center;"></button>`;
+          box.querySelector("h3").textContent = pkg.name;
+          box.querySelector("p").textContent = pkg.blurb || "";
+          const btn = box.querySelector("button");
+          btn.textContent = purchasesEnabled ? "BUY PACK" : "COMING SOON";
+          btn.disabled = !purchasesEnabled;
+          btn.addEventListener("click", () => buyPackage(pkg.id, btn));
+          grid.appendChild(box);
+        }
+        if (!purchasesEnabled) {
+          showNotice("Card payments are being set up. Until then, add your own Gemini key in the extension (Settings → Use your own Gemini key) for unlimited scans, or contact us for a pack.", true);
+        }
+      } catch (err) {
+        grid.innerHTML = "";
+        showNotice(`Could not load packs: ${err.message}`, true);
       }
+    }
+
+    async function buyPackage(packageId, btn) {
+      const workerBase = typeof getWorkerBase === 'function' ? getWorkerBase() : "https://streamsnap-lens.na0ryank0.workers.dev";
+      const label = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "OPENING CHECKOUT…";
+      try {
+        const r = await authFetch(`${workerBase}/billing/checkout`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ packageId })
+        });
+        const res = await r.json();
+        if (res.ok && res.url) {
+          window.location.href = res.url;
+          return;
+        }
+        showToast(res.error || "Could not start checkout.", true);
+      } catch (_) {
+        showToast("Could not start checkout.", true);
+      }
+      btn.disabled = false;
+      btn.textContent = label;
+    }
+
+    // Back from Stripe: ?purchase=success&session_id=cs_... — confirm and refresh the balance.
+    async function confirmPurchaseFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      const outcome = params.get("purchase");
+      if (!outcome) return;
+      const workerBase = typeof getWorkerBase === 'function' ? getWorkerBase() : "https://streamsnap-lens.na0ryank0.workers.dev";
+      switchView("shopper-plans");
+      if (outcome === "cancelled") {
+        showNotice("Checkout cancelled — nothing was charged.", true);
+      } else if (outcome === "success" && params.get("session_id")) {
+        try {
+          const r = await authFetch(`${workerBase}/billing/confirm`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId: params.get("session_id") })
+          });
+          const res = await r.json();
+          if (res.ok && res.quota) {
+            currentQuota = res.quota;
+            renderQuota();
+            showNotice(res.duplicate ? "This purchase was already added to your account." : "Payment received — your scans have been added. Happy shopping!");
+            showToast("Scans added to your account");
+          } else {
+            showNotice(res.error || "We could not confirm the payment yet. It will be added automatically within a minute.", true);
+          }
+        } catch (_) {
+          showNotice("We could not confirm the payment yet. It will be added automatically within a minute.", true);
+        }
+      }
+      history.replaceState(null, "", `${window.location.pathname}#shopper-plans`);
+      loadPurchaseHistory();
+    }
+
+    async function loadPurchaseHistory() {
+      const workerBase = typeof getWorkerBase === 'function' ? getWorkerBase() : "https://streamsnap-lens.na0ryank0.workers.dev";
+      const box = document.getElementById("purchase-history");
+      try {
+        const r = await authFetch(`${workerBase}/billing/history`);
+        const data = await r.json();
+        if (!data.ok) return;
+        if (data.quota) { currentQuota = data.quota; renderQuota(); }
+        if (!data.purchases.length) { box.textContent = "No purchases yet."; return; }
+        box.innerHTML = "";
+        for (const p of data.purchases) {
+          const row = document.createElement("div");
+          row.style.cssText = "display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-bottom:1px solid var(--hub-border);";
+          const left = document.createElement("span");
+          left.textContent = `${new Date(p.created_at + "Z").toLocaleDateString()} · ${p.package_id.replace(/_/g, " ")} · ${p.provider}`;
+          const right = document.createElement("span");
+          right.style.color = "var(--hub-green)";
+          right.textContent = `+${Number(p.credits).toLocaleString()} scans${p.amount_cents ? ` · ${(p.amount_cents / 100).toLocaleString("en-US", { style: "currency", currency: (p.currency || "usd").toUpperCase() })}` : ""}`;
+          row.append(left, right);
+          box.appendChild(row);
+        }
+      } catch (_) { /* history is a nicety */ }
     }
 
     async function loadProducts() {
@@ -1421,25 +1605,6 @@
         }
       } catch (err) {
         console.error(err);
-      }
-    }
-
-    async function updatePlan(plan) {
-      const workerBase = typeof getWorkerBase === 'function' ? getWorkerBase() : "https://streamsnap-lens.na0ryank0.workers.dev";
-      try {
-        const r = await authFetch(`${workerBase}/billing/upgrade`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plan })
-        });
-        const res = await r.json();
-        if (res.ok) {
-          currentUser.plan = plan;
-          renderUserProfile();
-          showToast(res.message || `Plan updated to ${plan.toUpperCase()}`);
-        }
-      } catch (_) {
-        showToast("Error updating plan", true);
       }
     }
 
