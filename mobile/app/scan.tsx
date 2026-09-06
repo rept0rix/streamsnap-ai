@@ -22,9 +22,8 @@ import { useStore } from "../store/useStore";
 import { ProductCard } from "../components/ProductCard";
 import { LoadingPulse } from "../components/LoadingPulse";
 import { EmptyState } from "../components/EmptyState";
-import { resolve } from "../services/api";
+import { scanImage, presentScanError } from "../services/scan";
 import { compressToBase64 } from "../services/imageUtils";
-import { getInstallId } from "../services/storage";
 
 export default function ScanScreen() {
   const router = useRouter();
@@ -40,8 +39,7 @@ export default function ScanScreen() {
     setScanStatus,
     setScanResults,
     saveProduct,
-    addProductToCart,
-    sessionToken
+    addProductToCart
   } = useStore();
 
   const hasResults = lastProducts.length > 0 || lastOthers.length > 0;
@@ -60,13 +58,8 @@ export default function ScanScreen() {
       if (!photo?.uri) throw new Error("No photo captured");
 
       setScanStatus("scanning");
-      const [base64, installId] = await Promise.all([
-        compressToBase64(photo.uri),
-        getInstallId()
-      ]);
-
-      const data = await resolve(base64, installId, sessionToken);
-      if (!data.ok) throw new Error(data.error ?? "Scan failed");
+      const base64 = await compressToBase64(photo.uri);
+      const data = await scanImage(base64);
 
       setScanResults(data.products, data.others, base64);
 
@@ -80,7 +73,7 @@ export default function ScanScreen() {
       const message = err instanceof Error ? err.message : "Unknown error";
       setScanStatus("error", message);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert("Scan failed", message);
+      if (!presentScanError(err, router)) Alert.alert("Scan failed", message);
     }
   }
 

@@ -24,9 +24,8 @@ import { useShareIntentContext, isImageShareIntent } from "expo-share-intent";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
-import { resolve } from "../services/api";
+import { scanImage, scanUrl } from "../services/scan";
 import { compressToBase64 } from "../services/imageUtils";
-import { getInstallId } from "../services/storage";
 import { useStore } from "../store/useStore";
 import { ProductCard } from "../components/ProductCard";
 import { LoadingPulse } from "../components/LoadingPulse";
@@ -38,7 +37,7 @@ export default function ShareScreen() {
   const insets = useSafeAreaInsets();
   const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntentContext();
 
-  const { sessionToken, saveProduct, addProductToCart } = useStore();
+  const { saveProduct, addProductToCart } = useStore();
 
   const [status, setStatus] = useState<"loading" | "success" | "error" | "noContent">("loading");
   const [products, setProducts] = useState<Product[]>([]);
@@ -91,16 +90,12 @@ export default function ShareScreen() {
       let data;
       let frameBase64: string | undefined = undefined;
 
-      const installId = await getInstallId();
-
       if (imageUri) {
         const base64 = await compressToBase64(imageUri);
         frameBase64 = base64;
-        const { resolve } = require("../services/api");
-        data = await resolve(base64, installId, sessionToken);
+        data = await scanImage(base64);
       } else if (sharedUrl) {
-        const { resolveUrl } = require("../services/api");
-        data = await resolveUrl(sharedUrl, installId, sessionToken);
+        data = await scanUrl(sharedUrl);
       }
 
       if (!data || !data.ok) throw new Error(data?.error ?? "Scan failed");

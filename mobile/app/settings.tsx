@@ -2,7 +2,7 @@
  * StreamSnap AI — Settings Screen
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -16,6 +16,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useStore } from "../store/useStore";
+import { ACCOUNT_PLANS_URL, fetchBillingInfo, getMe, type Quota } from "../services/api";
+import { describeQuota } from "../services/scan";
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -28,6 +30,31 @@ export default function SettingsScreen() {
   const [minConfidence, setMinConfidence] = useState(
     String(settings?.minConfidence ?? 50)
   );
+  const [geminiApiKey, setGeminiApiKey] = useState(settings?.geminiApiKey ?? "");
+  const [quota, setQuota] = useState<Quota | null>(null);
+  const [trialSize, setTrialSize] = useState<number>(100);
+  const [plansUrl, setPlansUrl] = useState<string>(ACCOUNT_PLANS_URL);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchBillingInfo().then((info) => {
+      if (cancelled || !info) return;
+      if (info.freeTrialScans) setTrialSize(info.freeTrialScans);
+      if (info.upgradeUrl) setPlansUrl(info.upgradeUrl);
+    });
+    if (sessionToken) {
+      getMe(sessionToken)
+        .then((me) => {
+          if (!cancelled && me.signedIn && me.quota) setQuota(me.quota);
+        })
+        .catch(() => {});
+    } else {
+      setQuota(null);
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionToken]);
 
   async function handleSave() {
     const confidence = parseInt(minConfidence, 10);
@@ -39,9 +66,17 @@ export default function SettingsScreen() {
       Alert.alert("Invalid tag", "Affiliate tag must be 3–25 alphanumeric characters.");
       return;
     }
-    await patchSettings({ affiliateTag, minConfidence: confidence });
-    Alert.alert("Saved", "Settings updated.");
+    const key = geminiApiKey.trim();
+    if (key && !/^[A-Za-z0-9_-]{20,}$/.test(key)) {
+      Alert.alert("Invalid key", "That does not look like a Gemini API key (AIza…).");
+      return;
+    }
+    await patchSettings({ affiliateTag, minConfidence: confidence, geminiApiKey: key });
+    Alert.alert("Saved", key ? "Settings updated. Scans now run on your own key and are unlimited." : "Settings updated.");
   }
+
+  const hasOwnKey = Boolean(settings?.geminiApiKey);
+  const quotaLine = describeQuota(quota);
 
   return (
     <ScrollView
@@ -88,6 +123,50 @@ export default function SettingsScreen() {
         </Text>
       </View>
 
+      {/* Scans & own key */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Scans</Text>
+        {hasOwnKey ? (
+          <Text style={styles.signedIn}>∞ Unlimited — running on your own Gemini key</Text>
+        ) : quotaLine ? (
+          <Text style={styles.balance}>{quotaLine}</Text>
+        ) : (
+          <Text style={styles.hint}>
+            Sign in to get {trialSize} free scans. After that, buy a scan pack or add your own Gemini key.
+          </Text>
+        )}
+        {!hasOwnKey && quota && quota.exhausted ? (
+          <Text style={[styles.hint, { color: "#F59E0B" }]}>
+            You are out of free scans. Buy a pack below or add your own key.
+          </Text>
+        ) : null}
+        {sessionToken ? (
+          <TouchableOpacity onPress={() => Linking.openURL(plansUrl)}>
+            <Text style={styles.link}>Buy more scans ↗</Text>
+          </TouchableOpacity>
+        ) : null}
+
+        <Text style={[styles.label, { marginTop: 18 }]}>Your own Gemini API key (optional)</Text>
+        <TextInput
+          style={styles.input}
+          value={geminiApiKey}
+          onChangeText={setGeminiApiKey}
+          placeholder="AIzaSy…"
+          placeholderTextColor="#475569"
+          autoCapitalize="none"
+          autoCorrect={false}
+          secureTextEntry
+        />
+        <Text style={styles.hint}>
+          With your own key, scans run on the same StreamSnap engine but on your Google account, so they
+          are never counted against your free scans or packs. Free keys from Google AI Studio are enough
+          for personal use. The key stays on this device.
+        </Text>
+        <TouchableOpacity onPress={() => Linking.openURL("https://aistudio.google.com/app/apikey")}>
+          <Text style={styles.link}>Get a free Gemini key ↗</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Account */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account</Text>
@@ -107,7 +186,7 @@ export default function SettingsScreen() {
         ) : (
           <View>
             <Text style={styles.hint}>
-              Sign in to unlock higher scan quotas and sync across devices.
+              Sign in to get {trialSize} free scans and sync across devices.
             </Text>
             <TouchableOpacity 
               style={{ marginTop: 16 }}
@@ -162,6 +241,7 @@ const styles = StyleSheet.create({
   hint: { color: "#64748B", fontSize: 12, marginTop: 8, lineHeight: 18 },
   link: { color: "#6366F1", fontSize: 13, marginTop: 8 },
   signedIn: { color: "#22C55E", fontSize: 14 },
+  balance: { color: "#F8FAFC", fontSize: 14, fontWeight: "600" },
   saveButton: {
     backgroundColor: "#6366F1",
     marginHorizontal: 16,
