@@ -65,6 +65,34 @@ test("title matching recovers a verified product when no ASIN is given", () => {
   assert.equal(result.asin, "B09XS7JWHH");
 });
 
+test("a listing the Worker verified against Amazon keeps its ASIN, image and badge", () => {
+  const result = resolveDetection({
+    source: "server",
+    verified: true,
+    asin: "B0BS4D5C8D", // not in the local catalog — verified upstream
+    title: "Apple Watch Series 8",
+    price: 163.29,
+    image: "https://m.media-amazon.com/images/I/71XMTLtZd5L._AC_SL400_.jpg"
+  });
+  assert.equal(result.verified, true);
+  assert.equal(result.asin, "B0BS4D5C8D");
+  assert.equal(result.price, 163.29);
+  assert.match(result.image, /^https:\/\/m\.media-amazon\.com\//);
+  assert.ok(getAmazonProductUrl(result.asin, result.title).includes("/dp/B0BS4D5C8D"));
+});
+
+test("a server item that is NOT verified is still stripped of any ASIN", () => {
+  const result = resolveDetection({ source: "server", verified: false, asin: "B0FAKE1234", title: "Curved monitor" });
+  assert.equal(result.asin, null);
+  assert.equal(result.verified, false);
+});
+
+test("the verified flag alone is not trusted without the server provenance", () => {
+  const result = resolveDetection({ verified: true, asin: "B0FAKE1234", title: "Some gadget" });
+  assert.equal(result.asin, null);
+  assert.equal(result.verified, false);
+});
+
 test("brand alone does not force a false verified match", () => {
   const result = resolveDetection({ title: "Sony television remote control" });
   assert.equal(result.verified, false);

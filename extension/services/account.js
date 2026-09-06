@@ -16,6 +16,21 @@ const PROFILE_KEY = "userProfile";
 /** Configured at build time; overridable for local development. */
 export const DEFAULT_API_BASE = "https://streamsnap-lens.na0ryank0.workers.dev";
 
+/** Where scan packs are bought. The Worker's 402 also carries this URL. */
+export const ACCOUNT_PLANS_URL = "https://streamsnap.online/account.html#shopper-plans";
+
+/** Public: pack catalogue, trial size and whether purchases are live. */
+export async function fetchBillingInfo() {
+  try {
+    const apiBase = await getApiBase();
+    const response = await fetch(`${apiBase}/billing/packages`);
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
 export async function getApiBase() {
   const { apiBase } = await chrome.storage.local.get(["apiBase"]);
   return (apiBase || DEFAULT_API_BASE).replace(/\/$/, "");
@@ -92,7 +107,8 @@ export async function fetchProfile() {
     const data = await response.json();
     if (data.signedIn) {
       await chrome.storage.local.set({
-        [PROFILE_KEY]: { ...data.user, quota: data.quota, fetchedAt: Date.now() }
+        [PROFILE_KEY]: { ...data.user, quota: data.quota, fetchedAt: Date.now() },
+        [QUOTA_KEY]: data.quota ? { ...data.quota, fetchedAt: Date.now() } : null
       });
     }
     return data;
@@ -105,8 +121,29 @@ export async function fetchProfile() {
   }
 }
 
+const QUOTA_KEY = "lastQuota";
+
+/**
+ * Every /resolve answer carries the caller's quota. Keep the latest one so the
+ * panel can show "87 of 100 free scans left" without a round trip — for
+ * anonymous installs too, which have no profile to hang it on.
+ */
+export async function rememberQuota(quota) {
+  if (!quota || typeof quota !== "object") return;
+  const stamped = { ...quota, fetchedAt: Date.now() };
+  const updates = { [QUOTA_KEY]: stamped };
+  const profile = await getProfile();
+  if (profile) updates[PROFILE_KEY] = { ...profile, quota: stamped };
+  await chrome.storage.local.set(updates);
+}
+
+export async function getQuota() {
+  const { [QUOTA_KEY]: quota } = await chrome.storage.local.get([QUOTA_KEY]);
+  return quota || null;
+}
+
 async function signOutLocal() {
-  await chrome.storage.local.remove([SESSION_KEY, PROFILE_KEY]);
+  await chrome.storage.local.remove([SESSION_KEY, PROFILE_KEY, QUOTA_KEY]);
 }
 
 export async function signOut() {

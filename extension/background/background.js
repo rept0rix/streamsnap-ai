@@ -1,8 +1,14 @@
 /**
  * StreamSnap AI — MV3 Service Worker
  *
- * Responsibilities: tab capture, Gemini Vision analysis, detection reconciliation,
- * catalog persistence, cart, and analytics.
+ * Responsibilities: tab capture, server-side recognition, detection
+ * reconciliation, catalog persistence, cart, and analytics.
+ *
+ * Every scan goes through the StreamSnap Worker (one engine for Chrome and
+ * mobile). A personal Gemini key, if the user added one, rides along as the
+ * X-Gemini-Key header: the Worker then runs on their key and does not meter
+ * the scan. Without a key the Worker meters the free trial / purchased packs
+ * and answers 402 when they run out.
  *
  * Two constraints shape this file:
  *  1. The service worker is evicted after ~30s idle, so no long-lived timers.
@@ -17,6 +23,7 @@ import {
   estimateCommission
 } from "../services/amazon_service.js";
 import { lookupFrame, recordFrame } from "../services/frame_cache.js";
+import { getApiBase, getToken, rememberQuota } from "../services/account.js";
 import {
   downscaleDataUrl,
   enforceCatalogBudget,
@@ -53,7 +60,6 @@ async function isUpdateRequired() {
 }
 
 const AUTO_SCAN_ALARM = "streamsnap-auto-scan";
-const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-flash-latest"];
 
 // ---------------------------------------------------------------------------
 // Lifecycle
@@ -251,125 +257,6 @@ async function extractCropFromBox(imageDataUrl, box) {
   }
 }
 
-const FULL_FRAME_PROMPT = (streamTitle) => `You are StreamSnap AI, an advanced visual commerce engine for live streams.
-Analyze this video frame from an active live stream titled: "${streamTitle}".
-Streamers show products in real-world conditions (in hand, worn, desk setup, background, active motion).
-Detect every prominent consumer product visible (electronics, microphones, headphones, lighting, controllers, apparel, tumblers/bottles, fitness gear, gadgets).
-
-Rules:
-- Identify recognizable products accurately even if in slight motion or dynamic studio lighting.
-- Only include "asin" if you know the exact real Amazon ASIN. Otherwise omit.
-- Always provide an estimated market retail price in USD as "price" (a number, e.g. 29.99) based on typical retail pricing for this item or brand.
-- If there is an original list price or standard MSRP higher than the sale price, provide "originalPrice" (e.g. 39.99) and "discountPercent" (e.g. 25).
-- If on discount or special deal, include "dealBadge" (e.g. "25% OFF 🔥" or "Live Deal ⚡").
-- Set "confidence" honestly between 0.3 and 1.0.
-- Give each item a bounding box [ymin, xmin, ymax, xmax] normalized 0-1000.
-
-Return JSON:
-{
-  "exactMatches": [
-    {
-      "title": "Specific product name with brand & model",
-      "brand": "Brand",
-      "price": 149.99,
-      "originalPrice": 199.99,
-      "discountPercent": 25,
-      "dealBadge": "25% OFF 🔥",
-      "confidence": 0.92,
-      "detectionLabel": "Short label",
-      "matchReason": "Visual cues identifying this product",
-      "box_2d": [380, 440, 710, 620]
-    }
-  ],
-  "lookAlikes": [
-    {
-      "title": "Similar product style/category description",
-      "price": 39.99,
-      "originalPrice": 49.99,
-      "discountPercent": 20,
-      "dealBadge": "20% OFF",
-      "similarityScore": 85,
-      "detectionLabel": "Short label",
-      "matchReason": "Style or category match",
-      "box_2d": [450, 310, 710, 390]
-    }
-  ]
-}`;
-
-const CROP_PROMPT = (streamTitle) => `You are StreamSnap AI, a visual commerce search engine.
-The user cropped a specific object from a live stream titled: "${streamTitle}".
-Identify ONLY the object in this cropped region.
-
-Rules:
-- Identify the product, brand, estimated USD "price" (number, e.g. 29.99), "originalPrice" (if known), "discountPercent", and "dealBadge".
-- Set "confidence" between 0.3 and 1.0.
-- Only include "asin" if you are certain of the exact real Amazon ASIN.
-
-Return JSON: { "exactMatches": [...], "lookAlikes": [...] }`;
-
-async function callGemini(imageDataUrl, apiKey, prompt) {
-  if (!apiKey) {
-    throw new Error("No Gemini API key. Add one in the Setup tab.");
-  }
-  const cleanBase64 = imageDataUrl.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
-  const body = JSON.stringify({
-    contents: [
-      {
-        parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: cleanBase64 } }]
-      }
-    ],
-    generationConfig: { response_mime_type: "application/json", temperature: 0.1 }
-  });
-
-  let lastError = "";
-  for (const model of GEMINI_MODELS) {
-    let response;
-    try {
-      response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-          body
-        }
-      );
-    } catch (networkErr) {
-      lastError = `Network error: ${networkErr.message}`;
-      continue;
-    }
-
-    if (response.status === 401 || response.status === 403) {
-      throw new Error("Gemini rejected the API key. Check it in the Setup tab.");
-    }
-    if (response.status === 429) {
-      throw new Error("Gemini rate limit reached. Wait a moment and scan again.");
-    }
-    if (!response.ok) {
-      lastError = `${model} returned ${response.status}`;
-      continue;
-    }
-
-    const json = await response.json();
-    const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) {
-      lastError = `${model} returned an empty response`;
-      continue;
-    }
-
-    try {
-      const cleanText = text
-        .replace(/^```(?:json)?\s*/i, "")
-        .replace(/\s*```$/i, "")
-        .trim();
-      return JSON.parse(cleanText);
-    } catch {
-      lastError = `${model} returned malformed JSON`;
-    }
-  }
-
-  throw new Error(lastError || "Gemini analysis failed.");
-}
-
 // ---------------------------------------------------------------------------
 // Persistence
 // ---------------------------------------------------------------------------
@@ -452,65 +339,125 @@ async function publishScanResult(payload) {
   broadcast({ action: "SCAN_RESULTS_UPDATED", data: payload });
 }
 
-async function publishScanError(message) {
-  await safeSet({ isScanning: false, lastScanError: message });
-  broadcast({ action: "SCAN_FAILED", error: message });
+/**
+ * Errors carry structure, not just text: a 402 from the Worker becomes a
+ * paywall card in the panel (sign in / buy scans / add your own key) instead of
+ * a generic "scan failed".
+ */
+function describeError(err) {
+  const info = {
+    message: err?.message || "Scan failed.",
+    code: err?.code || null,
+    needsSignIn: Boolean(err?.needsSignIn),
+    needsUpgrade: Boolean(err?.needsUpgrade),
+    canUseOwnKey: Boolean(err?.canUseOwnKey),
+    upgradeUrl: err?.upgradeUrl || null,
+    quota: err?.quota || null
+  };
+  return info;
 }
 
-async function callServerResolve(imageDataUrl) {
-  // The session token is stored by the account service under "sessionToken".
-  // (An earlier build looked for "streamSnapSession", which never existed, so
-  // signed-in scans were sent anonymously.) Fall back to the old name just in
-  // case an older install still has it.
-  const { installId, sessionToken, streamSnapSession } = await chrome.storage.local.get([
-    "installId",
-    "sessionToken",
-    "streamSnapSession"
-  ]);
+async function publishScanError(err) {
+  const info = typeof err === "string" ? describeError(new Error(err)) : describeError(err);
+  await safeSet({ isScanning: false, lastScanError: info.message, lastScanErrorInfo: info });
+  broadcast({ action: "SCAN_FAILED", error: info.message, ...info });
+}
+
+function toNumber(value) {
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  const n = Number.parseFloat(String(value ?? "").replace(/[^0-9.]/g, ""));
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Shape one Worker product for the panel. Everything the server worked out
+ * (crop box, per-product crop, verified ASIN, catalog image) is kept — the
+ * earlier mapping dropped all of it, so every card showed the full frame twice
+ * and no listing could ever be shown as verified.
+ */
+function fromServerProduct(p, tier) {
+  const catalogImage = p.imageUrl || p.image || p.thumbnail || null;
+  return {
+    source: "server",
+    tier,
+    title: p.matchedTitle && p.verified ? p.matchedTitle : p.title,
+    detectionLabel: p.title,
+    brand: p.brand || null,
+    asin: p.asin || null,
+    verified: Boolean(p.verified && p.asin),
+    amazon_url: p.url || null,
+    image: catalogImage,
+    price: p.priceValue ?? toNumber(p.price),
+    priceEstimated: Boolean(p.priceEstimated),
+    confidence: p.confidence ?? null,
+    matchReason: p.matchReason || null,
+    matchedTitle: p.matchedTitle || null,
+    category: p.category || null,
+    box_2d: Array.isArray(p.box_2d) ? p.box_2d : null,
+    sourceCrop: typeof p.sourceCrop === "string" && p.sourceCrop.startsWith("data:") ? p.sourceCrop : null,
+    videoTitle: p.videoTitle || null
+  };
+}
+
+async function callServerResolve(imageDataUrl, { apiKey } = {}) {
+  const { installId } = await chrome.storage.local.get(["installId"]);
   let id = installId;
   if (!id) {
     id = crypto.randomUUID();
     await chrome.storage.local.set({ installId: id });
   }
 
-  const token = sessionToken || streamSnapSession;
+  const token = await getToken();
   const headers = { "Content-Type": "application/json" };
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  // The user's own key: the Worker runs on it and does not meter the scan.
+  if (apiKey) headers["X-Gemini-Key"] = apiKey;
 
-  const response = await fetch("https://streamsnap-lens.na0ryank0.workers.dev/resolve", {
+  const apiBase = await getApiBase();
+  const response = await fetch(`${apiBase}/resolve`, {
     method: "POST",
     headers,
     body: JSON.stringify({ image: imageDataUrl, installId: id })
   });
 
-  if (!response.ok) {
-    if (response.status === 401 || response.status === 403) {
-      throw new Error("Session could not be verified. Please sign in again.");
-    }
-    const text = await response.text().catch(() => "");
-    throw new Error(`Server error ${response.status}: ${text.slice(0, 100)}`);
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok || !data.ok) {
+    const err = new Error(
+      data.error ||
+        (response.status === 401 || response.status === 403
+          ? "Session could not be verified. Please sign in again."
+          : `Server error ${response.status}`)
+    );
+    err.status = response.status;
+    err.code = data.code || (response.status === 402 ? "QUOTA_EXHAUSTED" : null);
+    err.needsSignIn = Boolean(data.needsSignIn);
+    err.needsUpgrade = Boolean(data.needsUpgrade);
+    err.canUseOwnKey = Boolean(data.canUseOwnKey);
+    err.upgradeUrl = data.upgradeUrl || null;
+    err.quota = data.quota || null;
+    if (data.quota) await rememberQuota(data.quota);
+    throw err;
   }
 
-  const data = await response.json();
-  if (!data.ok) throw new Error(data.error || "Server scan failed.");
-  
+  if (data.quota) await rememberQuota(data.quota);
+
+  // Verified Amazon listings arrive in `amazon`; visual-only detections in
+  // `others`. (`products` is the union — reading it as exact matches showed
+  // every unverified item twice.)
+  const amazon = Array.isArray(data.amazon)
+    ? data.amazon
+    : (data.products || []).filter((p) => p.verified && p.asin);
+  const others = Array.isArray(data.others)
+    ? data.others
+    : (data.products || []).filter((p) => !(p.verified && p.asin));
+
   return {
-    exactMatches: (data.products || []).map(p => ({
-      title: p.title,
-      price: p.price,
-      amazon_url: p.url,
-      thumbnail: p.thumbnail,
-      asin: p.asin
-    })),
-    lookAlikes: (data.others || []).map(p => ({
-      title: p.title,
-      price: p.price,
-      amazon_url: p.url,
-      thumbnail: p.thumbnail,
-      asin: p.asin
-    }))
+    exactMatches: amazon.map((p) => fromServerProduct(p, "exact")),
+    lookAlikes: others.map((p) => fromServerProduct(p, "lookalike")),
+    engine: data.engine || null,
+    byoKey: Boolean(data.byoKey),
+    quota: data.quota || null
   };
 }
 
@@ -533,29 +480,21 @@ async function runAnalysis({ imageDataUrl, apiKey, streamContext, mode }) {
     fromCache = true;
     console.info(`[StreamSnap] frame cache hit (distance ${distance}) — no API call`);
   } else {
-    if (apiKey) {
-      console.info(`[StreamSnap] Using local Gemini API key.`);
-      raw = await callGemini(
-        imageDataUrl,
-        apiKey,
-        isCrop ? CROP_PROMPT(streamKey || "Live Stream") : FULL_FRAME_PROMPT(streamKey || "Live Stream")
-      );
-    } else {
-      console.info(`[StreamSnap] Using server resolve API.`);
-      raw = await callServerResolve(imageDataUrl);
-    }
+    console.info(`[StreamSnap] resolve via server${apiKey ? " (own Gemini key)" : ""}.`);
+    raw = await callServerResolve(imageDataUrl, { apiKey });
     if (hash) recordFrame(hash, raw, streamKey);
   }
 
   const results = reconcileResults(raw, minConfidence);
 
-  // Attach a bounded thumbnail per item: the model's box for full frames,
-  // the user's selection for crops.
+  // Attach a bounded live crop per item — the Worker's per-product crop when it
+  // sent one, else our own cut from its box, else the user's selection / frame.
+  // `thumbnail`/`sourceCrop` are the live crop; `image` stays the catalog photo.
   await Promise.all(
     [...results.exactMatches, ...results.lookAlikes].map(async (item) => {
       const source = isCrop
         ? imageDataUrl
-        : (await extractCropFromBox(imageDataUrl, item.box_2d)) || imageDataUrl;
+        : item.sourceCrop || (await extractCropFromBox(imageDataUrl, item.box_2d)) || imageDataUrl;
       const thumb = await downscaleDataUrl(source, LIMITS.THUMB_MAX_EDGE);
       item.thumbnail = thumb;
       item.sourceCrop = thumb;
@@ -576,6 +515,9 @@ async function runAnalysis({ imageDataUrl, apiKey, streamContext, mode }) {
     filteredCount: results.filteredCount || 0,
     minConfidence,
     fromCache,
+    engine: raw?.engine || null,
+    byoKey: Boolean(raw?.byoKey),
+    quota: raw?.quota || null,
     capturedAt: new Date().toLocaleTimeString()
   };
 
@@ -624,9 +566,8 @@ const handlers = {
       });
       return { success: true, data };
     } catch (err) {
-      const reason = err?.message || "Scan failed.";
-      await publishScanError(reason);
-      return { success: false, error: reason };
+      await publishScanError(err);
+      return { success: false, error: err?.message || "Scan failed.", ...describeError(err) };
     }
   },
 
@@ -650,9 +591,8 @@ const handlers = {
       });
       return { success: true, data };
     } catch (err) {
-      const reason = err?.message || "Crop analysis failed.";
-      await publishScanError(reason);
-      return { success: false, error: reason };
+      await publishScanError(err);
+      return { success: false, error: err?.message || "Crop analysis failed.", ...describeError(err) };
     }
   },
 
@@ -784,7 +724,7 @@ const handlers = {
   },
 
   async DELETE_LAST_SCAN() {
-    await chrome.storage.local.remove(["latestScanResults", "lastScanError"]);
+    await chrome.storage.local.remove(["latestScanResults", "lastScanError", "lastScanErrorInfo"]);
     broadcast({ action: "SCAN_CLEARED" });
     return { status: "deleted" };
   },

@@ -177,8 +177,14 @@
               <line x1="12" y1="17" x2="12.01" y2="17"></line>
             </svg>
           </span>
-          <h3>Scan Failed</h3>
+          <h3 id="scan-error-title">Scan Failed</h3>
           <p id="scan-error-text">Something went wrong.</p>
+          <div id="scan-paywall" class="paywall-actions" style="display:none;">
+            <button id="paywall-signin-btn" class="signin-btn" style="display:none;">Continue with Google — 100 free scans</button>
+            <button id="paywall-buy-btn" class="direct-scan-btn" style="display:none;">Buy a scan pack</button>
+            <button id="paywall-key-btn" class="account-btn" style="display:none;">Use my own Gemini key (unlimited)</button>
+            <p class="paywall-footnote">Your own key runs on the same StreamSnap engine and is never counted.</p>
+          </div>
           <button id="retry-scan-btn" class="direct-scan-btn">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; margin-right:4px;">
               <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
@@ -455,10 +461,11 @@
                 </svg>
               </span>
               <div>
-                <h4>Sign in to start scanning</h4>
+                <h4>Sign in for <span id="trial-size-label">100</span> free scans</h4>
                 <p>No API key, no setup. Scanning runs on our servers, so nothing billable is ever stored on your device.</p>
               </div>
             </div>
+            <p id="anon-quota-text" class="anon-quota-text" style="display:none;"></p>
             <button id="signin-btn" class="signin-btn">Continue with Google</button>
             <p id="signin-error" class="signin-error" style="display:none;"></p>
             <p class="account-footnote">
@@ -481,6 +488,13 @@
                 <span id="quota-plan" class="quota-plan"></span>
               </div>
               <div class="quota-track"><div id="quota-fill" class="quota-fill"></div></div>
+              <div class="quota-footer">
+                <span id="quota-credits" class="quota-credits"></span>
+                <button id="buy-scans-btn" class="quota-buy-btn" type="button">Buy more scans ↗</button>
+              </div>
+              <p id="quota-byo-note" class="settings-subtext" style="display:none; margin-top:6px;">
+                Your own Gemini key is active — scans are unlimited and not counted here.
+              </p>
             </div>
 
             <div class="account-actions">
@@ -563,14 +577,17 @@
             </div>
           </div>
 
-          <!-- Advanced: bring your own key. Collapsed, and clearly labelled as
-               the riskier path, because it is. -->
-          <details class="settings-section advanced-section">
-            <summary class="advanced-summary">Advanced: use your own Gemini key</summary>
+          <!-- Bring your own key: unlimited scans on the same engine, never metered. -->
+          <details class="settings-section advanced-section" id="byo-key-section">
+            <summary class="advanced-summary">Use your own Gemini key — unlimited scans</summary>
+            <p class="settings-subtext">
+              With your own key, scans run on the same StreamSnap engine but on your Google account, so they
+              are never counted against your free scans or scan packs. Free keys from Google AI Studio are enough
+              for personal use.
+            </p>
             <p class="settings-subtext warning-text">
-              A Gemini key is billable, and it is stored on this device as plain text. Anyone who
-              obtains it can spend money on your account. Signing in above is safer and needs no key.
-              Only use this if you specifically want your own key.
+              The key is stored on this device as plain text and is billable to you. Only add a key you control,
+              and remove it any time under Your Data.
             </p>
             <div class="settings-input-row">
               <input type="password" id="gemini-api-key-input" placeholder="AIzaSy..." autocomplete="off" />

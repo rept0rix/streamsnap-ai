@@ -13,14 +13,17 @@ import {
   getWebSearchUrl,
   getAllStoreSearchUrls,
   SUPPORTED_STORES,
-  isVerifiedAsin
+  isValidAsin
 } from "../services/amazon_service.js";
 import {
   signIn,
   signOut,
   fetchProfile,
   deleteAccount,
-  saveAffiliateTag
+  saveAffiliateTag,
+  getQuota,
+  fetchBillingInfo,
+  ACCOUNT_PLANS_URL
 } from "../services/account.js";
 import { CURRENT_BUILD, VERSION_HISTORY } from "../services/version_info.js";
 import { checkVersionGate } from "../services/version_gate.js";
@@ -260,9 +263,9 @@ function initSettings() {
   function paintKeyStatus(hasKey) {
     if (!keyStatus) return;
     keyStatus.textContent = hasKey
-      ? "Key saved — Gemini Vision active"
-      : "No API key. Scanning is disabled until you add one.";
-    keyStatus.style.color = hasKey ? "#10B981" : "#F59E0B";
+      ? "Your key is active — unlimited scans, nothing counted"
+      : "No key set — scans use your free trial / scan packs";
+    keyStatus.style.color = hasKey ? "#10B981" : "#9CA3AF";
   }
 
   // Populate dynamic version tracking
@@ -330,6 +333,8 @@ function initSettings() {
     chrome.storage.local.set({ geminiApiKey: key }, () => {
       paintKeyStatus(Boolean(key));
       flashSaved(saveKeyBtn);
+      const note = byId("quota-byo-note");
+      if (note) note.style.display = key ? "block" : "none";
     });
   });
 
@@ -454,25 +459,71 @@ function renderAccount(profile) {
     if (input && !input.value) input.value = user.affiliateTag;
   }
 
-  const quota = profile.quota || {};
-  const used = quota.used ?? 0;
-  const limit = quota.limit ?? 0;
+  renderQuota(profile.quota, { plan: user.plan, stale: profile.stale });
+}
+
+/**
+ * One renderer for the balance, fed by /auth/me and by every scan response.
+ * Lifetime trial: "87 of 100 free scans left". Monthly plan: "this month".
+ * Purchased credits are shown separately because they never expire.
+ */
+function renderQuota(quota, { plan, stale } = {}) {
+  const q = quota || {};
+  const limit = Number(q.limit) || 0;
+  const used = Math.min(Number(q.used) || 0, limit);
+  const remaining = q.remaining ?? Math.max(0, limit - used);
+  const credits = Number(q.credits) || 0;
+  const lifetime = (q.period || "lifetime") === "lifetime";
 
   const quotaText = byId("quota-text");
   if (quotaText) {
-    quotaText.textContent = profile.stale
-      ? `${used} of ${limit} scans used (offline)`
+    const base = lifetime
+      ? `${remaining} of ${limit} free scans left`
       : `${used} of ${limit} scans used this month`;
+    quotaText.textContent = stale ? `${base} (offline)` : base;
   }
 
   const planEl = byId("quota-plan");
-  if (planEl) planEl.textContent = (user.plan || "free").toUpperCase();
+  if (planEl) planEl.textContent = String(q.plan || plan || "free").toUpperCase();
 
   const fill = byId("quota-fill");
   if (fill && limit > 0) {
     const pct = Math.min(100, Math.round((used / limit) * 100));
     fill.style.width = `${pct}%`;
     fill.style.background = pct >= 90 ? "#EF4444" : pct >= 70 ? "#F59E0B" : "#10B981";
+  }
+
+  const creditsEl = byId("quota-credits");
+  if (creditsEl) {
+    creditsEl.textContent = credits > 0 ? `+ ${credits.toLocaleString()} purchased scans` : "";
+  }
+  const buyBtn = byId("buy-scans-btn");
+  if (buyBtn) buyBtn.classList.toggle("urgent", remaining === 0 && credits === 0);
+
+  const anonText = byId("anon-quota-text");
+  if (anonText) {
+    const isAnon = q.signedIn === false || q.plan === "anon";
+    anonText.style.display = isAnon && limit > 0 ? "block" : "none";
+    if (isAnon) anonText.textContent = `${remaining} of ${limit} trial scans left on this install.`;
+  }
+
+  chrome.storage.local.get(["geminiApiKey"], (res = {}) => {
+    const note = byId("quota-byo-note");
+    if (note) note.style.display = res.geminiApiKey ? "block" : "none";
+  });
+}
+
+function openPlansPage(url) {
+  chrome.tabs.create({ url: url || ACCOUNT_PLANS_URL });
+}
+
+function openOwnKeySetup() {
+  document.querySelector('[data-tab="settings"]')?.click();
+  const section = byId("byo-key-section");
+  if (section) {
+    section.open = true;
+    section.scrollIntoView({ behavior: "smooth", block: "start" });
+    setTimeout(() => byId("gemini-api-key-input")?.focus(), 250);
   }
 }
 
@@ -508,7 +559,19 @@ async function runSignOut() {
 }
 
 function initAccount() {
-  fetchProfile().then(renderAccount);
+  fetchProfile().then((profile) => {
+    renderAccount(profile);
+    // Anonymous installs have a balance too (the pre-sign-in teaser).
+    if (!profile?.signedIn) getQuota().then((q) => q && renderQuota(q));
+  });
+
+  fetchBillingInfo().then((info) => {
+    if (!info?.freeTrialScans) return;
+    const label = byId("trial-size-label");
+    if (label) label.textContent = String(info.freeTrialScans);
+    const btn = byId("paywall-signin-btn");
+    if (btn) btn.textContent = `Continue with Google — ${info.freeTrialScans} free scans`;
+  });
 
   byId("signin-btn")?.addEventListener("click", (e) =>
     runSignIn(e.currentTarget, "Continue with Google")
@@ -693,7 +756,12 @@ function initListeners() {
     // page-initiated scan) flips isScanning back to false. Without this the
     // loading spinner would hang forever — the classic "stuck, not searching".
     if (changes.isScanning && changes.isScanning.newValue === false) clearScanningIfIdle();
-    if (changes.lastScanError?.newValue) showScanError(changes.lastScanError.newValue);
+    if (changes.lastScanErrorInfo?.newValue) {
+      showScanError(changes.lastScanErrorInfo.newValue.message, changes.lastScanErrorInfo.newValue);
+    } else if (changes.lastScanError?.newValue) {
+      showScanError(changes.lastScanError.newValue);
+    }
+    if (changes.lastQuota?.newValue) renderQuota(changes.lastQuota.newValue);
     if (changes.latestScanResults?.newValue) renderScanResults(changes.latestScanResults.newValue);
     if (changes.discoveredCatalog) {
       state.catalog = changes.discoveredCatalog.newValue || [];
@@ -715,7 +783,7 @@ function initListeners() {
         renderScanResults(message.data);
         break;
       case "SCAN_FAILED":
-        showScanError(message.error);
+        showScanError(message.error, message);
         break;
       case "CATALOG_UPDATED":
         state.catalog = message.discoveredCatalog || [];
@@ -739,6 +807,13 @@ function initListeners() {
   byId("radar-scan-trigger")?.addEventListener("click", triggerDirectScan);
   byId("rescan-btn")?.addEventListener("click", triggerDirectScan);
   byId("retry-scan-btn")?.addEventListener("click", triggerDirectScan);
+
+  byId("paywall-signin-btn")?.addEventListener("click", (e) =>
+    runSignIn(e.currentTarget, "Continue with Google — 100 free scans")
+  );
+  byId("paywall-buy-btn")?.addEventListener("click", (e) => openPlansPage(e.currentTarget.dataset.url));
+  byId("paywall-key-btn")?.addEventListener("click", openOwnKeySetup);
+  byId("buy-scans-btn")?.addEventListener("click", () => openPlansPage());
 
   byId("clear-live-btn")?.addEventListener("click", () => {
     liveSessionFeed = { exactMatches: [], lookAlikes: [] };
@@ -938,12 +1013,74 @@ function clearScanningIfIdle() {
   }
 }
 
-function showScanError(message) {
+const PAYWALL_CODES = new Set(["QUOTA_EXHAUSTED", "TRIAL_EXHAUSTED_SIGN_IN"]);
+
+/**
+ * A 402 from the Worker is not a failure, it is the paywall: sign in for the
+ * free trial, buy a pack, or add your own key. Rendered even when earlier
+ * results are on screen — a toast would be too easy to miss for "you are out".
+ */
+function renderPaywall(message, info) {
+  const wall = byId("scan-paywall");
+  const title = byId("scan-error-title");
+  const text = byId("scan-error-text");
+  const retry = byId("retry-scan-btn");
+  const signInBtn = byId("paywall-signin-btn");
+  const buyBtn = byId("paywall-buy-btn");
+  const keyBtn = byId("paywall-key-btn");
+
+  const isPaywall = Boolean(info?.code && PAYWALL_CODES.has(info.code));
+  const isKeyProblem = info?.code === "BYO_KEY_REJECTED" || info?.code === "BYO_KEY_FAILED";
+
+  if (!wall) return false;
+  if (!isPaywall && !isKeyProblem) {
+    wall.style.display = "none";
+    if (title) title.textContent = "Scan Failed";
+    if (retry) retry.style.display = "";
+    return false;
+  }
+
+  if (title) {
+    title.textContent = isKeyProblem
+      ? "Your Gemini key did not work"
+      : info.needsSignIn
+        ? "Trial scans used up"
+        : "Free scans used up";
+  }
+  if (text) text.textContent = message;
+  if (retry) retry.style.display = isKeyProblem ? "" : "none";
+
+  if (signInBtn) signInBtn.style.display = info.needsSignIn ? "" : "none";
+  if (buyBtn) {
+    buyBtn.style.display = info.needsUpgrade ? "" : "none";
+    buyBtn.dataset.url = info.upgradeUrl || "";
+  }
+  if (keyBtn) {
+    keyBtn.style.display = isKeyProblem || info.canUseOwnKey ? "" : "none";
+    keyBtn.textContent = isKeyProblem ? "Fix my key in Setup" : "Use my own Gemini key (unlimited)";
+  }
+  wall.style.display = "flex";
+
+  if (info.quota) renderQuota(info.quota);
+  return true;
+}
+
+function showScanError(message, info = null) {
   const liveProgressBar = byId("scan-live-progress");
   if (liveProgressBar) liveProgressBar.style.display = "none";
 
   const hasExistingResults =
     liveSessionFeed.exactMatches.length > 0 || liveSessionFeed.lookAlikes.length > 0;
+
+  if (info && (PAYWALL_CODES.has(info.code) || String(info.code || "").startsWith("BYO_KEY"))) {
+    show("scan-loading-state", false);
+    show("scan-results-container", false);
+    show("scan-empty-state", false);
+    renderPaywall(message, info);
+    show("scan-error-state", true);
+    return;
+  }
+  renderPaywall(message, null);
 
   if (hasExistingResults) {
     // If we already have items, don't wipe them on a temporary error; just show a toast
@@ -993,7 +1130,7 @@ function triggerDirectScan() {
           },
           (aiRes) => {
             if (aiRes?.success && aiRes.data) renderScanResults(aiRes.data);
-            else showScanError(aiRes?.error || "Analysis failed.");
+            else showScanError(aiRes?.error || "Analysis failed.", aiRes);
           }
         );
       });
@@ -1056,6 +1193,7 @@ function mergeSessionItems(targetList, incomingList) {
 }
 
 function renderScanResults(data, isIncremental = true) {
+  if (data?.quota) renderQuota(data.quota);
   if (!data?.items) return;
   state.scan = data;
 
@@ -1223,7 +1361,9 @@ function showToast(container, message) {
 function createProductCard(prod, { catalog = false } = {}) {
   const card = el("div", "product-card");
   const title = prod.title || "Detected item";
-  const verified = Boolean(prod.verified) && isVerifiedAsin(prod.asin);
+  // Verified means the Worker matched a real listing (or the local catalog
+  // did). A real ASIN with the badge is a direct /dp/ link; nothing else is.
+  const verified = Boolean(prod.verified) && isValidAsin(prod.asin);
   const fallback = placeholderThumbnail(prod);
 
   // Check if we have a real distinct product catalog image

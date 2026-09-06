@@ -146,9 +146,24 @@ export function getProductByAsin(asin) {
 }
 
 /**
- * Reconcile a model detection against the verified catalog.
+ * True for a listing the Worker verified against Amazon itself (title overlap
+ * with a real search result, real ASIN, catalog image). The local catalog below
+ * exists to stop a *model's* claimed ASIN from becoming a dead link; a
+ * server-verified ASIN is not a claim, so it keeps its badge.
+ */
+export function isServerVerified(item) {
+  return Boolean(
+    item &&
+      item.source === "server" &&
+      item.verified === true &&
+      isValidAsin(typeof item.asin === "string" ? item.asin.trim().toUpperCase() : "")
+  );
+}
+
+/**
+ * Reconcile a detection against what we can verify.
  *
- * Returns the item with `verified` set. When the model supplied an ASIN we
+ * Returns the item with `verified` set. When a model supplied an ASIN we
  * cannot verify, the ASIN is dropped rather than surfaced as a dead link.
  */
 export function resolveDetection(item) {
@@ -158,6 +173,22 @@ export function resolveDetection(item) {
   if (!title) return null;
 
   const claimedAsin = typeof item.asin === "string" ? item.asin.trim().toUpperCase() : "";
+
+  if (isServerVerified(item)) {
+    const price = typeof item.price === "number" && item.price > 0 ? item.price : null;
+    return {
+      ...item,
+      asin: claimedAsin,
+      title,
+      price,
+      originalPrice: null,
+      discountPercent: null,
+      dealBadge: null,
+      image: typeof item.image === "string" && /^https?:\/\//.test(item.image) ? item.image : null,
+      category: item.category || categorizeProduct(title),
+      verified: true
+    };
+  }
 
   if (isVerifiedAsin(claimedAsin)) {
     const known = VERIFIED_PRODUCTS[claimedAsin];

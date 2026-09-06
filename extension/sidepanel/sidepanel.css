@@ -1769,6 +1769,70 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   transition: width 0.3s ease, background 0.3s ease;
 }
 
+.quota-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  min-height: 18px;
+}
+
+.quota-credits {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--exact-green);
+}
+
+.quota-buy-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary-gold);
+  cursor: pointer;
+}
+
+.quota-buy-btn:hover { text-decoration: underline; }
+
+.quota-buy-btn.urgent {
+  color: #090D14;
+  background: linear-gradient(135deg, #FF9900, #FF5500);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+}
+
+.anon-quota-text {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin: -4px 0 10px;
+}
+
+/* Paywall: the 402 state of the scan tab. */
+.paywall-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  max-width: 280px;
+  margin: 0 auto 8px;
+}
+
+.paywall-actions .signin-btn,
+.paywall-actions .direct-scan-btn,
+.paywall-actions .account-btn {
+  width: 100%;
+}
+
+.paywall-footnote {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
 .account-actions { display: flex; gap: 6px; }
 
 .account-btn {
