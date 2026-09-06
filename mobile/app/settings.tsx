@@ -16,6 +16,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useStore } from "../store/useStore";
+import { syncLiveScanMode, type LiveScanMode } from "../modules/live-scan/src";
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -28,6 +29,9 @@ export default function SettingsScreen() {
   const [minConfidence, setMinConfidence] = useState(
     String(settings?.minConfidence ?? 50)
   );
+  const [liveScanMode, setLiveScanMode] = useState<LiveScanMode>(
+    settings?.liveScanMode === "continuous" ? "continuous" : "pause"
+  );
 
   async function handleSave() {
     const confidence = parseInt(minConfidence, 10);
@@ -39,7 +43,8 @@ export default function SettingsScreen() {
       Alert.alert("Invalid tag", "Affiliate tag must be 3–25 alphanumeric characters.");
       return;
     }
-    await patchSettings({ affiliateTag, minConfidence: confidence });
+    await patchSettings({ affiliateTag, minConfidence: confidence, liveScanMode });
+    await syncLiveScanMode(liveScanMode);
     Alert.alert("Saved", "Settings updated.");
   }
 
@@ -71,6 +76,44 @@ export default function SettingsScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Live Scan mode */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Live Scan</Text>
+        <Text style={styles.label}>When to capture</Text>
+        <View style={styles.modeRow}>
+          <TouchableOpacity
+            style={[styles.modeChip, liveScanMode === "pause" && styles.modeChipActive]}
+            onPress={() => setLiveScanMode("pause")}
+            activeOpacity={0.85}
+          >
+            <Text style={[styles.modeChipTitle, liveScanMode === "pause" && styles.modeChipTitleActive]}>
+              Pause to Scan
+            </Text>
+            <Text style={styles.modeChipSub}>Semi-auto · recommended</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.modeChip, liveScanMode === "continuous" && styles.modeChipActive]}
+            onPress={() => setLiveScanMode("continuous")}
+            activeOpacity={0.85}
+          >
+            <Text
+              style={[
+                styles.modeChipTitle,
+                liveScanMode === "continuous" && styles.modeChipTitleActive
+              ]}
+            >
+              Continuous
+            </Text>
+            <Text style={styles.modeChipSub}>Also while playing</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.hint}>
+          {liveScanMode === "pause"
+            ? "Radar watches quietly in the background. The moment you pause a TikTok / Reel / YouTube video, that exact frame is scanned."
+            : "Scans every few seconds while the video plays, and also when you pause. Uses more quota."}
+        </Text>
+      </View>
+
       {/* Confidence */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Scan Settings</Text>
@@ -94,7 +137,7 @@ export default function SettingsScreen() {
         {sessionToken ? (
           <View>
             <Text style={styles.signedIn}>✅ Signed in and syncing</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={{ marginTop: 16 }}
               onPress={() => {
                 useStore.getState().setSessionToken(null);
@@ -109,11 +152,13 @@ export default function SettingsScreen() {
             <Text style={styles.hint}>
               Sign in to unlock higher scan quotas and sync across devices.
             </Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={{ marginTop: 16 }}
               onPress={() => router.push("/login")}
             >
-              <Text style={{ color: "#FF5500", fontSize: 14, fontWeight: "600" }}>Sign In with Google</Text>
+              <Text style={{ color: "#FF5500", fontSize: 14, fontWeight: "600" }}>
+                Sign In with Google
+              </Text>
             </TouchableOpacity>
           </View>
         )}
@@ -162,6 +207,23 @@ const styles = StyleSheet.create({
   hint: { color: "#64748B", fontSize: 12, marginTop: 8, lineHeight: 18 },
   link: { color: "#FF5500", fontSize: 13, marginTop: 8 },
   signedIn: { color: "#22C55E", fontSize: 14 },
+  modeRow: { flexDirection: "row", gap: 10 },
+  modeChip: {
+    flex: 1,
+    backgroundColor: "#0B0F17",
+    borderWidth: 1,
+    borderColor: "#334155",
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 12
+  },
+  modeChipActive: {
+    borderColor: "#FF5500",
+    backgroundColor: "rgba(255, 85, 0, 0.12)"
+  },
+  modeChipTitle: { color: "#CBD5E1", fontSize: 14, fontWeight: "700" },
+  modeChipTitleActive: { color: "#FF8A3D" },
+  modeChipSub: { color: "#64748B", fontSize: 11, marginTop: 4 },
   saveButton: {
     backgroundColor: "#FF5500",
     marginHorizontal: 16,

@@ -4,15 +4,14 @@ import UserNotifications
 
 /// Receives the device screen while the user is in TikTok / YouTube / Instagram.
 ///
-/// Two triggers send a frame to /resolve:
-///  1. **Pause** — the screen stops changing for ~1.2 s. Pausing a video to look
-///     at something is the strongest buying signal we get, so that exact frame
-///     is scanned immediately, once per still period, at higher JPEG quality
-///     (no motion blur). We cannot see the player's pause button; stillness of
-///     the pixels is the proxy.
-///  2. **Periodic** — every `minInterval` seconds while the video keeps moving,
-///     skipping near-duplicates of the last scanned frame.
+/// Default mode is **pause-only** (semi-automatic): the screen is watched cheaply,
+/// and a frame is sent to /resolve only when the pixels freeze for ~0.8 s — i.e. the
+/// viewer paused the video on something they want. That is the buying signal.
 ///
+/// Optional **continuous** mode (settings) also scans every `minInterval` seconds
+/// while the video keeps moving, still skipping near-duplicates.
+///
+/// We cannot see the player's pause button; stillness of the pixels is the proxy.
 /// Finds are written to the App Group so the main app accumulates them.
 final class SampleHandler: RPBroadcastSampleHandler {
   private let minInterval: TimeInterval = 5
@@ -26,8 +25,9 @@ final class SampleHandler: RPBroadcastSampleHandler {
 
   /// How often the cheap 8×8 hash is computed to watch for stillness.
   private let hashInterval: TimeInterval = 0.4
-  /// Consecutive near-identical hashes that count as "the user paused".
-  private let stillFramesRequired = 3
+  /// Consecutive near-identical hashes that count as "the user paused"
+  /// (~0.8 s). Snappy enough to feel intentional, long enough to ignore a blink.
+  private let stillFramesRequired = 2
   private let stillHammingMax = 4
   /// Hamming distance under which a frame is "the same content" as the last scan.
   private let duplicateHammingMax = 6
@@ -76,6 +76,8 @@ final class SampleHandler: RPBroadcastSampleHandler {
     var hash: UInt64 = 0
     var trigger: Trigger?
     var skippedDuplicate = false
+    // Re-read every tick so flipping the setting mid-broadcast takes effect.
+    let continuous = LiveScanStore.scanMode() == "continuous"
 
     autoreleasepool {
       let image = CIImage(cvPixelBuffer: pixelBuffer)
@@ -94,7 +96,7 @@ final class SampleHandler: RPBroadcastSampleHandler {
 
       let isDuplicateOfLastScan = lastHash != 0 && Self.hamming(lastHash, hash) < duplicateHammingMax
       let pausedNow = stillCount >= stillFramesRequired && !stillScanned
-      let periodicDue = now.timeIntervalSince(lastSampleAt) >= minInterval
+      let periodicDue = continuous && now.timeIntervalSince(lastSampleAt) >= minInterval
 
       if pausedNow {
         // One scan per still period, and none if this content was just scanned.
@@ -282,7 +284,14 @@ final class SampleHandler: RPBroadcastSampleHandler {
       ?? (first["sourceCrop"] as? String)
       ?? (first["frameImage"] as? String)
 
-    content.title = asin != nil ? "⚡ StreamSnap Match Found!" : "👀 StreamSnap Spotted Something"
+    content.title = {
+      let onPause = (first["capturedOnPause"] as? Bool) == true
+        || (first["trigger"] as? String) == "pause"
+      if onPause {
+        return asin != nil ? "⏸ Paused — Amazon match" : "⏸ Paused — something spotted"
+      }
+      return asin != nil ? "⚡ StreamSnap Match Found!" : "👀 StreamSnap Spotted Something"
+    }()
     if let price, !price.isEmpty {
       content.subtitle = asin != nil && !priceEstimated ? "\(price) on Amazon" : "~\(price) · tap to search Amazon"
     } else {

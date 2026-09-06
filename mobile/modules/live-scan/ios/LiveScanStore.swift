@@ -25,6 +25,8 @@ enum LiveScanStore {
     static let sessionToken = "ss.live.sessionToken"
     static let installId = "ss.live.installId"
     static let workerUrl = "ss.live.workerUrl"
+    /// "pause" (default) = scan only when the video freezes; "continuous" = also every ~5s while moving.
+    static let scanMode = "ss.live.scanMode"
   }
 
   static var defaults: UserDefaults? {
@@ -68,6 +70,19 @@ enum LiveScanStore {
     defaults.set(installId, forKey: Key.installId)
     defaults.set(workerUrl, forKey: Key.workerUrl)
     defaults.synchronize()
+  }
+
+  /// Persist the live-scan trigger mode for the broadcast extension to read.
+  /// Unknown values fall back to pause-only (the semi-automatic default).
+  static func writeScanMode(_ mode: String) {
+    let normalized = mode == "continuous" ? "continuous" : "pause"
+    defaults?.set(normalized, forKey: Key.scanMode)
+    defaults?.synchronize()
+  }
+
+  static func scanMode() -> String {
+    let raw = defaults?.string(forKey: Key.scanMode) ?? "pause"
+    return raw == "continuous" ? "continuous" : "pause"
   }
 
   static func credentials() -> (token: String?, installId: String, workerUrl: String) {

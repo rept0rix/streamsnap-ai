@@ -8,10 +8,11 @@ import {
   requestLiveScanNotifications,
   startLiveBroadcast,
   syncLiveScanCredentials,
+  syncLiveScanMode,
   type LiveScanProduct,
   type LiveScanState
 } from "../modules/live-scan/src";
-import { getInstallId } from "../services/storage";
+import { getInstallId, getSettings } from "../services/storage";
 import { useStore } from "../store/useStore";
 import { useNotificationStore } from "../store/useNotificationStore";
 import type { Product } from "../services/api";
@@ -84,7 +85,13 @@ export function useLiveScan() {
         await notifStore.addNotification({
           id: `live-find-${product.asin || Date.now()}`,
           type: "scan_find",
-          title: product.verified ? "⚡ Live Scan Found Product!" : "👀 Live Scan Spotted Something",
+          title: product.capturedOnPause
+            ? product.verified
+              ? "⏸ Paused — product found"
+              : "⏸ Paused — something spotted"
+            : product.verified
+              ? "⚡ Live Scan Found Product!"
+              : "👀 Live Scan Spotted Something",
           message: `${product.title}${priceLabel ? ` (${priceLabel})` : ""}`,
           product: lightProduct
         });
@@ -104,6 +111,9 @@ export function useLiveScan() {
         installId,
         workerUrl: WORKER_URL
       });
+      const settings = await getSettings();
+      if (!mounted) return;
+      await syncLiveScanMode(settings.liveScanMode === "continuous" ? "continuous" : "pause");
     })();
 
     const sub = addLiveScanListener((next) => {

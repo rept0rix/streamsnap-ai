@@ -35,6 +35,14 @@ public class LiveScanModule: Module {
       LiveScanStore.writeCredentials(token: token, installId: installId, workerUrl: workerUrl)
     }
 
+    AsyncFunction("syncScanMode") { (mode: String) in
+      LiveScanStore.writeScanMode(mode)
+    }
+
+    Function("getScanMode") { () -> String in
+      LiveScanStore.scanMode()
+    }
+
     Function("getState") { () -> [String: Any] in
       LiveScanStore.snapshot(screenCaptured: UIScreen.main.isCaptured)
     }

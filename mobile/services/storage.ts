@@ -25,6 +25,12 @@ export interface AppSettings {
   minConfidence: number;
   geminiApiKey: string; // stored locally for direct Gemini calls (optional)
   onboardingCompleted: boolean;
+  /**
+   * Live Scan trigger mode.
+   * - "pause" (default): only scan when the viewer pauses the video — semi-automatic.
+   * - "continuous": also sample every few seconds while the video plays.
+   */
+  liveScanMode: "pause" | "continuous";
 }
 
 export interface CartItem {
@@ -58,7 +64,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   affiliateTag: "streamsnap03-20",
   minConfidence: 50,
   geminiApiKey: "",
-  onboardingCompleted: false
+  onboardingCompleted: false,
+  liveScanMode: "pause"
 };
 
 // ---------------------------------------------------------------------------
@@ -148,7 +155,8 @@ export async function clearCatalog(): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export async function getSettings(): Promise<AppSettings> {
-  return getJson<AppSettings>(KEYS.SETTINGS, DEFAULT_SETTINGS);
+  const stored = await getJson<Partial<AppSettings>>(KEYS.SETTINGS, DEFAULT_SETTINGS);
+  return { ...DEFAULT_SETTINGS, ...stored };
 }
 
 export async function updateSettings(patch: Partial<AppSettings>): Promise<AppSettings> {

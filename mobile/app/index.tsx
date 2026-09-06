@@ -236,8 +236,8 @@ export default function HomeScreen() {
               </View>
               <Text style={styles.liveRadarSub} numberOfLines={1}>
                 {live.state.scanCount > 0
-                  ? `Pause a video to scan it · ${live.state.scanCount} frames analyzed`
-                  : "Pause on any product to scan it instantly..."}
+                  ? `Pause a video · ${live.state.scanCount} scan${live.state.scanCount === 1 ? "" : "s"}`
+                  : "Watching — pause on anything you like"}
               </Text>
             </View>
           </View>
@@ -284,9 +284,9 @@ export default function HomeScreen() {
 
             <View style={styles.stepItem}>
               <View style={styles.stepNumBadge}><Text style={styles.stepNumText}>2</Text></View>
-              <Ionicons name="phone-portrait-outline" size={20} color="#FF6A00" style={styles.stepIcon} />
-              <Text style={styles.stepBold}>Browse Video</Text>
-              <Text style={styles.stepSub}>TikTok, Reels, YT</Text>
+              <Ionicons name="pause-circle-outline" size={20} color="#FF6A00" style={styles.stepIcon} />
+              <Text style={styles.stepBold}>Pause Video</Text>
+              <Text style={styles.stepSub}>On the product</Text>
             </View>
 
             <Ionicons name="chevron-forward" size={16} color="#334155" style={styles.stepArrow} />
@@ -294,8 +294,8 @@ export default function HomeScreen() {
             <View style={styles.stepItem}>
               <View style={styles.stepNumBadge}><Text style={styles.stepNumText}>3</Text></View>
               <Ionicons name="cart-outline" size={20} color="#10B981" style={styles.stepIcon} />
-              <Text style={styles.stepBold}>Instant Finds</Text>
-              <Text style={styles.stepSub}>Amazon alerts drop</Text>
+              <Text style={styles.stepBold}>Instant Find</Text>
+              <Text style={styles.stepSub}>Amazon alert drops</Text>
             </View>
           </View>
         </View>

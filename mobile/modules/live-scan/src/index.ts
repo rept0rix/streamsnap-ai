@@ -77,6 +77,8 @@ type LiveScanNative = {
   getState(): LiveScanState;
   startBroadcast(): Promise<void>;
   syncCredentials(token: string | null, installId: string, workerUrl: string): Promise<void>;
+  syncScanMode?(mode: string): Promise<void>;
+  getScanMode?(): string;
   requestNotificationPermission(): Promise<boolean>;
   addListener(event: string, listener: (event: LiveScanState) => void): { remove: () => void };
 };
@@ -115,6 +117,19 @@ export async function syncLiveScanCredentials(opts: {
 }): Promise<void> {
   if (!native) return;
   await native.syncCredentials(opts.token ?? null, opts.installId, opts.workerUrl);
+}
+
+/** "pause" = semi-auto (default); "continuous" = also scan while the video plays. */
+export type LiveScanMode = "pause" | "continuous";
+
+export async function syncLiveScanMode(mode: LiveScanMode): Promise<void> {
+  if (!native?.syncScanMode) return;
+  await native.syncScanMode(mode === "continuous" ? "continuous" : "pause");
+}
+
+export function getLiveScanMode(): LiveScanMode {
+  const raw = native?.getScanMode?.() ?? "pause";
+  return raw === "continuous" ? "continuous" : "pause";
 }
 
 export async function requestLiveScanNotifications(): Promise<boolean> {
