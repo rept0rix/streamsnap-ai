@@ -517,7 +517,8 @@ async function runAnalysis({ imageDataUrl, apiKey, streamContext, mode }) {
     fromCache,
     engine: raw?.engine || null,
     byoKey: Boolean(raw?.byoKey),
-    quota: raw?.quota || null,
+    // A locally cached frame cost no scan, so its stored balance is stale.
+    quota: fromCache ? null : raw?.quota || null,
     capturedAt: new Date().toLocaleTimeString()
   };
 
