@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.6.3] - 2026-09-07 (09:30 IDT)
+
+### Added
+- **Auth Gates for History, Cart & Stats**: These side panel tabs now require Google sign-in; the Settings tab places Google Sign-in / Account & Quota as the primary top card, and History/Cart badge counters show `0` when signed out instead of leaking stale counts.
+- **Soft Update Banner**: When `/version` reports a newer `latestVersion`, the side panel shows a dismissible "update available" banner (in addition to the hard gate for builds below `minVersion`).
+
+### Changed
+- **Product Card Actions**: Redesigned into a clean 2-tier hierarchy with readable store pills.
+- **Version Unity**: `extension/manifest.json`, the worker's `LATEST_EXTENSION_VERSION` (served by `/version`), the in-extension version badges, the landing page badges / dynamic-version fallbacks and the packaged ZIP in `landing_page/assets/` now all report **1.6.3**. `MIN_EXTENSION_VERSION` remains `1.6.0` (no forced-update bump). The previously published `streamsnap-extension-v1.6.2.zip` is kept as an archive only; `tools/package.sh` no longer deletes older versioned zips.
+
+### Fixed
+- **Memory**: Capture canvases are released after `toDataURL`, manifest permissions were tightened, and Gemini JSON parsing was hardened against malformed model output.
+
+---
+
 ## [1.6.1] - 2026-09-01 (13:15 IDT)
 
 ### Fixed
