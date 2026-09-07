@@ -4,20 +4,32 @@
  */
 
 export const CURRENT_BUILD = {
-  version: "1.6.0",
-  buildDate: "2026-09-01",
-  buildTime: "12:20",
-  buildTimestamp: "2026-09-01 12:20:00 IDT",
-  title: "Forced Updates, Account Header & Master On/Off",
+  version: "1.6.3",
+  buildDate: "2026-09-07",
+  buildTime: "09:30",
+  buildTimestamp: "2026-09-07 09:30:00 IDT",
+  title: "Sign-in Gates, Product Card Redesign & Memory Cleanup",
   highlights: [
-    "🔒 Forced Update Gate: server-driven minimum version with a hard 'Update required' block.",
-    "👤 Account in Header: signed-in Google account and Sign out on every tab.",
-    "⚡ Master On/Off Switch with OFF guard on the panel and video page."
+    "🔒 Auth Gates: History, Cart and Stats now require Google sign-in; badge counters show 0 when signed out.",
+    "🛍️ Product Card Redesign: clean 2-tier action buttons with readable store pills.",
+    "🧹 Canvas memory cleanup after capture, tighter manifest permissions and hardened Gemini JSON parsing."
   ]
 };
 
 export const VERSION_HISTORY = [
   CURRENT_BUILD,
+  {
+    version: "1.6.1",
+    buildDate: "2026-09-01",
+    buildTime: "13:15",
+    buildTimestamp: "2026-09-01 13:15:00 IDT",
+    title: "Scan Reliability Fixes",
+    highlights: [
+      "🔧 Scan & Snip work with either a Gemini key or a signed-in session (server-side fallback).",
+      "🔐 Signed-in scans now send the session token and attribute to the account quota.",
+      "⏳ Loading spinner no longer hangs when a scan ends without a result."
+    ]
+  },
   {
     version: "1.6.0",
     buildDate: "2026-09-01",

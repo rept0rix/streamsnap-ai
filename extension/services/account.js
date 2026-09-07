@@ -189,7 +189,7 @@ export async function registerDevice() {
       body: JSON.stringify({
         deviceId: deviceId || undefined,
         deviceType: "extension",
-        deviceName: `Chrome Extension v1.6.0 (${platformOs})`,
+        deviceName: `Chrome Extension v1.6.3 (${platformOs})`,
         platformOs
       })
     });
