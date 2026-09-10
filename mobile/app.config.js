@@ -98,7 +98,7 @@ module.exports = ({ config }) => ({
   extra: {
     workerUrl: "https://streamsnap-lens.na0ryank0.workers.dev",
     eas: {
-      projectId: "0538ed35-21ea-4c96-9755-0cd4bbbbd7f8"
+      projectId: "3b4a8c4e-a1be-402a-979f-afb09b807982"
     }
   }
 });
