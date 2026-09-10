@@ -140,6 +140,12 @@
           <span>ENTER LIVE SIMULATOR ↓</span>
           <span class="telemetry-bracket">]</span>
         </a>
+
+        <a href="assets/streamsnap-android-latest.apk" download="StreamSnap-AI-android-tester.apk" class="btn-telemetry-explore">
+          <span class="telemetry-bracket">[</span>
+          <span>⬇ ANDROID APK</span>
+          <span class="telemetry-bracket">]</span>
+        </a>
       </div>
 
       <!-- Trust Meta Strip -->
@@ -754,8 +760,8 @@
             </a>
           </div>
           <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
-            <span>Android tester APK:</span>
-            <a href="android.html" class="source-link-text" style="font-weight:700;">
+            <span>Android tester APK (~83 MB):</span>
+            <a href="assets/streamsnap-android-latest.apk" download="StreamSnap-AI-android-tester.apk" class="source-link-text" style="font-weight:700;">
               ⬇ Download Android APK
             </a>
           </div>
@@ -851,6 +857,7 @@
         <a href="#simulator">Simulator</a>
         <a href="#architecture">Architecture</a>
         <a href="#creators">For Creators</a>
+        <a href="assets/streamsnap-android-latest.apk" download="StreamSnap-AI-android-tester.apk">Android APK</a>
       </div>
 
       <div class="footer-links-col">
@@ -877,12 +884,15 @@
         <span class="dock-dot"></span>
         <div class="dock-text">
           <span class="dock-title">StreamSnap AI</span>
-          <span class="dock-meta">Chrome Web Store · Free</span>
+          <span class="dock-meta" id="mobile-dock-meta">Chrome Web Store · Free</span>
         </div>
       </div>
-      <button class="dock-btn btn-install-trigger">
+      <button class="dock-btn btn-install-trigger" id="mobile-dock-install">
         <span>⚡ INSTALL</span>
       </button>
+      <a id="mobile-dock-apk" href="assets/streamsnap-android-latest.apk" download="StreamSnap-AI-android-tester.apk" class="dock-btn" style="display:none; text-decoration:none;">
+        <span>⬇ APK</span>
+      </a>
     </div>
   </div>
 

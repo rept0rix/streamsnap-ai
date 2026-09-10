@@ -2534,6 +2534,12 @@ body.studio-dark {
   box-shadow: 0 0 15px rgba(255, 153, 0, 0.4);
 }
 
+a.dock-btn {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
 /* ==========================================================================
    MOBILE-FIRST POLISHED RESPONSIVE ENGINE (TOUCH-FIRST & ACCESSIBLE)
    ========================================================================== */
