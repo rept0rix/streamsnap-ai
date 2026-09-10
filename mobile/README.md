@@ -32,7 +32,7 @@ You can run the app immediately in a local simulator or on your physical device 
 
 3. Run on a device:
    - **iOS:** Press `i` to open in iOS Simulator (requires Xcode), or scan the QR code with the Expo Go app on your physical iPhone.
-   - **Android:** Press `a` to open in Android Emulator, or scan with Expo Go on Android.
+   - **Android:** You do **not** need a physical Android phone. Use an emulator (`npx expo run:android`) or a cloud APK from EAS (below). Expo Go cannot run Live Scan.
 
 ## Live background scan
 
@@ -58,9 +58,23 @@ The App Group `group.com.streamsnap.ai` must exist on the Apple Developer team.
 3. A persistent **StreamSnap Live Scan** notification stays up — keep it running and switch to TikTok / YouTube / Reels.
 4. Pause on a product to scan that frame immediately, or wait for the periodic 5s sample. Tap the radar again (or **Stop** on the notification) to end capture.
 
+You do not need a physical Android phone to build or ship this.
+
+**Local emulator** (Android Studio / `sdkmanager` AVD):
+
 ```bash
-npx expo run:android --device
+npx expo run:android
 ```
+
+**Cloud APK / Play bundle** (from a Mac or CI, no phone):
+
+```bash
+npx eas-cli login
+npx eas-cli build --platform android --profile preview      # APK for testers
+npx eas-cli build --platform android --profile production  # AAB for Play Console
+```
+
+Preview APKs can be sent to friends or internal testers. Production is an App Bundle for Google Play.
 
 ## Building the Native Share Extension
 
