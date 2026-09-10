@@ -232,24 +232,34 @@ export default function HomeScreen() {
               <View style={styles.liveRadarTitleRow}>
                 <Text style={styles.liveRadarTitle}>STREAMSNAP RADAR ACTIVE</Text>
                 <View style={styles.liveFpsBadge}>
-                  <Text style={styles.liveFpsText}>60 FPS</Text>
+                  <Text style={styles.liveFpsText}>LIVE</Text>
                 </View>
               </View>
               <Text style={styles.liveRadarSub} numberOfLines={1}>
-                {live.state.scanCount > 0
-                  ? `Pause a video to scan it · ${live.state.scanCount} frames analyzed`
-                  : "Pause on any product to scan it instantly..."}
+                {live.state.lastError
+                  ? live.state.lastError
+                  : live.state.scanCount > 0
+                    ? `${live.state.scanCount} frames · ${live.state.findCount} finds · tap STOP`
+                    : "Pause on a product, or tap STOP to end"}
               </Text>
             </View>
           </View>
 
-          {/* Dynamic Audio/Video Equalizer Waves */}
-          <View style={styles.liveWaveBox}>
-            <View style={[styles.liveWaveBar, { height: 14 }]} />
-            <View style={[styles.liveWaveBar, { height: 22 }]} />
-            <View style={[styles.liveWaveBar, { height: 11 }]} />
-            <View style={[styles.liveWaveBar, { height: 18 }]} />
-          </View>
+          <TouchableOpacity
+            style={styles.liveStopBtn}
+            onPress={async () => {
+              try {
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                await live.stop();
+              } catch (err) {
+                const message = err instanceof Error ? err.message : "Could not stop live scan";
+                Alert.alert("Live scan", message);
+              }
+            }}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.liveStopBtnText}>STOP</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <View style={styles.idleRadarBanner}>
@@ -298,7 +308,7 @@ export default function HomeScreen() {
               <View style={styles.stepNumBadge}><Text style={styles.stepNumText}>3</Text></View>
               <Ionicons name="cart-outline" size={20} color="#10B981" style={styles.stepIcon} />
               <Text style={styles.stepBold}>Instant Finds</Text>
-              <Text style={styles.stepSub}>Amazon alerts drop</Text>
+              <Text style={styles.stepSub}>Amazon alerts · STOP anytime</Text>
             </View>
           </View>
         </View>
@@ -309,7 +319,7 @@ export default function HomeScreen() {
             onPress={async () => {
               try {
                 await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-                if (liveActive && Platform.OS === "android") {
+                if (liveActive) {
                   await live.stop();
                   return;
                 }
@@ -922,6 +932,19 @@ const styles = StyleSheet.create({
     color: "#CBD5E1",
     fontSize: 11,
     marginTop: 2
+  },
+  liveStopBtn: {
+    backgroundColor: "#EA4300",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+    marginLeft: 8
+  },
+  liveStopBtnText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "900",
+    letterSpacing: 0.6
   },
   liveWaveBox: {
     flexDirection: "row",

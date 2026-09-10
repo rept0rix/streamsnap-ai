@@ -27,7 +27,7 @@ import { getCurrentUser } from "./auth.js";
 
 const LIMITS = {
   MAX_IMAGE_BYTES: 3 * 1024 * 1024,
-  PER_HOUR: 60,
+  PER_HOUR: 180,
   PER_DAY: 400,
   IMAGE_TTL_SECONDS: 300, // Google fetches within seconds; 5 min is generous
   CACHE_TTL_SECONDS: 60 * 60 * 24 * 7,

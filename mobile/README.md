@@ -56,7 +56,7 @@ The App Group `group.com.streamsnap.ai` must exist on the Apple Developer team.
 1. Tap **Live Scan** in StreamSnap.
 2. Approve the system **screen capture** prompt (and notifications, so find alerts appear).
 3. A persistent **StreamSnap Live Scan** notification stays up — keep it running and switch to TikTok / YouTube / Reels.
-4. Pause on a product to scan that frame immediately, or wait for the periodic 5s sample. Tap the radar again (or **Stop** on the notification) to end capture.
+4. Pause on a product to scan that frame immediately, or wait for the periodic sample (~20s). Tap **STOP** on the floating pill, the radar, or the notification to end capture.
 
 You do not need a physical Android phone to build or ship this.
 

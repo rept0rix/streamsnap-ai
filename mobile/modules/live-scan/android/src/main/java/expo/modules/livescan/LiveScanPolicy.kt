@@ -5,7 +5,8 @@ package expo.modules.livescan
  * Pause = ~1.2s of near-identical 8×8 hashes. Periodic = every 5s, skip near-dupes.
  */
 internal object LiveScanPolicy {
-  const val MIN_INTERVAL_MS = 5_000L
+  // Worker hourly cap is 180. 20s periodic stays under that; pause scans fire immediately.
+  const val MIN_INTERVAL_MS = 20_000L
   const val HASH_INTERVAL_MS = 400L
   const val WARMUP_MS = 1_000L
   const val STILL_FRAMES_REQUIRED = 3

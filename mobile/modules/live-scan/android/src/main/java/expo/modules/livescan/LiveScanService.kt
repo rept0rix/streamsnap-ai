@@ -1,7 +1,6 @@
 package expo.modules.livescan
 
 import android.app.Activity
-import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -18,7 +17,6 @@ import android.os.IBinder
 import android.os.Process
 import android.util.DisplayMetrics
 import android.view.WindowManager
-import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import android.graphics.PixelFormat
 
@@ -33,9 +31,21 @@ class LiveScanService : Service() {
   private var engine: LiveScanEngine? = null
   private var captureThread: HandlerThread? = null
   private var captureHandler: Handler? = null
+  private var stoppedByUser = false
 
   private val projectionCallback = object : MediaProjection.Callback() {
     override fun onStop() {
+      if (!stoppedByUser) {
+        LiveScanStore.recordEvent(
+          this@LiveScanService,
+          phase = "projection_stopped",
+          error = "Capture ended. Android stops it if you lock the phone or tap the screen-share chip."
+        )
+        LiveScanNotifier.notifySessionEnded(
+          this@LiveScanService,
+          "Live Scan stopped — phone locked or screen-share chip tapped. Open StreamSnap and start again."
+        )
+      }
       stopCapture()
       stopSelf()
     }
@@ -56,6 +66,7 @@ class LiveScanService : Service() {
   override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
     when (intent?.action) {
       ACTION_STOP -> {
+        stoppedByUser = true
         stopCapture()
         stopSelf()
         return START_NOT_STICKY
@@ -75,12 +86,14 @@ class LiveScanService : Service() {
         startForegroundNotification()
         LiveScanStore.beginSession(this)
         startCapture(resultCode, data)
+        LiveScanOverlay.show(this)
       }
     }
     return START_NOT_STICKY
   }
 
   override fun onDestroy() {
+    LiveScanOverlay.hide()
     stopCapture()
     LiveScanStore.endSession(this)
     captureThread?.quitSafely()
@@ -91,31 +104,7 @@ class LiveScanService : Service() {
   }
 
   private fun startForegroundNotification() {
-    val stopIntent = Intent(this, LiveScanService::class.java).setAction(ACTION_STOP)
-    val stopPi = PendingIntent.getService(
-      this,
-      0,
-      stopIntent,
-      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-    )
-    val launch = packageManager.getLaunchIntentForPackage(packageName)
-    val contentPi = launch?.let {
-      PendingIntent.getActivity(
-        this,
-        1,
-        it,
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-      )
-    }
-    val notification = NotificationCompat.Builder(this, LiveScanNotifier.FG_CHANNEL_ID)
-      .setSmallIcon(android.R.drawable.ic_menu_camera)
-      .setContentTitle("StreamSnap Live Scan")
-      .setContentText("Capturing the screen. Open TikTok or YouTube, then pause on a product.")
-      .setOngoing(true)
-      .setContentIntent(contentPi)
-      .addAction(0, "Stop", stopPi)
-      .setPriority(NotificationCompat.PRIORITY_LOW)
-      .build()
+    val notification = LiveScanNotifier.buildRunningNotification(this)
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
       startForeground(

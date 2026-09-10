@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 internal class LiveScanEngine(private val context: Context) {
   private val resolveExecutor = Executors.newSingleThreadExecutor()
   private val inFlight = AtomicBoolean(false)
+  @Volatile private var backoffUntilMs = 0L
 
   private var lastHashAtMs = 0L
   private var lastSampleAtMs = 0L
@@ -39,6 +40,7 @@ internal class LiveScanEngine(private val context: Context) {
   fun onFrame(image: Image) {
     val now = android.os.SystemClock.elapsedRealtime()
     if (now - startedAtMs < LiveScanPolicy.WARMUP_MS) return
+    if (now < backoffUntilMs) return
     if (now - lastHashAtMs < LiveScanPolicy.HASH_INTERVAL_MS) return
     if (inFlight.get()) return
     lastHashAtMs = now
@@ -130,6 +132,10 @@ internal class LiveScanEngine(private val context: Context) {
         null
       }
       val workerError = parsed?.optString("error")?.ifEmpty { null }
+
+      if (status == 429) {
+        backoffUntilMs = android.os.SystemClock.elapsedRealtime() + 60_000
+      }
 
       if (status !in 200..299 || parsed?.optBoolean("ok") != true) {
         LiveScanStore.recordEvent(

@@ -118,8 +118,19 @@ internal object LiveScanStore {
     } else if (incrementOk) {
       editor.remove(Key.LAST_ERROR)
     }
+    val nextScans = p.getInt(Key.SCAN_COUNT, 0) + if (incrementScan) 1 else 0
+    val finds = p.getInt(Key.FIND_COUNT, 0)
+    val broadcasting = p.getBoolean(Key.BROADCASTING, false)
     editor.apply()
     ping(context)
+    if (broadcasting && (incrementScan || incrementSkip || error != null)) {
+      LiveScanNotifier.updateRunning(
+        context,
+        scans = nextScans,
+        finds = finds,
+        error = if (incrementOk) null else (error ?: p.getString(Key.LAST_ERROR, null))
+      )
+    }
   }
 
   fun upsertProducts(context: Context, incoming: List<JSONObject>): Int {
@@ -176,6 +187,14 @@ internal object LiveScanStore {
       .putInt(Key.FIND_COUNT, ordered.length())
       .apply()
     ping(context)
+    if (prefs(context).getBoolean(Key.BROADCASTING, false)) {
+      LiveScanNotifier.updateRunning(
+        context,
+        scans = prefs(context).getInt(Key.SCAN_COUNT, 0),
+        finds = ordered.length(),
+        error = null
+      )
+    }
     return added
   }
 

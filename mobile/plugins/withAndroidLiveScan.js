@@ -4,7 +4,8 @@ const SERVICE_NAME = "expo.modules.livescan.LiveScanService";
 const PERMISSIONS = [
   "android.permission.FOREGROUND_SERVICE",
   "android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION",
-  "android.permission.POST_NOTIFICATIONS"
+  "android.permission.POST_NOTIFICATIONS",
+  "android.permission.SYSTEM_ALERT_WINDOW"
 ];
 
 function withAndroidLiveScan(config) {

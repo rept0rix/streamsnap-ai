@@ -2,7 +2,7 @@
  * Mirrors LiveScanPolicy.decide() so the sampling rules can be verified
  * without an Android toolchain.
  */
-const MIN_INTERVAL_MS = 5_000;
+const MIN_INTERVAL_MS = 20_000;
 const STILL_FRAMES_REQUIRED = 3;
 const STILL_HAMMING_MAX = 4;
 const DUPLICATE_HAMMING_MAX = 6;
@@ -123,7 +123,7 @@ const moved = decide({
   stillCount: state.stillCount,
   stillScanned: true
 });
-assert(moved.trigger === "periodic", `expected periodic after motion + 5s, got ${moved.trigger}`);
+assert(moved.trigger === "periodic", `expected periodic after motion + interval, got ${moved.trigger}`);
 assert(moved.stillCount === 1, "motion must reset still count");
 
 // Near-duplicate of last scan is skipped
