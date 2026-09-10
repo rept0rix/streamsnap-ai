@@ -16,6 +16,7 @@ module.exports = ({ config }) => ({
   ios: {
     supportsTablet: false,
     bundleIdentifier: "com.streamsnap.ai",
+    buildNumber: "1",
     infoPlist: {
       NSCameraUsageDescription:
         "StreamSnap uses your camera to scan items in live streams and find them on Amazon.",
@@ -36,7 +37,15 @@ module.exports = ({ config }) => ({
       backgroundColor: "#0B0F17"
     },
     package: "com.streamsnap.ai",
-    permissions: ["CAMERA", "READ_EXTERNAL_STORAGE", "READ_MEDIA_IMAGES"],
+    versionCode: 1,
+    permissions: [
+      "CAMERA",
+      "READ_EXTERNAL_STORAGE",
+      "READ_MEDIA_IMAGES",
+      "FOREGROUND_SERVICE",
+      "FOREGROUND_SERVICE_MEDIA_PROJECTION",
+      "POST_NOTIFICATIONS"
+    ],
     intentFilters: [
       {
         action: "VIEW",
@@ -51,11 +60,15 @@ module.exports = ({ config }) => ({
     ]
   },
   web: {
-    bundler: "metro"
+    bundler: "metro",
+    output: "static",
+    favicon: "./assets/icon.png"
   },
   plugins: [
     "./plugins/withBroadcastExtension",
+    "./plugins/withAndroidLiveScan",
     "expo-router",
+    "expo-font",
     "expo-camera",
     [
       "expo-image-picker",
@@ -77,9 +90,15 @@ module.exports = ({ config }) => ({
     ]
   ],
   experiments: {
-    typedRoutes: true
+    typedRoutes: true,
+    ...(process.env.EXPO_WEB_BASE_URL
+      ? { baseUrl: process.env.EXPO_WEB_BASE_URL }
+      : {})
   },
   extra: {
-    workerUrl: "https://streamsnap-lens.na0ryank0.workers.dev"
+    workerUrl: "https://streamsnap-lens.na0ryank0.workers.dev",
+    eas: {
+      projectId: "3b4a8c4e-a1be-402a-979f-afb09b807982"
+    }
   }
 });

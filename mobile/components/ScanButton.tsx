@@ -91,7 +91,7 @@ export function ScanButton({
           style={styles.icon}
         />
         <Text style={styles.label}>{loading ? "Scanning..." : label}</Text>
-        <Text style={styles.subLabel}>{loading ? "Tap to pause" : "Auto-Capture"}</Text>
+        <Text style={styles.subLabel}>{loading ? "Tap to stop" : "Auto-Capture"}</Text>
       </TouchableOpacity>
     </View>
   );

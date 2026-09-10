@@ -32,18 +32,67 @@ You can run the app immediately in a local simulator or on your physical device 
 
 3. Run on a device:
    - **iOS:** Press `i` to open in iOS Simulator (requires Xcode), or scan the QR code with the Expo Go app on your physical iPhone.
-   - **Android:** Press `a` to open in Android Emulator, or scan with Expo Go on Android.
+   - **Android:** You do **not** need a physical Android phone. Use an emulator (`npx expo run:android`) or a cloud APK from EAS (below). Expo Go cannot run Live Scan.
 
-## Live background scan (iOS)
+## Live background scan
 
-iOS will not let an app silently read another app's screen. The legal path is a ReplayKit **Broadcast Upload Extension**:
+Neither iOS nor Android lets an app silently read another app's screen. StreamSnap uses the official capture APIs on each platform. This requires a **native build**, not Expo Go.
+
+### iOS (ReplayKit)
 
 1. Tap **Live Scan** in StreamSnap.
 2. In the system picker, start **StreamSnap Live Scan** (not Share).
 3. Open TikTok / YouTube / Instagram. iOS shows a red status bar while broadcasting.
 4. StreamSnap samples a frame about every 5 seconds, skips near-duplicates, and stacks finds in the catalog.
 
-This requires a native build (`npx expo run:ios --device`), not Expo Go. The App Group `group.com.streamsnap.ai` must exist on the Apple Developer team.
+```bash
+npx expo run:ios --device
+```
+
+The App Group `group.com.streamsnap.ai` must exist on the Apple Developer team.
+
+### Android (MediaProjection)
+
+1. Tap **Live Scan** in StreamSnap.
+2. Approve the system **screen capture** prompt (and notifications, so find alerts appear).
+3. A persistent **StreamSnap Live Scan** notification stays up — keep it running and switch to TikTok / YouTube / Reels.
+4. Pause on a product to scan that frame immediately, or wait for the periodic sample (~20s). Tap **STOP** on the floating pill, the radar, or the notification to end capture.
+
+You do not need a physical Android phone to build or ship this.
+
+**Local emulator** (Android Studio / `sdkmanager` AVD):
+
+```bash
+npx expo run:android
+```
+
+**Cloud APK / Play bundle** (from a Mac or CI, no phone):
+
+```bash
+npx eas-cli login
+npx eas-cli build --platform android --profile preview      # APK for testers
+npx eas-cli build --platform android --profile production  # AAB for Play Console
+```
+
+Preview APKs can be sent to friends or internal testers. Production is an App Bundle for Google Play.
+
+### Send a tester APK (sideload)
+
+Build a standalone phone APK (JS bundled in, no Metro, no Expo Go):
+
+```bash
+cd mobile
+npm run apk:tester
+```
+
+The file is `android/app/build/outputs/apk/release/app-release.apk`. Send it on WhatsApp, Telegram, or Google Drive.
+
+On the tester's phone:
+
+1. Open the APK from the chat / Drive download.
+2. Allow **Install unknown apps** for that messenger if Android asks.
+3. Install, open **StreamSnap AI**, tap **Live Scan**, allow screen capture.
+4. Switch to TikTok / YouTube and pause on a product.
 
 ## Building the Native Share Extension
 

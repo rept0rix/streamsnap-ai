@@ -142,7 +142,7 @@ Tighten `TITLE_KEYS`, `LINK_KEYS` and friends in `parser.js` once you have seen 
 
 ## Limits and cost
 
-Per install: 60 scans/hour, 400/day. Adjust in `LIMITS` in `src/index.js`.
+Per install: 180 scans/hour, 400/day. Adjust in `LIMITS` in `src/index.js`. Live Scan samples about every 20s plus pause frames, so the old 60/hour cap ran out in a few minutes.
 
 Bright Data gives 5,000 requests/month free, then $1.50 per 1,000. Cloudflare Workers, KV and R2 all have free tiers that comfortably cover early usage. Cache hits cost nothing, so real spend tracks *distinct* crops rather than total scans — which is why the same streamer's static setup is nearly free to scan repeatedly.
 

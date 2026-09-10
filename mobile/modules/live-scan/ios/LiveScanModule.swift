@@ -52,6 +52,9 @@ public class LiveScanModule: Module {
       if #available(iOS 16.2, *) {
         LiveActivityManager.shared.endActivity()
       }
+      await MainActor.run {
+        self.presentBroadcastPicker()
+      }
     }
   }
 

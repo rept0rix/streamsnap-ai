@@ -20,7 +20,8 @@ import {
   Modal,
   TextInput,
   ActivityIndicator,
-  Image
+  Image,
+  Platform
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -37,6 +38,7 @@ import { compressToBase64 } from "../services/imageUtils";
 import { getInstallId } from "../services/storage";
 import { useLiveScan } from "../hooks/useLiveScan";
 import { useNotificationStore } from "../store/useNotificationStore";
+import { isExpoGo } from "../lib/expoGo";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -75,7 +77,7 @@ export default function HomeScreen() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images"],
       quality: 0.85
     });
 
@@ -231,24 +233,34 @@ export default function HomeScreen() {
               <View style={styles.liveRadarTitleRow}>
                 <Text style={styles.liveRadarTitle}>STREAMSNAP RADAR ACTIVE</Text>
                 <View style={styles.liveFpsBadge}>
-                  <Text style={styles.liveFpsText}>60 FPS</Text>
+                  <Text style={styles.liveFpsText}>LIVE</Text>
                 </View>
               </View>
               <Text style={styles.liveRadarSub} numberOfLines={1}>
-                {live.state.scanCount > 0
-                  ? `Pause a video to scan it · ${live.state.scanCount} frames analyzed`
-                  : "Pause on any product to scan it instantly..."}
+                {live.state.lastError
+                  ? live.state.lastError
+                  : live.state.scanCount > 0
+                    ? `${live.state.scanCount} frames · ${live.state.findCount} finds · tap STOP`
+                    : "Pause on a product, or tap STOP to end"}
               </Text>
             </View>
           </View>
 
-          {/* Dynamic Audio/Video Equalizer Waves */}
-          <View style={styles.liveWaveBox}>
-            <View style={[styles.liveWaveBar, { height: 14 }]} />
-            <View style={[styles.liveWaveBar, { height: 22 }]} />
-            <View style={[styles.liveWaveBar, { height: 11 }]} />
-            <View style={[styles.liveWaveBar, { height: 18 }]} />
-          </View>
+          <TouchableOpacity
+            style={styles.liveStopBtn}
+            onPress={async () => {
+              try {
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                await live.stop();
+              } catch (err) {
+                const message = err instanceof Error ? err.message : "Could not stop live scan";
+                Alert.alert("Live scan", message);
+              }
+            }}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.liveStopBtnText}>STOP</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <View style={styles.idleRadarBanner}>
@@ -286,7 +298,9 @@ export default function HomeScreen() {
               <View style={styles.stepNumBadge}><Text style={styles.stepNumText}>2</Text></View>
               <Ionicons name="phone-portrait-outline" size={20} color="#FF6A00" style={styles.stepIcon} />
               <Text style={styles.stepBold}>Browse Video</Text>
-              <Text style={styles.stepSub}>TikTok, Reels, YT</Text>
+              <Text style={styles.stepSub}>
+                {Platform.OS === "android" ? "Allow capture, then TikTok / YT" : "TikTok, Reels, YT"}
+              </Text>
             </View>
 
             <Ionicons name="chevron-forward" size={16} color="#334155" style={styles.stepArrow} />
@@ -295,7 +309,7 @@ export default function HomeScreen() {
               <View style={styles.stepNumBadge}><Text style={styles.stepNumText}>3</Text></View>
               <Ionicons name="cart-outline" size={20} color="#10B981" style={styles.stepIcon} />
               <Text style={styles.stepBold}>Instant Finds</Text>
-              <Text style={styles.stepSub}>Amazon alerts drop</Text>
+              <Text style={styles.stepSub}>Amazon alerts · STOP anytime</Text>
             </View>
           </View>
         </View>
@@ -306,6 +320,17 @@ export default function HomeScreen() {
             onPress={async () => {
               try {
                 await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+                if (isExpoGo) {
+                  Alert.alert(
+                    "Expo Go",
+                    "Live Scan needs a native iPhone build (ReplayKit). In Expo Go use Camera or Gallery to scan a screenshot."
+                  );
+                  return;
+                }
+                if (liveActive) {
+                  await live.stop();
+                  return;
+                }
                 await live.start();
               } catch (err) {
                 const message = err instanceof Error ? err.message : "Could not start live scan";
@@ -390,7 +415,9 @@ export default function HomeScreen() {
               </View>
               <Text style={styles.emptyTitle}>No products scanned yet</Text>
               <Text style={styles.emptyDesc}>
-                Tap Live Scan above, then open TikTok or YouTube. Pause on anything you like — that frame is scanned instantly and lands right here.
+                {Platform.OS === "android"
+                  ? "Tap Live Scan, allow screen capture, then open TikTok or YouTube. Pause on anything you like — that frame is scanned instantly and lands right here."
+                  : "Tap Live Scan above, then open TikTok or YouTube. Pause on anything you like — that frame is scanned instantly and lands right here."}
               </Text>
               <TouchableOpacity
                 style={styles.emptyActionBtn}
@@ -913,6 +940,19 @@ const styles = StyleSheet.create({
     color: "#CBD5E1",
     fontSize: 11,
     marginTop: 2
+  },
+  liveStopBtn: {
+    backgroundColor: "#EA4300",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+    marginLeft: 8
+  },
+  liveStopBtnText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "900",
+    letterSpacing: 0.6
   },
   liveWaveBox: {
     flexDirection: "row",

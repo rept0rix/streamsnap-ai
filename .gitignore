@@ -1,5 +1,7 @@
 .DS_Store
 *.log
+*.apk
+!landing_page/assets/*.apk
 node_modules/
 .system_generated/
 
@@ -16,3 +18,4 @@ mobile/node_modules/
 mobile/.expo/
 mobile/ios/
 mobile/android/
+mobile/modules/live-scan/android/build/

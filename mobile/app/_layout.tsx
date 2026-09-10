@@ -1,33 +1,36 @@
-import { useEffect } from "react";
-import { Stack } from "expo-router";
+import { useEffect, useState, type ReactNode } from "react";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { ShareIntentProvider, useShareIntentContext } from "expo-share-intent";
 import { useStore } from "../store/useStore";
 import { useNotificationStore } from "../store/useNotificationStore";
 import { getSessionToken } from "../services/storage";
 import { NotificationToast } from "../components/NotificationToast";
+import { isExpoGo, isExpoGoOrWeb } from "../lib/expoGo";
 
-export default function RootLayout() {
-  const { loadSettings, loadCatalog, loadCart, setSessionToken } = useStore();
-  const { loadNotifications } = useNotificationStore();
+function ShareIntentRedirect() {
+  const router = useRouter();
+  const segments = useSegments();
+  const { hasShareIntent } = useShareIntentContext();
 
   useEffect(() => {
-    // Bootstrap on app start
-    async function init() {
-      const t = await getSessionToken();
-      setSessionToken(t);
-      // Wait for token to be set before loading catalog to ensure cloud sync runs
-      await Promise.all([loadSettings(), loadCatalog(), loadCart(), loadNotifications()]);
+    if (hasShareIntent && segments[0] !== "share") {
+      router.push("/share");
     }
-    init();
-  }, []);
+  }, [hasShareIntent, segments, router]);
 
+  return null;
+}
+
+function AppTree({ children }: { children?: ReactNode }) {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <StatusBar style="light" backgroundColor="#0B0F17" />
         <NotificationToast />
+        {children}
         <Stack
           screenOptions={{
             headerStyle: { backgroundColor: "#0B0F17" },
@@ -52,4 +55,41 @@ export default function RootLayout() {
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
+}
+
+export default function RootLayout() {
+  const { loadSettings, loadCatalog, loadCart, setSessionToken } = useStore();
+  const { loadNotifications } = useNotificationStore();
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    async function init() {
+      const t = await getSessionToken();
+      setSessionToken(t);
+      await Promise.all([loadSettings(), loadCatalog(), loadCart(), loadNotifications()]);
+      setReady(true);
+    }
+    init();
+  }, []);
+
+  // Native share-intent is unavailable in Expo Go and on web.
+  const tree = isExpoGoOrWeb ? (
+    <AppTree />
+  ) : (
+    <ShareIntentProvider options={{ resetOnBackground: false, disabled: isExpoGo }}>
+      <AppTree>
+        <ShareIntentRedirect />
+      </AppTree>
+    </ShareIntentProvider>
+  );
+
+  // expo-observe has a native module and must not load inside Expo Go or web.
+  if (isExpoGoOrWeb) {
+    return tree;
+  }
+
+  const { ObservedApp } = require("../lib/observeRoot") as {
+    ObservedApp: (props: { children: ReactNode; ready: boolean }) => ReactNode;
+  };
+  return <ObservedApp ready={ready}>{tree}</ObservedApp>;
 }
