@@ -76,6 +76,24 @@ npx eas-cli build --platform android --profile production  # AAB for Play Consol
 
 Preview APKs can be sent to friends or internal testers. Production is an App Bundle for Google Play.
 
+### Send a tester APK (sideload)
+
+Build a standalone phone APK (JS bundled in, no Metro, no Expo Go):
+
+```bash
+cd mobile
+npm run apk:tester
+```
+
+The file is `android/app/build/outputs/apk/release/app-release.apk`. Send it on WhatsApp, Telegram, or Google Drive.
+
+On the tester's phone:
+
+1. Open the APK from the chat / Drive download.
+2. Allow **Install unknown apps** for that messenger if Android asks.
+3. Install, open **StreamSnap AI**, tap **Live Scan**, allow screen capture.
+4. Switch to TikTok / YouTube and pause on a product.
+
 ## Building the Native Share Extension
 
 Share Sheet is the fallback for a single screenshot or URL. A native build is required.

@@ -9,6 +9,7 @@
     "prebuild": "expo prebuild --clean",
     "lint": "eslint . --ext .ts,.tsx",
     "test:live-scan": "node modules/live-scan/scripts/verify-policy.mjs",
+    "apk:tester": "cd android && ./gradlew :app:assembleRelease -PreactNativeArchitectures=armeabi-v7a,arm64-v8a",
     "postinstall": "patch-package"
   },
   "dependencies": {
