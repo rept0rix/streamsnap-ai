@@ -32,8 +32,24 @@ import { ProductCard } from "../components/ProductCard";
 import { LoadingPulse } from "../components/LoadingPulse";
 import { EmptyState } from "../components/EmptyState";
 import type { Product } from "../services/api";
+import { isExpoGo } from "../lib/expoGo";
 
 export default function ShareScreen() {
+  if (isExpoGo) {
+    return (
+      <View style={{ flex: 1, backgroundColor: "#0B0F17", justifyContent: "center" }}>
+        <EmptyState
+          emoji="📤"
+          title="Share is not in Expo Go"
+          subtitle="Camera and Gallery work here. Share from TikTok needs a native build."
+        />
+      </View>
+    );
+  }
+  return <ShareScreenNative />;
+}
+
+function ShareScreenNative() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntentContext();

@@ -38,6 +38,7 @@ import { compressToBase64 } from "../services/imageUtils";
 import { getInstallId } from "../services/storage";
 import { useLiveScan } from "../hooks/useLiveScan";
 import { useNotificationStore } from "../store/useNotificationStore";
+import { isExpoGo } from "../lib/expoGo";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -319,6 +320,13 @@ export default function HomeScreen() {
             onPress={async () => {
               try {
                 await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+                if (isExpoGo) {
+                  Alert.alert(
+                    "Expo Go",
+                    "Live Scan needs a native iPhone build (ReplayKit). In Expo Go use Camera or Gallery to scan a screenshot."
+                  );
+                  return;
+                }
                 if (liveActive) {
                   await live.stop();
                   return;
