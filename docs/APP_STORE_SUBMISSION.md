@@ -191,12 +191,16 @@ After Apple Developer is approved, create:
 
 ## 7. Builds (after Expo login)
 
+The Expo project is already linked in `mobile/app.config.js` as `extra.eas.projectId` = `0538ed35-21ea-4c96-9755-0cd4bbbbd7f8`.
+
+Do **not** use Expo Go for Live Scan. ReplayKit and MediaProjection need a native build (`eas build` or `npx expo run:android` / `run:ios`).
+
 ```bash
 cd mobile
 npx eas-cli login
-npx eas-cli init          # writes extra.eas.projectId into app.config.js
-npx eas-cli build --platform android --profile production   # AAB
-npx eas-cli build --platform ios --profile production       # IPA
+npx eas-cli init --id 0538ed35-21ea-4c96-9755-0cd4bbbbd7f8 --non-interactive --force
+npx eas-cli build --platform android --profile production   # AAB for Play
+npx eas-cli build --platform ios --profile production       # IPA for App Store
 npx eas-cli submit --platform android --profile production  # draft / internal
 npx eas-cli submit --platform ios --profile production      # needs Apple team + ascAppId
 ```

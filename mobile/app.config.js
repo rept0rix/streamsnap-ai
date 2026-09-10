@@ -91,7 +91,8 @@ module.exports = ({ config }) => ({
   },
   extra: {
     workerUrl: "https://streamsnap-lens.na0ryank0.workers.dev",
-    // extra.eas.projectId is written by `npx eas-cli init` after Expo login.
-    eas: {}
+    eas: {
+      projectId: "0538ed35-21ea-4c96-9755-0cd4bbbbd7f8"
+    }
   }
 });
