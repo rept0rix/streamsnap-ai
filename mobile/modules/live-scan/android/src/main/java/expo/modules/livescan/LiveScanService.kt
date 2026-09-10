@@ -77,7 +77,7 @@ class LiveScanService : Service() {
         startCapture(resultCode, data)
       }
     }
-    return START_STICKY
+    return START_NOT_STICKY
   }
 
   override fun onDestroy() {
@@ -158,16 +158,26 @@ class LiveScanService : Service() {
       }
     }, captureHandler)
 
-    virtualDisplay = projection.createVirtualDisplay(
-      "StreamSnapLiveScan",
-      width,
-      height,
-      density,
-      DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-      reader.surface,
-      null,
-      captureHandler
-    )
+    try {
+      virtualDisplay = projection.createVirtualDisplay(
+        "StreamSnapLiveScan",
+        width,
+        height,
+        density,
+        DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+        reader.surface,
+        null,
+        captureHandler
+      )
+    } catch (err: Exception) {
+      LiveScanStore.recordEvent(
+        this,
+        phase = "display_failed",
+        error = err.message ?: "Could not create screen capture display"
+      )
+      stopSelf()
+      return
+    }
     LiveScanStore.recordEvent(this, phase = "capturing")
   }
 
