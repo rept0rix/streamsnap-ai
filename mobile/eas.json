@@ -20,10 +20,18 @@
     "production": {
       "android": {
         "buildType": "app-bundle"
+      },
+      "ios": {
+        "resourceClass": "m-medium"
       }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "android": {
+        "track": "internal",
+        "releaseStatus": "draft"
+      }
+    }
   }
 }

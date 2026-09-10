@@ -4,25 +4,45 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Privacy Policy — StreamSnap AI</title>
+  <meta name="description" content="Privacy policy for the StreamSnap AI Chrome extension, iOS app, and Android app.">
   <link rel="stylesheet" href="styles.css">
   <link rel="icon" type="image/svg+xml" href="assets/logo_full.svg">
 </head>
 <body style="padding: 40px; color: #F8FAFC; background: #04060A; font-family: sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto;">
   <a href="index.html" style="color: #FF9900; text-decoration: none;">&larr; Back to Home</a>
   <h1 style="margin-top: 40px;">Privacy Policy</h1>
-  <p>Last updated: August 2026</p>
-  
-  <h3>1. Information We Collect</h3>
-  <p>When you use the StreamSnap AI extension, we may collect screenshot data to process through our visual AI. This data is processed in real-time and deleted immediately after the product matches are found.</p>
-  <p>When you sign in using Google, we store your name, email, and profile picture to provide you with your account and saved history.</p>
+  <p>Last updated: September 10, 2026</p>
+  <p>This policy covers the StreamSnap AI <strong>Chrome extension</strong>, <strong>iOS app</strong>, and <strong>Android app</strong>. Google Play and the App Store should use this page: <a href="https://streamsnap.online/privacy.html" style="color: #FF9900;">https://streamsnap.online/privacy.html</a>.</p>
 
-  <h3>2. How We Use Your Information</h3>
-  <p>We use your information exclusively to provide the StreamSnap visual shopping service, manage your usage limits, and store your product history. We do not sell your data to third parties.</p>
+  <h3>1. Products</h3>
+  <p>The Chrome extension finds products on YouTube, Twitch, TikTok, Facebook Live, and Kick. The iOS app uses camera, gallery, and Live Scan through ReplayKit (you start the system broadcast picker). The Android app uses camera, gallery, and Live Scan through MediaProjection (you approve the system screen-capture prompt). A foreground notification stays visible while Android capture is running. You can stop from STOP in the app, the notification, or the floating STOP pill.</p>
+  <p>StreamSnap does not record audio. Live Scan does not run until you explicitly start it.</p>
 
-  <h3>3. Third-Party Services</h3>
-  <p>We use Google Cloud Vision and Gemini AI to process images. Your data is subject to Google's data processing terms. We also use Cloudflare to host our infrastructure.</p>
+  <h3>2. Information we process</h3>
+  <p><strong>Video frames and screen capture.</strong> When you start a scan (Scan / Snip in Chrome, camera or gallery in the app, or Live Scan), we capture a still frame or crop for product recognition. You initiate every capture. Frames go to our Cloudflare Worker for matching and are discarded from our servers after processing. Downscaled thumbnails of finds may stay <em>on your device</em> so the catalog can show the source frame next to the Amazon image. We do not keep a server-side archive of your video, browsing history, or other apps on screen.</p>
+  <p>On Android and iOS, capture continues only while the OS session is active. Locking the phone, tapping the system screen-share chip, or tapping STOP ends it.</p>
+  <p><strong>Camera.</strong> Used only when you take an in-app photo scan. The camera does not run in the background.</p>
+  <p><strong>Photo library / gallery.</strong> Used only when you pick a screenshot or photo. We do not scan your library in the background.</p>
+  <p><strong>Google Sign-In.</strong> If you sign in, we store your name, email, and profile picture for your account, quota, and history. You can use StreamSnap without signing in, with a smaller anonymous allowance.</p>
+  <p><strong>Install ID and quota.</strong> Each scan includes a locally generated install ID so we can enforce fair-use limits. This is not an advertising ID.</p>
+  <p><strong>Notifications.</strong> We ask for notification permission so Live Scan can alert you when a product is found and so Android can show the “Live Scan is running” notice. You may deny notifications.</p>
+  <p><strong>Optional Gemini API key.</strong> Stored on the device and sent only to Google’s Generative AI API when you scan.</p>
 
-  <h3>4. Contact Us</h3>
-  <p>If you have any questions about this Privacy Policy, please contact us at naor@streamsnap.online.</p>
+  <h3>3. How we use information</h3>
+  <p>We use this information only to recognize products in the frame you chose, keep your on-device catalog and cart, enforce scan quotas, and provide sign-in. We do not sell, rent, or trade personal data. StreamSnap contains no ad SDKs and no third-party analytics telemetry.</p>
+
+  <h3>4. Third-party services</h3>
+  <p>We use a Cloudflare Worker (vision API, cache of <em>product results</em> not raw video), Google Gemini / Cloud Vision when configured, Google Sign-In, and Amazon product links. When you tap a product we open Amazon with an Associates tag. We do not read your Amazon account, payment details, or purchase history. We may earn a commission on qualifying purchases at no extra cost to you.</p>
+
+  <h3>5. Permissions</h3>
+  <p><strong>Chrome:</strong> side panel, active tab (frame capture when you scan), local storage. Host access is limited to youtube.com, twitch.tv, tiktok.com, facebook.com, and kick.com.</p>
+  <p><strong>iOS:</strong> camera and photos for optional scans; ReplayKit broadcast after you start it; optional notifications; App Group <code>group.com.streamsnap.ai</code> so the broadcast extension can pass finds to the app.</p>
+  <p><strong>Android:</strong> camera and photos for optional scans; notifications; foreground service type <code>mediaProjection</code> so Live Scan can continue when you switch to TikTok or YouTube; screen capture only after the system prompt.</p>
+
+  <h3>6. Children</h3>
+  <p>StreamSnap is not directed at children under 13 (or under 16 where a higher age applies).</p>
+
+  <h3>7. Contact</h3>
+  <p>Questions: <a href="mailto:naor@streamsnap.online" style="color: #FF9900;">naor@streamsnap.online</a><br>Website: <a href="https://streamsnap.online" style="color: #FF9900;">https://streamsnap.online</a></p>
 </body>
 </html>

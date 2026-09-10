@@ -16,6 +16,7 @@ module.exports = ({ config }) => ({
   ios: {
     supportsTablet: false,
     bundleIdentifier: "com.streamsnap.ai",
+    buildNumber: "1",
     infoPlist: {
       NSCameraUsageDescription:
         "StreamSnap uses your camera to scan items in live streams and find them on Amazon.",
@@ -36,6 +37,7 @@ module.exports = ({ config }) => ({
       backgroundColor: "#0B0F17"
     },
     package: "com.streamsnap.ai",
+    versionCode: 1,
     permissions: [
       "CAMERA",
       "READ_EXTERNAL_STORAGE",
@@ -88,6 +90,8 @@ module.exports = ({ config }) => ({
     typedRoutes: true
   },
   extra: {
-    workerUrl: "https://streamsnap-lens.na0ryank0.workers.dev"
+    workerUrl: "https://streamsnap-lens.na0ryank0.workers.dev",
+    // extra.eas.projectId is written by `npx eas-cli init` after Expo login.
+    eas: {}
   }
 });
