@@ -56,6 +56,15 @@ function initMobileDock() {
     if (apk) apk.style.display = "inline-flex";
   }
 
+  if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    const meta = document.getElementById("mobile-dock-meta");
+    const install = document.getElementById("mobile-dock-install");
+    const iphone = document.getElementById("mobile-dock-iphone");
+    if (meta) meta.textContent = "iPhone · Camera & Gallery in Safari";
+    if (install) install.style.display = "none";
+    if (iphone) iphone.style.display = "inline-flex";
+  }
+
   function checkDockVisibility() {
     if (!footer) return;
     const footerRect = footer.getBoundingClientRect();

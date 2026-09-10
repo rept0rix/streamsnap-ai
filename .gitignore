@@ -1,6 +1,9 @@
 .DS_Store
 *.log
 node_modules/
+# Expo web export stores icon fonts here; GitHub Pages needs them.
+!landing_page/go/assets/node_modules/
+!landing_page/go/assets/node_modules/**
 .system_generated/
 
 # Build output — release zips are produced by tools/package.sh

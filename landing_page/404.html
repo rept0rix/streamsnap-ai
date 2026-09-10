@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>StreamSnap AI</title>
+  <script>
+    (function () {
+      var path = location.pathname || "/";
+      if (path.indexOf("/go") === 0) {
+        location.replace("/go/" + location.search + location.hash);
+        return;
+      }
+      location.replace("/" + location.search + location.hash);
+    })();
+  </script>
+</head>
+<body>
+  <p>Taking you back to <a href="/">StreamSnap</a>.</p>
+</body>
+</html>
