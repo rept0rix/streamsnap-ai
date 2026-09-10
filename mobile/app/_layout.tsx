@@ -8,7 +8,7 @@ import { useStore } from "../store/useStore";
 import { useNotificationStore } from "../store/useNotificationStore";
 import { getSessionToken } from "../services/storage";
 import { NotificationToast } from "../components/NotificationToast";
-import { isExpoGo } from "../lib/expoGo";
+import { isExpoGo, isExpoGoOrWeb } from "../lib/expoGo";
 
 function ShareIntentRedirect() {
   const router = useRouter();
@@ -70,13 +70,13 @@ export default function RootLayout() {
     init();
   }, []);
 
-  // expo-share-intent has no native module inside Expo Go.
-  if (isExpoGo) {
+  // Native share-intent is unavailable in Expo Go and on web.
+  if (isExpoGoOrWeb) {
     return <AppTree />;
   }
 
   return (
-    <ShareIntentProvider options={{ resetOnBackground: false }}>
+    <ShareIntentProvider options={{ resetOnBackground: false, disabled: isExpoGo }}>
       <AppTree>
         <ShareIntentRedirect />
       </AppTree>

@@ -60,7 +60,9 @@ module.exports = ({ config }) => ({
     ]
   },
   web: {
-    bundler: "metro"
+    bundler: "metro",
+    output: "static",
+    favicon: "./assets/icon.png"
   },
   plugins: [
     "./plugins/withBroadcastExtension",
@@ -87,7 +89,10 @@ module.exports = ({ config }) => ({
     ]
   ],
   experiments: {
-    typedRoutes: true
+    typedRoutes: true,
+    ...(process.env.EXPO_WEB_BASE_URL
+      ? { baseUrl: process.env.EXPO_WEB_BASE_URL }
+      : {})
   },
   extra: {
     workerUrl: "https://streamsnap-lens.na0ryank0.workers.dev",

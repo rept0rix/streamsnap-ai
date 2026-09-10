@@ -32,10 +32,10 @@ import { ProductCard } from "../components/ProductCard";
 import { LoadingPulse } from "../components/LoadingPulse";
 import { EmptyState } from "../components/EmptyState";
 import type { Product } from "../services/api";
-import { isExpoGo } from "../lib/expoGo";
+import { isExpoGoOrWeb } from "../lib/expoGo";
 
 export default function ShareScreen() {
-  if (isExpoGo) {
+  if (isExpoGoOrWeb) {
     return (
       <View style={{ flex: 1, backgroundColor: "#0B0F17", justifyContent: "center" }}>
         <EmptyState

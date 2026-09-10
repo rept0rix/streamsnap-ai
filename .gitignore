@@ -18,3 +18,4 @@ mobile/node_modules/
 mobile/.expo/
 mobile/ios/
 mobile/android/
+mobile/modules/live-scan/android/build/
