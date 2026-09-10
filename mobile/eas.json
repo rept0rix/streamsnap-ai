@@ -23,7 +23,8 @@
       },
       "ios": {
         "resourceClass": "m-medium"
-      }
+      },
+      "uploadSourceMaps": true
     }
   },
   "submit": {

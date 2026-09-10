@@ -13,6 +13,7 @@
     "postinstall": "patch-package"
   },
   "dependencies": {
+    "@expo/vector-icons": "^15.0.2",
     "@react-native-async-storage/async-storage": "2.2.0",
     "ajv": "^8.20.0",
     "ajv-keywords": "^5.1.0",
@@ -21,10 +22,12 @@
     "expo-camera": "~57.0.4",
     "expo-constants": "~57.0.17",
     "expo-crypto": "~57.0.2",
+    "expo-font": "~57.0.3",
     "expo-haptics": "~57.0.2",
     "expo-image-manipulator": "~57.0.16",
     "expo-image-picker": "~57.0.16",
     "expo-linking": "~57.0.9",
+    "expo-observe": "~57.0.20",
     "expo-router": "~57.0.20",
     "expo-secure-store": "~57.0.3",
     "expo-share-intent": "^8.0.0",

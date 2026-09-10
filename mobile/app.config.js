@@ -68,6 +68,7 @@ module.exports = ({ config }) => ({
     "./plugins/withBroadcastExtension",
     "./plugins/withAndroidLiveScan",
     "expo-router",
+    "expo-font",
     "expo-camera",
     [
       "expo-image-picker",

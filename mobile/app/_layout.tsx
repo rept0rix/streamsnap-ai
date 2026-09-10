@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -60,26 +60,36 @@ function AppTree({ children }: { children?: ReactNode }) {
 export default function RootLayout() {
   const { loadSettings, loadCatalog, loadCart, setSessionToken } = useStore();
   const { loadNotifications } = useNotificationStore();
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     async function init() {
       const t = await getSessionToken();
       setSessionToken(t);
       await Promise.all([loadSettings(), loadCatalog(), loadCart(), loadNotifications()]);
+      setReady(true);
     }
     init();
   }, []);
 
   // Native share-intent is unavailable in Expo Go and on web.
-  if (isExpoGoOrWeb) {
-    return <AppTree />;
-  }
-
-  return (
+  const tree = isExpoGoOrWeb ? (
+    <AppTree />
+  ) : (
     <ShareIntentProvider options={{ resetOnBackground: false, disabled: isExpoGo }}>
       <AppTree>
         <ShareIntentRedirect />
       </AppTree>
     </ShareIntentProvider>
   );
+
+  // expo-observe has a native module and must not load inside Expo Go or web.
+  if (isExpoGoOrWeb) {
+    return tree;
+  }
+
+  const { ObservedApp } = require("../lib/observeRoot") as {
+    ObservedApp: (props: { children: ReactNode; ready: boolean }) => ReactNode;
+  };
+  return <ObservedApp ready={ready}>{tree}</ObservedApp>;
 }
