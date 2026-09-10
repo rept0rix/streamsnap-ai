@@ -119,9 +119,10 @@ class LiveScanModule : Module() {
     }
 
     AsyncFunction("stopBroadcast") {
-      val ctx = appContext.reactContext ?: return@AsyncFunction
+      val ctx = appContext.reactContext ?: return@AsyncFunction null
       LiveScanService.stop(ctx)
       emitSnapshot()
+      null
     }
   }
 
