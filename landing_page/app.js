@@ -47,6 +47,15 @@ function initMobileDock() {
   const footer = document.querySelector(".footer-studio");
   if (!dock) return;
 
+  if (/Android/i.test(navigator.userAgent)) {
+    const meta = document.getElementById("mobile-dock-meta");
+    const install = document.getElementById("mobile-dock-install");
+    const apk = document.getElementById("mobile-dock-apk");
+    if (meta) meta.textContent = "Android tester · ~83 MB";
+    if (install) install.style.display = "none";
+    if (apk) apk.style.display = "inline-flex";
+  }
+
   function checkDockVisibility() {
     if (!footer) return;
     const footerRect = footer.getBoundingClientRect();
