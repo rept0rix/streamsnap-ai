@@ -7,6 +7,7 @@ import {
   isLiveScanAvailable,
   requestLiveScanNotifications,
   startLiveBroadcast,
+  stopLiveBroadcast,
   syncLiveScanCredentials,
   type LiveScanProduct,
   type LiveScanState
@@ -93,7 +94,7 @@ export function useLiveScan() {
   }, []);
 
   useEffect(() => {
-    if (Platform.OS !== "ios") return;
+    if (Platform.OS !== "ios" && Platform.OS !== "android") return;
 
     let mounted = true;
     (async () => {
@@ -143,5 +144,10 @@ export function useLiveScan() {
     await startLiveBroadcast();
   }, [sessionToken]);
 
-  return { available, state, start, refresh, ingest };
+  const stop = useCallback(async () => {
+    await stopLiveBroadcast();
+    refresh();
+  }, [refresh]);
+
+  return { available, state, start, stop, refresh, ingest };
 }

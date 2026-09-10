@@ -34,16 +34,33 @@ You can run the app immediately in a local simulator or on your physical device 
    - **iOS:** Press `i` to open in iOS Simulator (requires Xcode), or scan the QR code with the Expo Go app on your physical iPhone.
    - **Android:** Press `a` to open in Android Emulator, or scan with Expo Go on Android.
 
-## Live background scan (iOS)
+## Live background scan
 
-iOS will not let an app silently read another app's screen. The legal path is a ReplayKit **Broadcast Upload Extension**:
+Neither iOS nor Android lets an app silently read another app's screen. StreamSnap uses the official capture APIs on each platform. This requires a **native build**, not Expo Go.
+
+### iOS (ReplayKit)
 
 1. Tap **Live Scan** in StreamSnap.
 2. In the system picker, start **StreamSnap Live Scan** (not Share).
 3. Open TikTok / YouTube / Instagram. iOS shows a red status bar while broadcasting.
 4. StreamSnap samples a frame about every 5 seconds, skips near-duplicates, and stacks finds in the catalog.
 
-This requires a native build (`npx expo run:ios --device`), not Expo Go. The App Group `group.com.streamsnap.ai` must exist on the Apple Developer team.
+```bash
+npx expo run:ios --device
+```
+
+The App Group `group.com.streamsnap.ai` must exist on the Apple Developer team.
+
+### Android (MediaProjection)
+
+1. Tap **Live Scan** in StreamSnap.
+2. Approve the system **screen capture** prompt (and notifications, so find alerts appear).
+3. A persistent **StreamSnap Live Scan** notification stays up — keep it running and switch to TikTok / YouTube / Reels.
+4. Pause on a product to scan that frame immediately, or wait for the periodic 5s sample. Tap the radar again (or **Stop** on the notification) to end capture.
+
+```bash
+npx expo run:android --device
+```
 
 ## Building the Native Share Extension
 

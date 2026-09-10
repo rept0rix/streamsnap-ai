@@ -20,7 +20,8 @@ import {
   Modal,
   TextInput,
   ActivityIndicator,
-  Image
+  Image,
+  Platform
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -286,7 +287,9 @@ export default function HomeScreen() {
               <View style={styles.stepNumBadge}><Text style={styles.stepNumText}>2</Text></View>
               <Ionicons name="phone-portrait-outline" size={20} color="#FF6A00" style={styles.stepIcon} />
               <Text style={styles.stepBold}>Browse Video</Text>
-              <Text style={styles.stepSub}>TikTok, Reels, YT</Text>
+              <Text style={styles.stepSub}>
+                {Platform.OS === "android" ? "Allow capture, then TikTok / YT" : "TikTok, Reels, YT"}
+              </Text>
             </View>
 
             <Ionicons name="chevron-forward" size={16} color="#334155" style={styles.stepArrow} />
@@ -306,6 +309,10 @@ export default function HomeScreen() {
             onPress={async () => {
               try {
                 await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+                if (liveActive && Platform.OS === "android") {
+                  await live.stop();
+                  return;
+                }
                 await live.start();
               } catch (err) {
                 const message = err instanceof Error ? err.message : "Could not start live scan";
@@ -390,7 +397,9 @@ export default function HomeScreen() {
               </View>
               <Text style={styles.emptyTitle}>No products scanned yet</Text>
               <Text style={styles.emptyDesc}>
-                Tap Live Scan above, then open TikTok or YouTube. Pause on anything you like — that frame is scanned instantly and lands right here.
+                {Platform.OS === "android"
+                  ? "Tap Live Scan, allow screen capture, then open TikTok or YouTube. Pause on anything you like — that frame is scanned instantly and lands right here."
+                  : "Tap Live Scan above, then open TikTok or YouTube. Pause on anything you like — that frame is scanned instantly and lands right here."}
               </Text>
               <TouchableOpacity
                 style={styles.emptyActionBtn}

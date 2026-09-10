@@ -36,7 +36,14 @@ module.exports = ({ config }) => ({
       backgroundColor: "#0B0F17"
     },
     package: "com.streamsnap.ai",
-    permissions: ["CAMERA", "READ_EXTERNAL_STORAGE", "READ_MEDIA_IMAGES"],
+    permissions: [
+      "CAMERA",
+      "READ_EXTERNAL_STORAGE",
+      "READ_MEDIA_IMAGES",
+      "FOREGROUND_SERVICE",
+      "FOREGROUND_SERVICE_MEDIA_PROJECTION",
+      "POST_NOTIFICATIONS"
+    ],
     intentFilters: [
       {
         action: "VIEW",
@@ -55,6 +62,7 @@ module.exports = ({ config }) => ({
   },
   plugins: [
     "./plugins/withBroadcastExtension",
+    "./plugins/withAndroidLiveScan",
     "expo-router",
     "expo-camera",
     [

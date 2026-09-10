@@ -8,6 +8,7 @@
     "ios": "expo run:ios",
     "prebuild": "expo prebuild --clean",
     "lint": "eslint . --ext .ts,.tsx",
+    "test:live-scan": "node modules/live-scan/scripts/verify-policy.mjs",
     "postinstall": "patch-package"
   },
   "dependencies": {
