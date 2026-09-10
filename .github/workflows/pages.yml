@@ -2,7 +2,7 @@ name: Deploy Landing Page to GitHub Pages
 
 on:
   push:
-    branches: ["master", "main"]
+    branches: ["master", "main", "cursor/android-live-scan-8def"]
   workflow_dispatch:
 
 permissions:
