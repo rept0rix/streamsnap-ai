@@ -4,6 +4,8 @@
  * Connects to the existing /resolve endpoint and auth routes.
  */
 
+import { reportObservedError } from "../lib/observeSafe";
+
 const WORKER_URL = "https://streamsnap-lens.na0ryank0.workers.dev";
 
 export interface Product {
@@ -72,18 +74,23 @@ export async function resolve(
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const response = await fetch(`${WORKER_URL}/resolve`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ image: imageBase64, installId })
-  });
+  try {
+    const response = await fetch(`${WORKER_URL}/resolve`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ image: imageBase64, installId })
+    });
 
-  if (!response.ok) {
-    const text = await response.text().catch(() => "");
-    throw new Error(`Worker error ${response.status}: ${text.slice(0, 200)}`);
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      throw new Error(`Worker error ${response.status}: ${text.slice(0, 200)}`);
+    }
+
+    return response.json() as Promise<ResolveResult>;
+  } catch (err) {
+    reportObservedError(err, "resolve");
+    throw err;
   }
-
-  return response.json() as Promise<ResolveResult>;
 }
 
 export async function resolveUrl(
@@ -96,18 +103,23 @@ export async function resolveUrl(
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const response = await fetch(`${WORKER_URL}/resolve-url`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ url, installId })
-  });
+  try {
+    const response = await fetch(`${WORKER_URL}/resolve-url`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ url, installId })
+    });
 
-  if (!response.ok) {
-    const text = await response.text().catch(() => "");
-    throw new Error(`Worker error ${response.status}: ${text.slice(0, 200)}`);
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      throw new Error(`Worker error ${response.status}: ${text.slice(0, 200)}`);
+    }
+
+    return response.json() as Promise<ResolveResult>;
+  } catch (err) {
+    reportObservedError(err, "resolve_url");
+    throw err;
   }
-
-  return response.json() as Promise<ResolveResult>;
 }
 
 // ---------------------------------------------------------------------------

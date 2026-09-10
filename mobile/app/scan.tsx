@@ -25,8 +25,18 @@ import { EmptyState } from "../components/EmptyState";
 import { resolve } from "../services/api";
 import { compressToBase64 } from "../services/imageUtils";
 import { getInstallId } from "../services/storage";
+import { ObserveInteractive, reportObservedError } from "../lib/observeSafe";
 
 export default function ScanScreen() {
+  return (
+    <>
+      <ObserveInteractive />
+      <ScanScreenBody />
+    </>
+  );
+}
+
+function ScanScreenBody() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [permission, requestPermission] = useCameraPermissions();
@@ -77,6 +87,7 @@ export default function ScanScreen() {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setMode("results");
     } catch (err) {
+      reportObservedError(err, "camera_scan");
       const message = err instanceof Error ? err.message : "Unknown error";
       setScanStatus("error", message);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);

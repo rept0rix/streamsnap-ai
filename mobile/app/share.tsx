@@ -33,11 +33,13 @@ import { LoadingPulse } from "../components/LoadingPulse";
 import { EmptyState } from "../components/EmptyState";
 import type { Product } from "../services/api";
 import { isExpoGoOrWeb } from "../lib/expoGo";
+import { ObserveInteractive, reportObservedError } from "../lib/observeSafe";
 
 export default function ShareScreen() {
   if (isExpoGoOrWeb) {
     return (
       <View style={{ flex: 1, backgroundColor: "#0B0F17", justifyContent: "center" }}>
+        <ObserveInteractive />
         <EmptyState
           emoji="📤"
           title="Share is not in Expo Go"
@@ -131,6 +133,7 @@ function ShareScreenNative() {
 
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (err) {
+      reportObservedError(err, "share_scan");
       const msg = err instanceof Error ? err.message : "Unknown error";
       setErrorMessage(msg);
       setStatus("error");
@@ -149,6 +152,7 @@ function ShareScreenNative() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      <ObserveInteractive />
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.logo}>⚡ StreamSnap</Text>

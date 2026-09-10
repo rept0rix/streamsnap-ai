@@ -9,6 +9,7 @@ import { useNotificationStore } from "../store/useNotificationStore";
 import { getSessionToken } from "../services/storage";
 import { NotificationToast } from "../components/NotificationToast";
 import { isExpoGo, isExpoGoOrWeb } from "../lib/expoGo";
+import { AppReadyProvider } from "../lib/observeSafe";
 
 function ShareIntentRedirect() {
   const router = useRouter();
@@ -46,6 +47,7 @@ function AppTree({ children }: { children?: ReactNode }) {
           <Stack.Screen name="cart" options={{ title: "Cart" }} />
           <Stack.Screen name="notifications" options={{ title: "Updates & Alerts" }} />
           <Stack.Screen name="settings" options={{ title: "Settings" }} />
+          <Stack.Screen name="login" options={{ title: "Sign in" }} />
           <Stack.Screen name="share" options={{ title: "StreamSnap", presentation: "modal" }} />
           <Stack.Screen
             name="product/[id]"
@@ -84,12 +86,13 @@ export default function RootLayout() {
   );
 
   // expo-observe has a native module and must not load inside Expo Go or web.
-  if (isExpoGoOrWeb) {
-    return tree;
+  let content = tree;
+  if (!isExpoGoOrWeb) {
+    const { ObservedApp } = require("../lib/observeRoot") as {
+      ObservedApp: (props: { children: ReactNode; ready: boolean }) => ReactNode;
+    };
+    content = <ObservedApp ready={ready}>{tree}</ObservedApp>;
   }
 
-  const { ObservedApp } = require("../lib/observeRoot") as {
-    ObservedApp: (props: { children: ReactNode; ready: boolean }) => ReactNode;
-  };
-  return <ObservedApp ready={ready}>{tree}</ObservedApp>;
+  return <AppReadyProvider ready={ready}>{content}</AppReadyProvider>;
 }

@@ -39,6 +39,7 @@ import { getInstallId } from "../services/storage";
 import { useLiveScan } from "../hooks/useLiveScan";
 import { useNotificationStore } from "../store/useNotificationStore";
 import { isExpoGo } from "../lib/expoGo";
+import { ObserveInteractive } from "../lib/observeSafe";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -178,6 +179,7 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      <ObserveInteractive />
       {/* ⚡ Header */}
       <View style={styles.header}>
         <View style={styles.brandRow}>

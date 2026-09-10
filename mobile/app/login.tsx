@@ -6,6 +6,7 @@ import * as AuthSession from "expo-auth-session";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useStore } from "../store/useStore";
 import { getInstallId } from "../services/storage";
+import { ObserveInteractive } from "../lib/observeSafe";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -59,6 +60,7 @@ export default function LoginScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <ObserveInteractive />
       <View style={styles.header}>
         <Text style={styles.logo}>⚡ StreamSnap AI</Text>
       </View>
