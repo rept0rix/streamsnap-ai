@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Fixed
+- **WhatsApp / social preview**: landing now ships Open Graph + Twitter Card tags with an absolute `og-share.png` (1200×630), plus PNG favicon / apple-touch-icon — so link shares show an image, not text-only.
+
 ## [1.6.3] - 2026-09-07 (09:30 IDT)
 
 ### Added
