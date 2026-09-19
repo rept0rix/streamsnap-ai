@@ -1,6 +1,11 @@
 # StreamSnap AI — תוכנית עבודה
 
-**נכון ל:** 29 באוגוסט 2026 · **גרסה נוכחית:** v1.3.0 · **סטטוס:** קוד תקין, טרם נבדק בדפדפן
+**נכון ל:** 19 בספטמבר 2026 · **גרסה חיה:** v1.6.3 (worker + landing) · **CWS:** עדיין 1.3.0 (badge כנה) · **סטטוס:** PR #6 trust/OG פתוח — מחכה ל־תעשה ל־merge/Pages
+
+**מצב חי עכשיו**
+- Live: worker `latestVersion` 1.6.3, אתר https://streamsnap.online
+- פתוח: [PR #6](https://github.com/rept0rix/streamsnap-ai/pull/6) — admin footer, privacy chip, commission FOUC, Open Graph ל־WhatsApp (בלי deploy עד תעשה)
+- Homepage ב־GitHub מצביע ל־streamsnap.online
 
 ---
 
