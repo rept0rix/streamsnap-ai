@@ -604,20 +604,20 @@
     <div class="container">
       <div class="section-head-mono">
         <span class="mono-section-number">[ 04 // CREATOR_PORTAL ]</span>
-        <h2 class="editorial-section-title">Monetize What You Wear and Use.</h2>
+        <h2 class="editorial-section-title">Let Viewers Find What You Wear and Use.</h2>
       </div>
 
-      <div class="creator-terminal-grid">
+      <div class="creator-terminal-grid" style="grid-template-columns: 1fr;">
         <div class="creator-info-card">
           <p class="creator-lead">
             Creators answer "what mic is that?" or "where is that hoodie from?" twenty times every stream.
           </p>
           <p class="creator-body">
-            StreamSnap turns your stream setup into an interactive live storefront. Viewers click your gear directly on video, and purchases credit your Amazon Associates tracking tag (1%–20% commission) — without you maintaining link trees or repeating yourself in chat.
+            StreamSnap lets viewers click the gear they see on your stream and find it on Amazon — without you maintaining link trees or repeating yourself in chat. Viewer purchases are not credited to your Associates tag.
           </p>
           <div class="creator-feature-list">
-            <div class="feat-item"><span class="feat-bullet">✓</span> 1-Minute setup with your Amazon Associates tracking ID</div>
-            <div class="feat-item"><span class="feat-bullet">✓</span> You keep 100% of your affiliate earnings</div>
+            <div class="feat-item"><span class="feat-bullet">✓</span> Optional: add your own Amazon Associates tag in Setup</div>
+            <div class="feat-item"><span class="feat-bullet">✓</span> Your own purchases through StreamSnap use your tag</div>
             <div class="feat-item"><span class="feat-bullet">✓</span> No tag yet? Use StreamSnap for free right away and add it anytime</div>
           </div>
           <button id="claim-tag-btn" class="btn-laser">
@@ -626,45 +626,8 @@
           </button>
         </div>
 
-        <!-- Interactive Calculator Terminal -->
-        <div class="calc-terminal-card" id="calculator">
-          <div class="calc-head">
-            <span class="calc-dot"></span>
-            <span>COMMISSION_ESTIMATE_ENGINE</span>
-          </div>
-
-          <div class="calc-inputs-stack">
-            <div class="calc-input-group">
-              <div class="input-header-mono">
-                <span>CONCURRENT VIEWERS:</span>
-                <span id="val-viewers" class="text-gold">500</span>
-              </div>
-              <input type="range" id="input-viewers" min="50" max="10000" step="50" value="500" class="terminal-range" />
-            </div>
-
-            <div class="calc-input-group">
-              <div class="input-header-mono">
-                <span>STREAMING HOURS / WEEK:</span>
-                <span id="val-hours" class="text-gold">20 hrs</span>
-              </div>
-              <input type="range" id="input-hours" min="1" max="60" step="1" value="20" class="terminal-range" />
-            </div>
-
-            <div class="calc-input-group">
-              <div class="input-header-mono">
-                <span>AVERAGE PRODUCT PRICE:</span>
-                <span id="val-price" class="text-gold">$75.00</span>
-              </div>
-              <input type="range" id="input-price" min="10" max="500" step="5" value="75" class="terminal-range" />
-            </div>
-
-            <div class="calc-output-box">
-              <div class="output-label-mono">ESTIMATED MONTHLY COMMISSION</div>
-              <div class="output-val-giant" id="calc-earnings">$0.00</div>
-              <div class="output-sub-annual" id="calc-annual-val">$0.00 / year</div>
-            </div>
-          </div>
-        </div>
+        <!-- Commission calculator removed: it estimated creator earnings from viewer
+             purchases, which StreamSnap does not credit to a creator's tag. -->
       </div>
 
     </div>
@@ -698,7 +661,7 @@
             <span class="faq-icon">+</span>
           </div>
           <div class="faq-body">
-            <p>No! Regular viewers and shoppers do not need an Amazon ID. An Associates tag is only needed if you are a streamer or creator who wants to collect affiliate commissions on products found in your broadcasts.</p>
+            <p>No! Regular viewers and shoppers do not need an Amazon ID. An Associates tag is optional: if you add your own in Setup, the Amazon links you open through StreamSnap use it. StreamSnap does not credit viewers' purchases to a streamer's tag.</p>
           </div>
         </div>
 
@@ -792,13 +755,13 @@
   <div id="connect-modal" class="modal-overlay-studio" style="display:none;">
     <div class="modal-card-studio">
       <div class="modal-header-studio">
-        <div class="modal-title-mono">[ CREATOR ASSOCIATES TAG // OPTIONAL ]</div>
+        <div class="modal-title-mono">[ YOUR ASSOCIATES TAG // OPTIONAL ]</div>
         <button id="close-connect-modal" class="modal-close-btn">✕</button>
       </div>
 
       <div class="modal-body-studio">
         <div class="modal-explanation-box">
-          <p><strong>Are you a streamer or creator?</strong> Enter your Amazon Associates tracking ID (e.g. <code>yourname-20</code>) so viewer purchases from your streams pay commissions directly to your account.</p>
+          <p><strong>Have an Amazon Associates account?</strong> Add your tracking ID (e.g. <code>yourname-20</code>) in the extension's Setup tab and the Amazon links you open through StreamSnap will use it. Purchases made by your stream's viewers are not credited to your tag.</p>
           <p class="dim-note">Viewers and shoppers do not need an Amazon ID.</p>
         </div>
 
