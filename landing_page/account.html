@@ -988,7 +988,7 @@
             <div class="setting-row" style="align-items:flex-start;">
               <div class="setting-info" style="max-width:360px;">
                 <h4>Amazon Associate Tracking Tag</h4>
-                <p>Your unique affiliate ID (e.g. <code>mychannel-20</code>) used to credit all viewer product sales.</p>
+                <p>Your affiliate ID (e.g. <code>mychannel-20</code>). Amazon links you open through StreamSnap use it; viewers' purchases are not credited to it.</p>
               </div>
               <input type="text" id="inp-affiliate-tag" class="hub-input" placeholder="e.g. channel-20" required>
             </div>
@@ -1080,7 +1080,7 @@
         <div class="view-header">
           <div>
             <h1 class="view-title">Streamer Gear Bag</h1>
-            <p class="view-desc">Curate your verified streaming equipment (mic, camera, lighting, chair, apparel). Viewers scanning your stream will automatically see your gear and buy with your affiliate tag.</p>
+            <p class="view-desc">Curate your verified streaming equipment (mic, camera, lighting, chair, apparel). Viewer purchases are not credited to your affiliate tag.</p>
           </div>
         </div>
 
@@ -1641,7 +1641,7 @@
         if (gear.length === 0) {
           grid.innerHTML = `
             <div style="grid-column:1/-1; padding:24px; text-align:center; background:var(--hub-card); border-radius:10px; color:var(--hub-text-dim); font-size:13px;">
-              No gear added to your showcase yet. Add your microphone, camera, or chair above to start earning commissions!
+              No gear added to your showcase yet. Add your microphone, camera, or chair above to build your showcase.
             </div>
           `;
           return;
