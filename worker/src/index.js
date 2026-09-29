@@ -18,7 +18,7 @@
  */
 
 import { parseLensResponse, collectRawShape } from "./parser.js";
-import { detectProducts } from "./vision.js";
+import { detectProducts, withTimeout } from "./vision.js";
 import { lookupAmazonProduct } from "./amazon_lookup.js";
 import { handleAuthRoute } from "./routes_auth.js";
 import { handleAdminRoute } from "./routes_admin.js";
@@ -31,8 +31,22 @@ const LIMITS = {
   PER_DAY: 400,
   IMAGE_TTL_SECONDS: 300, // Google fetches within seconds; 5 min is generous
   CACHE_TTL_SECONDS: 60 * 60 * 24 * 7,
-  UPSTREAM_TIMEOUT_MS: 20000
+  UPSTREAM_TIMEOUT_MS: 20000,
+  // One overall budget for the vision step of /resolve (the model ladder can
+  // otherwise chain several per-model timeouts) and for all of /resolve-url.
+  RESOLVE_DEADLINE_MS: 22000,
+  RESOLVE_URL_DEADLINE_MS: 25000
 };
+
+/** A deadline from a wrangler var (string) when set, else the default. */
+function deadlineMs(override, fallback) {
+  const n = Number(override);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
+function isTimeout(err) {
+  return err?.name === "TimeoutError" || err?.name === "AbortError";
+}
 
 /**
  * The oldest extension build still allowed to run. Bump this to force every
@@ -502,13 +516,23 @@ async function handleResolve(request, env, ctx) {
       // A caller-supplied Gemini key (mobile settings) takes precedence over the
       // server secret so a user can bring their own quota, exactly like the extension.
       const geminiKey = (request.headers.get("X-Gemini-Key") || "").trim() || undefined;
-      const res = await resolveWithVision(bytes, env, { geminiKey });
+      const visionDeadline = deadlineMs(env.RESOLVE_DEADLINE_MS, LIMITS.RESOLVE_DEADLINE_MS);
+      const res = await withTimeout(resolveWithVision(bytes, env, { geminiKey }), visionDeadline, "Product search");
       amazon = res.amazon;
       others = res.others;
       rawVisionText = res.rawText;
       visionModel = res.model;
       engine = String(visionModel || "").startsWith("gemini") ? "gemini" : "workers-ai";
     } catch (err) {
+      if (isTimeout(err)) {
+        console.log("[resolve] vision deadline hit:", err.message);
+        return json(
+          { ok: false, timeout: true, error: "Product search timed out. Please try again." },
+          504,
+          request,
+          env
+        );
+      }
       console.log("[resolve] vision error on frame:", err.message);
       amazon = [];
       others = [];
@@ -596,7 +620,21 @@ async function handleResolveUrl(request, env, ctx) {
     return json({ ok: false, error: "Valid URL is required." }, 400, request, env);
   }
 
+  // One deadline for the whole flow: page fetch, thumbnail fetch and vision.
+  const deadline = deadlineMs(env.RESOLVE_URL_DEADLINE_MS, LIMITS.RESOLVE_URL_DEADLINE_MS);
+  const signal = AbortSignal.timeout(deadline);
   try {
+    return await withTimeout(resolveUrlSteps(request, env, ctx, body, targetUrl, signal), deadline, "/resolve-url");
+  } catch (err) {
+    if (isTimeout(err)) {
+      return json({ ok: false, timeout: true, error: "Timed out resolving the video link. Please try again." }, 504, request, env);
+    }
+    return json({ ok: false, error: err.message }, 500, request, env);
+  }
+}
+
+async function resolveUrlSteps(request, env, ctx, body, targetUrl, signal) {
+  {
     // 1. Fetch the target URL to extract og:image
     const response = await fetch(targetUrl, {
       headers: {
@@ -605,7 +643,7 @@ async function handleResolveUrl(request, env, ctx) {
         "Accept-Language": "en-US,en;q=0.5"
       },
       redirect: "follow",
-      signal: AbortSignal.timeout(LIMITS.UPSTREAM_TIMEOUT_MS)
+      signal
     });
     
     if (!response.ok) {
@@ -649,7 +687,7 @@ async function handleResolveUrl(request, env, ctx) {
     // 2. Fetch the image itself
     const imgRes = await fetch(imageUrl, {
       headers: { "User-Agent": "StreamSnap Bot" },
-      signal: AbortSignal.timeout(LIMITS.UPSTREAM_TIMEOUT_MS)
+      signal
     });
     
     if (!imgRes.ok) {
@@ -681,11 +719,5 @@ async function handleResolveUrl(request, env, ctx) {
     });
     
     return handleResolve(simulatedRequest, env, ctx);
-
-  } catch (err) {
-    if (err?.name === "TimeoutError" || err?.name === "AbortError") {
-      return json({ ok: false, error: "Timed out fetching the video link." }, 504, request, env);
-    }
-    return json({ ok: false, error: err.message }, 500, request, env);
   }
 }

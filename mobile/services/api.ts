@@ -114,6 +114,9 @@ async function postResolve(
       signal: controller.signal
     });
 
+    // The worker answers 504 when its own overall search deadline is hit.
+    if (response.status === 504) throw new ResolveTimeoutError();
+
     if (!response.ok) {
       const text = await response.text().catch(() => "");
       throw new Error(`Worker error ${response.status}: ${text.slice(0, 200)}`);

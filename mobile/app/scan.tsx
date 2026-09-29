@@ -58,6 +58,9 @@ export default function ScanScreen() {
 
   const abortRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(true);
+  // Set synchronously on tap so a double tap can't start two scans while
+  // takePictureAsync is still resolving.
+  const snapBusyRef = useRef(false);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -93,20 +96,19 @@ export default function ScanScreen() {
   // ---------------------------------------------------------------------------
 
   async function handleSnap() {
-    if (!cameraRef.current) return;
+    if (!cameraRef.current || snapBusyRef.current) return;
+    snapBusyRef.current = true;
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
     const isStale = () => controller.signal.aborted || !mountedRef.current;
-
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    setScanStatus("scanning");
 
     try {
-      const photo = await cameraRef.current.takePictureAsync({ quality: 0.85 });
-      if (!photo?.uri) throw new Error("No photo captured");
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      const photo = await cameraRef.current?.takePictureAsync({ quality: 0.85 });
       if (isStale()) return;
-
-      setScanStatus("scanning");
+      if (!photo?.uri) throw new Error("No photo captured");
       const [base64, installId] = await Promise.all([
         compressToBase64(photo.uri),
         getInstallId()
@@ -117,12 +119,12 @@ export default function ScanScreen() {
       if (isStale()) return;
       if (!data.ok) throw new Error(data.error ?? "Scan failed");
 
-      setScanResults(data.products, data.others, base64);
-
       for (const p of data.products) {
+        if (isStale()) return;
         await saveProduct(p, base64);
       }
       if (isStale()) return;
+      setScanResults(data.products, data.others, base64);
 
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setMode("results");
@@ -139,6 +141,7 @@ export default function ScanScreen() {
       Alert.alert("Scan failed", message);
     } finally {
       if (abortRef.current === controller) abortRef.current = null;
+      snapBusyRef.current = false;
     }
   }
 

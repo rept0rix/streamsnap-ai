@@ -71,6 +71,7 @@ export default function HomeScreen() {
   const scanAbortRef = useRef<AbortController | null>(null);
   const urlAbortRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(true);
+  const pickingRef = useRef(false);
 
   React.useEffect(() => {
     mountedRef.current = true;
@@ -107,20 +108,29 @@ export default function HomeScreen() {
   // Gallery Scan
   // ---------------------------------------------------------------------------
   async function handlePickImage() {
-    if (busy) return;
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) {
-      Alert.alert("Permission needed", "Allow photo access to scan from your gallery.");
-      return;
+    if (busy || pickingRef.current) return;
+    pickingRef.current = true;
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert("Permission needed", "Allow photo access to scan from your gallery.");
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.85
+      });
+
+      if (result.canceled || !result.assets[0]) return;
+      await performScan(result.assets[0].uri);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Could not open your gallery.";
+      if (!scanAbortRef.current) setScanStatus("idle");
+      Alert.alert("Gallery", message);
+    } finally {
+      pickingRef.current = false;
     }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.85
-    });
-
-    if (result.canceled || !result.assets[0]) return;
-    await performScan(result.assets[0].uri);
   }
 
   async function performScan(imageUri: string) {
@@ -144,12 +154,12 @@ export default function HomeScreen() {
 
       if (!data.ok) throw new Error(data.error ?? "Scan failed");
 
-      setScanResults(data.products, data.others, base64);
-
       for (const p of data.products) {
+        if (isStale()) return;
         await saveProduct(p, base64);
       }
       if (isStale()) return;
+      setScanResults(data.products, data.others, base64);
 
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
@@ -203,8 +213,10 @@ export default function HomeScreen() {
       if (!res.ok) throw new Error(res.error || "Could not extract products from link.");
 
       for (const p of res.products || []) {
+        if (isStale()) return;
         await saveProduct(p);
       }
+      if (isStale()) return;
 
       await addNotification({
         type: "scan_find",

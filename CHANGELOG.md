@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Fixed
+- **Mobile — searches could hang forever**: `/resolve` and `/resolve-url` requests now have a 25s client timeout (`RESOLVE_TIMEOUT_MS`) and are aborted via `AbortController` on Stop, timeout and unmount. Camera, Gallery, Paste Link and Share screens show a Stop/Cancel button; a timeout returns the UI to idle with a clear message. Triggers are disabled while a search is running, the camera snap is guarded against double taps, and results from a stopped search are never saved, notified or shown.
+- **Mobile — stale results**: "Scan Again" now calls the store `reset()`, and opening Camera no longer shows results from a previous search.
+- **Worker — bounded search time**: Workers AI calls are capped per model, `/resolve` has one overall vision deadline (22s) and `/resolve-url` one overall deadline (25s) covering page fetch, thumbnail fetch and vision; both return HTTP 504 with a clear error instead of hanging.
+- **Extension (next version, not yet fixed)**: `sidepanel.js` L483 queries non-existent `#scan-results-view`; should be `scan-results-container` (old results stay visible after sign-out).
+
+### Changed
+- **CI**: worker tests (`npm test` in `worker/`) now run on pull requests and pushes to master alongside extension validation. No deploy step.
+
+---
+
 ## [1.6.3] - 2026-09-07 (09:30 IDT)
 
 ### Added

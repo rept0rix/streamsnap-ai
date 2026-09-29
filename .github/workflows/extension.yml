@@ -46,3 +46,25 @@ jobs:
           name: streamsnap-extension
           path: dist/*.zip
           if-no-files-found: error
+
+  worker-tests:
+    # Runs the Cloudflare Worker unit/route tests only. Never deploys:
+    # no wrangler command and no Cloudflare credentials are used here.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: worker
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install worker dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run worker tests
+        run: npm test

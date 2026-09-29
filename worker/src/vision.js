@@ -35,7 +35,11 @@ export async function withTimeout(promise, ms, label = "upstream") {
     return await Promise.race([
       promise,
       new Promise((_, reject) => {
-        timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+        timer = setTimeout(() => {
+          const err = new Error(`${label} timed out after ${ms}ms`);
+          err.name = "TimeoutError";
+          reject(err);
+        }, ms);
       })
     ]);
   } finally {
