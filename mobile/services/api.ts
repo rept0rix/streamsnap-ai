@@ -62,52 +62,93 @@ export interface AuthMeResult {
 // Core: resolve an image to products
 // ---------------------------------------------------------------------------
 
-export async function resolve(
-  imageBase64: string,
-  installId: string,
-  token?: string | null
+export const RESOLVE_TIMEOUT_MS = 25_000;
+
+export class ResolveTimeoutError extends Error {
+  constructor() {
+    super(
+      `The search took too long (over ${Math.round(RESOLVE_TIMEOUT_MS / 1000)}s) and was stopped. Check your connection and try again.`
+    );
+    this.name = "ResolveTimeoutError";
+    Object.setPrototypeOf(this, ResolveTimeoutError.prototype);
+  }
+}
+
+export class ResolveAbortedError extends Error {
+  constructor() {
+    super("Search stopped.");
+    this.name = "ResolveAbortedError";
+    Object.setPrototypeOf(this, ResolveAbortedError.prototype);
+  }
+}
+
+// AbortSignal.any / AbortSignal.timeout are not reliable on Hermes, so the
+// timeout and the caller's signal are wired into one controller by hand.
+async function postResolve(
+  path: string,
+  body: unknown,
+  token: string | null | undefined,
+  signal: AbortSignal | undefined
 ): Promise<ResolveResult> {
+  if (signal?.aborted) throw new ResolveAbortedError();
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json"
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const response = await fetch(`${WORKER_URL}/resolve`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ image: imageBase64, installId })
-  });
+  const controller = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, RESOLVE_TIMEOUT_MS);
+  const onCallerAbort = () => controller.abort();
+  signal?.addEventListener("abort", onCallerAbort);
 
-  if (!response.ok) {
-    const text = await response.text().catch(() => "");
-    throw new Error(`Worker error ${response.status}: ${text.slice(0, 200)}`);
+  try {
+    const response = await fetch(`${WORKER_URL}${path}`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+      signal: controller.signal
+    });
+
+    // The worker answers 504 when its own overall search deadline is hit.
+    if (response.status === 504) throw new ResolveTimeoutError();
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      throw new Error(`Worker error ${response.status}: ${text.slice(0, 200)}`);
+    }
+
+    return (await response.json()) as ResolveResult;
+  } catch (err) {
+    if (timedOut) throw new ResolveTimeoutError();
+    if (signal?.aborted || controller.signal.aborted) throw new ResolveAbortedError();
+    throw err;
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener("abort", onCallerAbort);
   }
+}
 
-  return response.json() as Promise<ResolveResult>;
+export async function resolve(
+  imageBase64: string,
+  installId: string,
+  token?: string | null,
+  signal?: AbortSignal
+): Promise<ResolveResult> {
+  return postResolve("/resolve", { image: imageBase64, installId }, token, signal);
 }
 
 export async function resolveUrl(
   url: string,
   installId: string,
-  token?: string | null
+  token?: string | null,
+  signal?: AbortSignal
 ): Promise<ResolveResult> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json"
-  };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-
-  const response = await fetch(`${WORKER_URL}/resolve-url`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ url, installId })
-  });
-
-  if (!response.ok) {
-    const text = await response.text().catch(() => "");
-    throw new Error(`Worker error ${response.status}: ${text.slice(0, 200)}`);
-  }
-
-  return response.json() as Promise<ResolveResult>;
+  return postResolve("/resolve-url", { url, installId }, token, signal);
 }
 
 // ---------------------------------------------------------------------------
@@ -263,10 +304,15 @@ export async function sendSyncEvent(
 // ---------------------------------------------------------------------------
 
 export async function healthCheck(): Promise<boolean> {
+  // AbortSignal.timeout is not available on Hermes; wire the timeout by hand.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
   try {
-    const res = await fetch(`${WORKER_URL}/health`, { signal: AbortSignal.timeout(5000) });
+    const res = await fetch(`${WORKER_URL}/health`, { signal: controller.signal });
     return res.ok;
   } catch {
     return false;
+  } finally {
+    clearTimeout(timer);
   }
 }

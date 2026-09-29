@@ -20,7 +20,8 @@ import {
   isJunkTitle,
   detectProducts,
   VISION_MODELS,
-  MIN_CONFIDENCE
+  MIN_CONFIDENCE,
+  withTimeout
 } from "../src/vision.js";
 
 let passed = 0;
@@ -356,6 +357,11 @@ await test("Gemini junk detections are filtered like any other model's", async (
 
 await test("without a key and without an AI binding the error says so", async () => {
   await assert.rejects(() => detectProducts({}, new Uint8Array([1])), /no vision backend configured/);
+});
+
+await test("withTimeout rejects a stuck upstream instead of hanging", async () => {
+  await assert.rejects(() => withTimeout(new Promise(() => {}), 20, "stuck"), /stuck timed out after 20ms/);
+  assert.equal(await withTimeout(Promise.resolve(7), 1000), 7);
 });
 
 console.log(`\n${failed === 0 ? "✓" : "✗"} ${passed} passed, ${failed} failed\n`);

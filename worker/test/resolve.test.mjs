@@ -193,6 +193,44 @@ await test("X-Gemini-Key lets a caller bring their own key (and is CORS-allowed)
   assert.match(preflight.headers.get("Access-Control-Allow-Headers") || "", /X-Gemini-Key/);
 });
 
+console.log("\nOverall deadlines (504)");
+
+await test("POST /resolve returns 504 when the vision step exceeds its overall deadline", async () => {
+  const env = { ...makeEnv(), RESOLVE_DEADLINE_MS: "50" };
+  env.AI.run = () => new Promise(() => {}); // a model that never answers
+  const started = Date.now();
+  const { status, body } = await callResolve(env);
+  assert.equal(status, 504);
+  assert.equal(body.ok, false);
+  assert.equal(body.timeout, true);
+  assert.match(body.error, /timed out/i);
+  assert.ok(Date.now() - started < 2000, "must not wait for every model in the ladder");
+});
+
+await test("POST /resolve-url returns 504 when the whole flow exceeds its deadline", async () => {
+  const env = { ...makeEnv(), RESOLVE_URL_DEADLINE_MS: "50" };
+  const prevFetch = globalThis.fetch;
+  globalThis.fetch = () => new Promise(() => {}); // target page never responds
+  try {
+    const response = await worker.fetch(
+      new Request("https://worker.test/resolve-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: "https://www.tiktok.com/@x/video/1", installId: "test-install-0001" })
+      }),
+      env,
+      ctx
+    );
+    const body = await response.json();
+    assert.equal(response.status, 504);
+    assert.equal(body.ok, false);
+    assert.equal(body.timeout, true);
+    assert.match(body.error, /timed out/i);
+  } finally {
+    globalThis.fetch = prevFetch;
+  }
+});
+
 globalThis.fetch = realFetch;
 
 console.log(`\n${failed === 0 ? "✓" : "✗"} ${passed} passed, ${failed} failed\n`);

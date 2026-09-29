@@ -25,6 +25,31 @@ export const VISION_MODELS = {
 
 export const DEFAULT_GEMINI_MODELS = ["gemini-2.5-flash", "gemini-flash-latest"];
 const GEMINI_TIMEOUT_MS = 15000;
+/** Upper bound for a single Workers AI vision call (the AI binding takes no AbortSignal). */
+export const WORKERS_AI_TIMEOUT_MS = 20000;
+
+/** Race a promise against a timer so a stuck upstream can never hang a request. */
+export async function withTimeout(promise, ms, label = "upstream") {
+  let timer;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timer = setTimeout(() => {
+          const err = new Error(`${label} timed out after ${ms}ms`);
+          err.name = "TimeoutError";
+          reject(err);
+        }, ms);
+      })
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function runAI(env, model, payload) {
+  return withTimeout(env.AI.run(model, payload), WORKERS_AI_TIMEOUT_MS, `Workers AI ${model}`);
+}
 
 /** Gemini structured-output schema (OpenAPI subset). Mirrors VISION_SYSTEM_PROMPT. */
 export const GEMINI_RESPONSE_SCHEMA = {
@@ -283,12 +308,12 @@ function responseText(response) {
  */
 async function runWithLicenseRetry(env, model, payload, agreePayload) {
   try {
-    return await env.AI.run(model, payload);
+    return await runAI(env, model, payload);
   } catch (err) {
     const message = String(err?.message || err);
     if (!message.includes("5016") && !/submit the prompt ['"]agree['"]/i.test(message)) throw err;
-    await env.AI.run(model, agreePayload);
-    return env.AI.run(model, payload);
+    await runAI(env, model, agreePayload);
+    return runAI(env, model, payload);
   }
 }
 
@@ -324,7 +349,7 @@ async function runLlama32(env, bytes) {
 }
 
 async function runLlava(env, bytes) {
-  return env.AI.run(VISION_MODELS.llava, {
+  return runAI(env, VISION_MODELS.llava, {
     image: Array.from(bytes),
     prompt: `${VISION_SYSTEM_PROMPT}\n\n${VISION_USER_PROMPT}`,
     max_tokens: 700

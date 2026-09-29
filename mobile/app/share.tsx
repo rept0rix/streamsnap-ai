@@ -9,7 +9,7 @@
  * We receive the shared asset, run it through /resolve, and show results.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -24,7 +24,7 @@ import { useShareIntentContext } from "expo-share-intent";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
-import { resolve } from "../services/api";
+import { resolve, resolveUrl, ResolveAbortedError } from "../services/api";
 import { compressToBase64 } from "../services/imageUtils";
 import { getInstallId } from "../services/storage";
 import { useStore } from "../store/useStore";
@@ -45,6 +45,18 @@ export default function ShareScreen() {
   const [others, setOthers] = useState<Product[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
 
+  const abortRef = useRef<AbortController | null>(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      abortRef.current?.abort();
+      abortRef.current = null;
+    };
+  }, []);
+
   // ---------------------------------------------------------------------------
   // Process shared content on mount
   // ---------------------------------------------------------------------------
@@ -59,6 +71,11 @@ export default function ShareScreen() {
   }, [hasShareIntent, shareIntent]);
 
   async function processShareIntent() {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const isStale = () => controller.signal.aborted || !mountedRef.current;
+
     try {
       setStatus("loading");
 
@@ -92,16 +109,17 @@ export default function ShareScreen() {
       let frameBase64: string | undefined = undefined;
 
       const installId = await getInstallId();
+      if (isStale()) return;
 
       if (imageUri) {
         const base64 = await compressToBase64(imageUri);
+        if (isStale()) return;
         frameBase64 = base64;
-        const { resolve } = require("../services/api");
-        data = await resolve(base64, installId, sessionToken);
+        data = await resolve(base64, installId, sessionToken, controller.signal);
       } else if (sharedUrl) {
-        const { resolveUrl } = require("../services/api");
-        data = await resolveUrl(sharedUrl, installId, sessionToken);
+        data = await resolveUrl(sharedUrl, installId, sessionToken, controller.signal);
       }
+      if (isStale()) return;
 
       if (!data || !data.ok) throw new Error(data?.error ?? "Scan failed");
 
@@ -115,14 +133,26 @@ export default function ShareScreen() {
 
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (err) {
+      if (err instanceof ResolveAbortedError || isStale()) return;
       const msg = err instanceof Error ? err.message : "Unknown error";
       setErrorMessage(msg);
       setStatus("error");
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      if (abortRef.current === controller) abortRef.current = null;
     }
   }
 
+  function handleStop() {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setErrorMessage("Search stopped.");
+    setStatus("error");
+  }
+
   function handleClose() {
+    abortRef.current?.abort();
+    abortRef.current = null;
     resetShareIntent();
     router.dismiss();
   }
@@ -145,6 +175,9 @@ export default function ShareScreen() {
       {status === "loading" && (
         <View style={styles.centered}>
           <LoadingPulse message="Finding products..." />
+          <TouchableOpacity style={styles.stopButton} onPress={handleStop}>
+            <Text style={styles.stopButtonText}>Stop</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -247,6 +280,14 @@ const styles = StyleSheet.create({
   closeText: { color: "#64748B", fontSize: 14 },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   scroll: { flex: 1 },
+  stopButton: {
+    marginTop: 16,
+    backgroundColor: "#FF5500",
+    borderRadius: 12,
+    paddingHorizontal: 28,
+    paddingVertical: 10
+  },
+  stopButtonText: { color: "#fff", fontWeight: "700", fontSize: 14 },
   groupLabel: { color: "#FF5500", fontSize: 14, fontWeight: "700", marginBottom: 12, marginTop: 20 },
   viewCatalogButton: {
     marginTop: 24,
