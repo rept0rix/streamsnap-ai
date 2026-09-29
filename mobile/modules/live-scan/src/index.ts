@@ -76,13 +76,14 @@ type LiveScanNative = {
   isAvailable(): boolean;
   getState(): LiveScanState;
   startBroadcast(): Promise<void>;
+  stopBroadcast?: () => Promise<void>;
   syncCredentials(token: string | null, installId: string, workerUrl: string): Promise<void>;
   requestNotificationPermission(): Promise<boolean>;
   addListener(event: string, listener: (event: LiveScanState) => void): { remove: () => void };
 };
 
 function loadNative(): LiveScanNative | null {
-  if (Platform.OS !== "ios") return null;
+  if (Platform.OS !== "ios" && Platform.OS !== "android") return null;
   try {
     return requireNativeModule("LiveScan") as LiveScanNative;
   } catch {
@@ -93,7 +94,7 @@ function loadNative(): LiveScanNative | null {
 const native = loadNative();
 
 export function isLiveScanAvailable(): boolean {
-  return Platform.OS === "ios" && !!native?.isAvailable();
+  return (Platform.OS === "ios" || Platform.OS === "android") && !!native?.isAvailable();
 }
 
 export function getLiveScanState(): LiveScanState {
@@ -103,9 +104,18 @@ export function getLiveScanState(): LiveScanState {
 
 export async function startLiveBroadcast(): Promise<void> {
   if (!native) {
-    throw new Error("Live background scan is only available in a native iOS build.");
+    throw new Error(
+      "Live background scan needs a native iOS or Android build (not Expo Go)."
+    );
   }
   await native.startBroadcast();
+}
+
+export async function stopLiveBroadcast(): Promise<void> {
+  if (!native) return;
+  if (typeof native.stopBroadcast === "function") {
+    await native.stopBroadcast();
+  }
 }
 
 export async function syncLiveScanCredentials(opts: {
