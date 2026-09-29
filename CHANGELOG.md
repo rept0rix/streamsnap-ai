@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Known issues
+- `GET /creator/gear/public?channel=` matches streamers with an unverified substring search (`stream_channels LIKE %x%`); `account.html` saves channel handles to KV while D1 has a separate `stream_channels` field and they don't match. Not fixed; belongs to the channel-to-tag mapping decision (see `docs/design/channel-to-creator-tag.md`).
+
+---
+
 ## [1.6.3] - 2026-09-07 (09:30 IDT)
 
 ### Added

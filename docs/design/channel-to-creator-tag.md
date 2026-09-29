@@ -10,6 +10,8 @@ Relevant code that already exists:
 - `account.html` saves the creator's channel handles to KV (`creator:channels:<userId>`), not to D1 `stream_channels`. **The two stores don't match.**
 - `GET /creator/gear/public?channel=` looks a streamer up with `stream_channels LIKE %channel%` **or** `affiliate_tag = channel`. This is an **unverified substring match**: anyone can type someone else's handle. No client calls the endpoint today.
 
+> **Known issue (not fixed, tracked in CHANGELOG `[Unreleased]` → Known issues):** `GET /creator/gear/public?channel=` matches streamers with an unverified substring search (`stream_channels LIKE %x%`), and `account.html` writes channel handles to KV (`creator:channels:<userId>`) while D1 has a separate `users.stream_channels` field; the two don't match. Both are resolved by the mapping below (one verified table, no `LIKE` lookup).
+
 ## Where the mapping lives
 - **Source of truth: D1**, in a new table, `creator_channels(platform, channel_id, user_id, affiliate_tag_snapshot, verified_at, verification_method, status, created_at, updated_at)`.
 - Primary key: `(platform, channel_id)`. Use the **stable platform ID**, not the display handle. Handles can be renamed and reused, and a handle may only be stored as a display hint.
