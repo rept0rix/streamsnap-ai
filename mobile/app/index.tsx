@@ -8,7 +8,7 @@
  * Prominent History / Catalog section.
  */
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -32,7 +32,7 @@ import { useStore } from "../store/useStore";
 import { ProductCard } from "../components/ProductCard";
 import { ScanButton } from "../components/ScanButton";
 import { EmptyState } from "../components/EmptyState";
-import { resolve, resolveUrl } from "../services/api";
+import { resolve, resolveUrl, ResolveAbortedError, ResolveTimeoutError } from "../services/api";
 import { compressToBase64 } from "../services/imageUtils";
 import { getInstallId } from "../services/storage";
 import { useLiveScan } from "../hooks/useLiveScan";
@@ -64,10 +64,50 @@ export default function HomeScreen() {
   const [videoUrl, setVideoUrl] = useState("");
   const [urlLoading, setUrlLoading] = useState(false);
 
+  // While a one-shot search is in flight, block starting another one.
+  const busy = scanStatus === "scanning" || urlLoading;
+
+  // In-flight one-shot searches (Gallery scan / Paste Link)
+  const scanAbortRef = useRef<AbortController | null>(null);
+  const urlAbortRef = useRef<AbortController | null>(null);
+  const mountedRef = useRef(true);
+
+  React.useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (scanAbortRef.current) {
+        scanAbortRef.current.abort();
+        scanAbortRef.current = null;
+        setScanStatus("idle");
+      }
+      urlAbortRef.current?.abort();
+      urlAbortRef.current = null;
+    };
+  }, []);
+
+  function stopScan() {
+    scanAbortRef.current?.abort();
+    scanAbortRef.current = null;
+    setScanStatus("idle");
+  }
+
+  function stopUrlResolve() {
+    urlAbortRef.current?.abort();
+    urlAbortRef.current = null;
+    setUrlLoading(false);
+  }
+
+  function closeLinkModal() {
+    stopUrlResolve();
+    setLinkModalVisible(false);
+  }
+
   // ---------------------------------------------------------------------------
   // Gallery Scan
   // ---------------------------------------------------------------------------
   async function handlePickImage() {
+    if (busy) return;
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
       Alert.alert("Permission needed", "Allow photo access to scan from your gallery.");
@@ -84,6 +124,11 @@ export default function HomeScreen() {
   }
 
   async function performScan(imageUri: string) {
+    scanAbortRef.current?.abort();
+    const controller = new AbortController();
+    scanAbortRef.current = controller;
+    const isStale = () => controller.signal.aborted || !mountedRef.current;
+
     setScanStatus("scanning");
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
@@ -92,8 +137,10 @@ export default function HomeScreen() {
         compressToBase64(imageUri),
         getInstallId()
       ]);
+      if (isStale()) return;
 
-      const data = await resolve(base64, installId, sessionToken);
+      const data = await resolve(base64, installId, sessionToken, controller.signal);
+      if (isStale()) return;
 
       if (!data.ok) throw new Error(data.error ?? "Scan failed");
 
@@ -102,20 +149,29 @@ export default function HomeScreen() {
       for (const p of data.products) {
         await saveProduct(p, base64);
       }
+      if (isStale()) return;
 
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
       if (data.products.length > 0 || data.others.length > 0) {
-        router.push("/scan");
+        router.push({ pathname: "/scan", params: { show: "results" } });
       } else {
         Alert.alert("No products detected", "Try taking a clearer shot or scan live while video plays.");
         setScanStatus("idle");
       }
     } catch (err) {
+      if (err instanceof ResolveAbortedError || isStale()) return;
+      if (err instanceof ResolveTimeoutError) {
+        setScanStatus("idle");
+        Alert.alert("Search timed out", err.message);
+        return;
+      }
       const message = err instanceof Error ? err.message : "Unknown error";
       setScanStatus("error", message);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert("Scan failed", message);
+    } finally {
+      if (scanAbortRef.current === controller) scanAbortRef.current = null;
     }
   }
 
@@ -124,17 +180,25 @@ export default function HomeScreen() {
   // ---------------------------------------------------------------------------
   async function handleResolveVideoLink() {
     const trimmed = videoUrl.trim();
+    if (urlLoading || scanStatus === "scanning") return;
     if (!trimmed || !/^https?:\/\//i.test(trimmed)) {
       Alert.alert("Invalid Link", "Please paste a valid TikTok, Instagram Reels, or YouTube URL.");
       return;
     }
+
+    urlAbortRef.current?.abort();
+    const controller = new AbortController();
+    urlAbortRef.current = controller;
+    const isStale = () => controller.signal.aborted || !mountedRef.current;
 
     setUrlLoading(true);
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     try {
       const installId = await getInstallId();
-      const res = await resolveUrl(trimmed, installId, sessionToken);
+      if (isStale()) return;
+      const res = await resolveUrl(trimmed, installId, sessionToken, controller.signal);
+      if (isStale()) return;
 
       if (!res.ok) throw new Error(res.error || "Could not extract products from link.");
 
@@ -150,6 +214,7 @@ export default function HomeScreen() {
           : "Products extracted from video link.",
         product: res.products?.[0]
       });
+      if (isStale()) return;
 
       setLinkModalVisible(false);
       setVideoUrl("");
@@ -157,15 +222,23 @@ export default function HomeScreen() {
 
       if ((res.products?.length || 0) > 0 || (res.others?.length || 0) > 0) {
         setScanResults(res.products, res.others);
-        router.push("/scan");
+        router.push({ pathname: "/scan", params: { show: "results" } });
       } else {
         Alert.alert("No Products Found", "We scanned the video frame but could not detect shoppable items.");
       }
     } catch (err) {
+      if (err instanceof ResolveAbortedError || isStale()) return;
+      if (err instanceof ResolveTimeoutError) {
+        Alert.alert("Search timed out", err.message);
+        return;
+      }
       const message = err instanceof Error ? err.message : "Network error";
       Alert.alert("Extraction Failed", message);
     } finally {
-      setUrlLoading(false);
+      if (urlAbortRef.current === controller) {
+        urlAbortRef.current = null;
+        if (mountedRef.current) setUrlLoading(false);
+      }
     }
   }
 
@@ -260,6 +333,16 @@ export default function HomeScreen() {
         </View>
       )}
 
+      {scanStatus === "scanning" && (
+        <View style={styles.searchingBanner}>
+          <ActivityIndicator color="#FF6A00" size="small" />
+          <Text style={styles.searchingText}>Searching for products…</Text>
+          <TouchableOpacity style={styles.stopBtn} onPress={stopScan}>
+            <Text style={styles.stopBtnText}>Stop</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -333,8 +416,9 @@ export default function HomeScreen() {
           {/* 3. 🛠 Compact Quick Action Bar */}
           <View style={styles.quickBar}>
             <TouchableOpacity
-              style={styles.quickBtn}
+              style={[styles.quickBtn, busy && styles.quickBtnDisabled]}
               onPress={() => router.push("/scan")}
+              disabled={busy}
               activeOpacity={0.8}
             >
               <Ionicons name="camera-outline" size={18} color="#FFA066" />
@@ -342,8 +426,9 @@ export default function HomeScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.quickBtn}
+              style={[styles.quickBtn, busy && styles.quickBtnDisabled]}
               onPress={handlePickImage}
+              disabled={busy}
               activeOpacity={0.8}
             >
               <Ionicons name="image-outline" size={18} color="#FFA066" />
@@ -351,8 +436,9 @@ export default function HomeScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.quickBtn, styles.quickBtnHighlight]}
+              style={[styles.quickBtn, styles.quickBtnHighlight, busy && styles.quickBtnDisabled]}
               onPress={() => setLinkModalVisible(true)}
+              disabled={busy}
               activeOpacity={0.8}
             >
               <Ionicons name="link-outline" size={18} color="#FF6A00" />
@@ -393,8 +479,9 @@ export default function HomeScreen() {
                 Tap Live Scan above, then open TikTok or YouTube. Pause on anything you like — that frame is scanned instantly and lands right here.
               </Text>
               <TouchableOpacity
-                style={styles.emptyActionBtn}
+                style={[styles.emptyActionBtn, busy && styles.quickBtnDisabled]}
                 onPress={() => setLinkModalVisible(true)}
+                disabled={busy}
               >
                 <Ionicons name="link" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
                 <Text style={styles.emptyActionText}>Try Pasting a Video Link</Text>
@@ -415,7 +502,7 @@ export default function HomeScreen() {
         visible={linkModalVisible}
         transparent
         animationType="fade"
-        onRequestClose={() => setLinkModalVisible(false)}
+        onRequestClose={closeLinkModal}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
@@ -424,7 +511,7 @@ export default function HomeScreen() {
                 <Ionicons name="link" size={20} color="#FF6A00" style={{ marginRight: 8 }} />
                 <Text style={styles.modalTitle}>Paste Video Link</Text>
               </View>
-              <TouchableOpacity onPress={() => setLinkModalVisible(false)}>
+              <TouchableOpacity onPress={closeLinkModal}>
                 <Ionicons name="close" size={22} color="#94A3B8" />
               </TouchableOpacity>
             </View>
@@ -458,6 +545,12 @@ export default function HomeScreen() {
                 </>
               )}
             </TouchableOpacity>
+
+            {urlLoading && (
+              <TouchableOpacity style={styles.cancelBtn} onPress={stopUrlResolve}>
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </Modal>
@@ -842,6 +935,51 @@ const styles = StyleSheet.create({
   resolveBtnText: {
     color: "#FFFFFF",
     fontSize: 15,
+    fontWeight: "800"
+  },
+  quickBtnDisabled: {
+    opacity: 0.4
+  },
+  cancelBtn: {
+    alignItems: "center",
+    marginTop: 10,
+    paddingVertical: 10
+  },
+  cancelBtnText: {
+    color: "#FF6A00",
+    fontSize: 14,
+    fontWeight: "700"
+  },
+
+  // One-shot search in progress
+  searchingBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    backgroundColor: "rgba(255, 106, 0, 0.1)",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255, 106, 0, 0.4)"
+  },
+  searchingText: {
+    flex: 1,
+    color: "#CBD5E1",
+    fontSize: 12,
+    fontWeight: "700"
+  },
+  stopBtn: {
+    backgroundColor: "#FF5500",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10
+  },
+  stopBtnText: {
+    color: "#FFFFFF",
+    fontSize: 12,
     fontWeight: "800"
   },
 

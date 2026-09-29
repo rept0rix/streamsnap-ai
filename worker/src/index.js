@@ -604,7 +604,8 @@ async function handleResolveUrl(request, env, ctx) {
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.5"
       },
-      redirect: "follow"
+      redirect: "follow",
+      signal: AbortSignal.timeout(LIMITS.UPSTREAM_TIMEOUT_MS)
     });
     
     if (!response.ok) {
@@ -647,7 +648,8 @@ async function handleResolveUrl(request, env, ctx) {
 
     // 2. Fetch the image itself
     const imgRes = await fetch(imageUrl, {
-      headers: { "User-Agent": "StreamSnap Bot" }
+      headers: { "User-Agent": "StreamSnap Bot" },
+      signal: AbortSignal.timeout(LIMITS.UPSTREAM_TIMEOUT_MS)
     });
     
     if (!imgRes.ok) {
@@ -681,6 +683,9 @@ async function handleResolveUrl(request, env, ctx) {
     return handleResolve(simulatedRequest, env, ctx);
 
   } catch (err) {
+    if (err?.name === "TimeoutError" || err?.name === "AbortError") {
+      return json({ ok: false, error: "Timed out fetching the video link." }, 504, request, env);
+    }
     return json({ ok: false, error: err.message }, 500, request, env);
   }
 }

@@ -4,7 +4,7 @@
  * Handles live camera scanning and shows product results.
  */
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -15,14 +15,14 @@ import {
   Linking
 } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useStore } from "../store/useStore";
 import { ProductCard } from "../components/ProductCard";
 import { LoadingPulse } from "../components/LoadingPulse";
 import { EmptyState } from "../components/EmptyState";
-import { resolve } from "../services/api";
+import { resolve, ResolveAbortedError, ResolveTimeoutError } from "../services/api";
 import { compressToBase64 } from "../services/imageUtils";
 import { getInstallId } from "../services/storage";
 
@@ -41,11 +41,52 @@ export default function ScanScreen() {
     setScanResults,
     saveProduct,
     addProductToCart,
-    sessionToken
+    sessionToken,
+    reset
   } = useStore();
 
+  // Only a caller that just produced results (Gallery / Paste Link) opens this
+  // screen on the results view; every other entry (Camera, Cart) starts fresh.
+  const { show } = useLocalSearchParams<{ show?: string }>();
   const hasResults = lastProducts.length > 0 || lastOthers.length > 0;
-  const [mode, setMode] = useState<"camera" | "results">(hasResults ? "results" : "camera");
+  const openOnResults = show === "results" && hasResults;
+  const [mode, setMode] = useState<"camera" | "results">(openOnResults ? "results" : "camera");
+
+  useEffect(() => {
+    if (!openOnResults && useStore.getState().scanStatus !== "scanning") reset();
+  }, []);
+
+  const abortRef = useRef<AbortController | null>(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (abortRef.current) {
+        abortRef.current.abort();
+        abortRef.current = null;
+        setScanStatus("idle");
+      }
+    };
+  }, []);
+
+  function stopScan() {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setScanStatus("idle");
+  }
+
+  function handleScanAgain() {
+    if (abortRef.current) stopScan();
+    reset();
+    setMode("camera");
+  }
+
+  function handleClose() {
+    if (abortRef.current) stopScan();
+    router.dismiss();
+  }
 
   // ---------------------------------------------------------------------------
   // Camera capture
@@ -53,19 +94,27 @@ export default function ScanScreen() {
 
   async function handleSnap() {
     if (!cameraRef.current) return;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const isStale = () => controller.signal.aborted || !mountedRef.current;
+
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
     try {
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.85 });
       if (!photo?.uri) throw new Error("No photo captured");
+      if (isStale()) return;
 
       setScanStatus("scanning");
       const [base64, installId] = await Promise.all([
         compressToBase64(photo.uri),
         getInstallId()
       ]);
+      if (isStale()) return;
 
-      const data = await resolve(base64, installId, sessionToken);
+      const data = await resolve(base64, installId, sessionToken, controller.signal);
+      if (isStale()) return;
       if (!data.ok) throw new Error(data.error ?? "Scan failed");
 
       setScanResults(data.products, data.others, base64);
@@ -73,14 +122,23 @@ export default function ScanScreen() {
       for (const p of data.products) {
         await saveProduct(p, base64);
       }
+      if (isStale()) return;
 
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setMode("results");
     } catch (err) {
+      if (err instanceof ResolveAbortedError || isStale()) return;
+      if (err instanceof ResolveTimeoutError) {
+        setScanStatus("idle");
+        Alert.alert("Search timed out", err.message);
+        return;
+      }
       const message = err instanceof Error ? err.message : "Unknown error";
       setScanStatus("error", message);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert("Scan failed", message);
+    } finally {
+      if (abortRef.current === controller) abortRef.current = null;
     }
   }
 
@@ -108,11 +166,11 @@ export default function ScanScreen() {
   // Results view
   // ---------------------------------------------------------------------------
 
-  if (mode === "results" || hasResults) {
+  if (mode === "results") {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.resultsHeader}>
-          <TouchableOpacity onPress={() => setMode("camera")}>
+          <TouchableOpacity onPress={handleScanAgain}>
             <Text style={styles.backButton}>← Scan Again</Text>
           </TouchableOpacity>
           <Text style={styles.resultsTitle}>
@@ -126,7 +184,12 @@ export default function ScanScreen() {
         </View>
 
         {scanStatus === "scanning" ? (
-          <LoadingPulse message="Scanning..." />
+          <View style={styles.scanningBox}>
+            <LoadingPulse message="Scanning..." />
+            <TouchableOpacity style={styles.stopButton} onPress={stopScan}>
+              <Text style={styles.stopButtonText}>Stop</Text>
+            </TouchableOpacity>
+          </View>
         ) : lastProducts.length === 0 && lastOthers.length === 0 ? (
           <EmptyState
             emoji="🔍"
@@ -178,7 +241,7 @@ export default function ScanScreen() {
       <CameraView ref={cameraRef} style={styles.camera} facing="back">
         {/* Overlay */}
         <View style={[styles.cameraOverlay, { paddingTop: insets.top + 16 }]}>
-          <TouchableOpacity onPress={() => router.dismiss()} style={styles.closeButton}>
+          <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
             <Text style={styles.closeButtonText}>✕</Text>
           </TouchableOpacity>
         </View>
@@ -192,7 +255,12 @@ export default function ScanScreen() {
         {/* Snap button */}
         <View style={[styles.cameraControls, { paddingBottom: insets.bottom + 32 }]}>
           {scanStatus === "scanning" ? (
-            <LoadingPulse message="Identifying..." dark={false} />
+            <>
+              <LoadingPulse message="Identifying..." dark={false} />
+              <TouchableOpacity style={styles.stopButton} onPress={stopScan}>
+                <Text style={styles.stopButtonText}>Stop</Text>
+              </TouchableOpacity>
+            </>
           ) : (
             <TouchableOpacity
               style={styles.snapButton}
@@ -301,5 +369,14 @@ const styles = StyleSheet.create({
   resultsTitle: { color: "#F8FAFC", fontSize: 16, fontWeight: "700", flex: 1, textAlign: "center" },
   doneButton: { color: "#FF5500", fontSize: 14, fontWeight: "600" },
   resultsList: { flex: 1 },
+  scanningBox: { flex: 1, justifyContent: "center", alignItems: "center" },
+  stopButton: {
+    marginTop: 16,
+    backgroundColor: "#FF5500",
+    borderRadius: 12,
+    paddingHorizontal: 28,
+    paddingVertical: 10
+  },
+  stopButtonText: { color: "#fff", fontWeight: "700", fontSize: 14 },
   groupLabel: { color: "#94A3B8", fontSize: 13, fontWeight: "600", marginBottom: 12, marginTop: 16 }
 });
