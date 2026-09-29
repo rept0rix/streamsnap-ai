@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased] / next
+
+### Known issues (not fixed yet)
+- **Side panel scan gate targets a missing element**: `extension/sidepanel/sidepanel.js` (~L483, in the sign-in gate logic) queries `#scan-results-view`, which doesn't exist; the element in `sidepanel.html` is `#scan-results-container`. Not fixed in 1.6.4.
+- **Mobile app gives up before the worker**: the mobile app's request timeout (25s) equals the worker's `/resolve-url` deadline (25s), so the app usually times out first and never sees the worker's 504.
+- **`/resolve-url` 504 route test coverage**: the test covers a hanging page fetch, not a slow AI step.
+
+---
+
+## [1.6.4] - 2026-09-29 (16:50 IDT)
+
+### Changed
+- **Honest creator-tag copy**: An Associates tag entered in Setup only applies to links opened in that user's own browser; nothing maps a channel to its creator's tag. Removed every promise that creators earn commission from their viewers:
+  - Onboarding "1-Click Amazon Cart" card: now "Add what you find to a Remote Cart and check out on Amazon in one go."
+  - Onboarding settings subtitle: now "Set your overlay controls and how sensitive product detection is."
+  - Onboarding Associates tag card: removed the "Earn 100% Commission" badge; the help text now reads "Optional. If you have an Amazon Associates ID (e.g. `yourname-20`), links you open in this browser will use it. It doesn't apply to purchases your viewers make."
+  - Side panel Stats (sign-in gate and header): now describe scans, Amazon clicks and cart adds, with an estimated commission figure.
+  - Side panel Settings setup guide and tag help text: now say links you open in this browser use your tag (no more "earn 100% of your affiliate commissions").
+  - README Monetization: the creator-tag bullet now explains the tag only applies in your own browser and that channel-to-creator mapping is a pending decision.
+- **Removed commission ranges**: The side panel's "1%–20%" per-category rate list and the README's "1%–10%" range are replaced with "Amazon sets the rate by product category."
+- **Version**: `extension/manifest.json` and the in-extension version constants (`services/version_info.js`, side panel badges, content-script build log, device name) report **1.6.4**. The worker's `LATEST_EXTENSION_VERSION` / `MIN_EXTENSION_VERSION`, the landing page badges and the `landing_page/assets/` zips stay at 1.6.3 until the Chrome Web Store submission.
+
+---
+
 ## [1.6.3] - 2026-09-07 (09:30 IDT)
 
 ### Added

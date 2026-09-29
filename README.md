@@ -177,8 +177,8 @@ or `setInterval` inside the service worker, template interpolation into
 
 ## 💰 Monetization
 
-- **Amazon Associates:** 1%–10% depending on category, on qualifying purchases made within the cookie window after a click.
-- **Creator tag:** Streamers enter their own Associates tag in Setup so links attribute to them.
+- **Amazon Associates:** Amazon sets the rate by product category. It applies to qualifying purchases made within the cookie window after a click.
+- **Creator tag:** If you enter your own Associates tag in Setup, links opened in your own browser use it. Your viewers' clicks don't use your tag yet. Mapping a channel to its creator's tag is a pending decision (see docs/design/channel-to-creator-tag.md).
 - **Prime bounty:** Amazon pays a per-signup bounty on qualifying new Prime subscribers.
 
 > The "Projected" number in the Stats tab is calculated from list prices and Amazon's published rate cards. It is an estimate, not reported revenue — actual earnings appear only in your Amazon Associates dashboard.

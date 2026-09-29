@@ -4,20 +4,32 @@
  */
 
 export const CURRENT_BUILD = {
-  version: "1.6.3",
-  buildDate: "2026-09-07",
-  buildTime: "09:30",
-  buildTimestamp: "2026-09-07 09:30:00 IDT",
-  title: "Sign-in Gates, Product Card Redesign & Memory Cleanup",
+  version: "1.6.4",
+  buildDate: "2026-09-29",
+  buildTime: "16:50",
+  buildTimestamp: "2026-09-29 16:50:00 IDT",
+  title: "Honest Creator-Tag Copy",
   highlights: [
-    "🔒 Auth Gates: History, Cart and Stats now require Google sign-in; badge counters show 0 when signed out.",
-    "🛍️ Product Card Redesign: clean 2-tier action buttons with readable store pills.",
-    "🧹 Canvas memory cleanup after capture, tighter manifest permissions and hardened Gemini JSON parsing."
+    "📝 Associates tag copy now says what it does: links you open in this browser use your tag.",
+    "🚫 Removed promises that creators earn commission from their viewers' purchases.",
+    "📊 Commission ranges replaced with: Amazon sets the rate by product category."
   ]
 };
 
 export const VERSION_HISTORY = [
   CURRENT_BUILD,
+  {
+    version: "1.6.3",
+    buildDate: "2026-09-07",
+    buildTime: "09:30",
+    buildTimestamp: "2026-09-07 09:30:00 IDT",
+    title: "Sign-in Gates, Product Card Redesign & Memory Cleanup",
+    highlights: [
+      "🔒 Auth Gates: History, Cart and Stats now require Google sign-in; badge counters show 0 when signed out.",
+      "🛍️ Product Card Redesign: clean 2-tier action buttons with readable store pills.",
+      "🧹 Canvas memory cleanup after capture, tighter manifest permissions and hardened Gemini JSON parsing."
+    ]
+  },
   {
     version: "1.6.1",
     buildDate: "2026-09-01",
