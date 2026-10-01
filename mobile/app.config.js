@@ -36,6 +36,7 @@ module.exports = ({ config }) => ({
       backgroundColor: "#0B0F17"
     },
     package: "com.streamsnap.ai",
+    versionCode: 1,
     permissions: ["CAMERA", "READ_EXTERNAL_STORAGE", "READ_MEDIA_IMAGES"],
     intentFilters: [
       {
@@ -56,7 +57,14 @@ module.exports = ({ config }) => ({
   plugins: [
     "./plugins/withBroadcastExtension",
     "expo-router",
-    "expo-camera",
+    [
+      "expo-camera",
+      {
+        cameraPermission:
+          "StreamSnap uses your camera to scan items and find them on Amazon.",
+        recordAudioAndroid: false
+      }
+    ],
     [
       "expo-image-picker",
       {
@@ -80,6 +88,9 @@ module.exports = ({ config }) => ({
     typedRoutes: true
   },
   extra: {
-    workerUrl: "https://streamsnap-lens.na0ryank0.workers.dev"
+    workerUrl: "https://streamsnap-lens.na0ryank0.workers.dev",
+    eas: {
+      projectId: "cc530bec-a051-4ccd-aaab-4ee40a134f32"
+    }
   }
 });
