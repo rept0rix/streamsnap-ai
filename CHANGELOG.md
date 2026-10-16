@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Side panel — stale scan results after sign-out**: `updateAuthGates()` looked up `#scan-results-view`, which does not exist (the element is `#scan-results-container`), so signing out never hid previous scan results. It now targets `#scan-results-container`.
+- **Side panel — previous account's scan visible after sign-out**: Signing out now clears the in-memory scan state (`state.scan`, live session feed), empties the rendered results, removes the stored last scan and per-account flags (`latestScanResults`, `lastScanError`, `isStreamer`, `creatorAffiliateTag`), and flushes the service worker's frame-result cache.
 
 ---
 

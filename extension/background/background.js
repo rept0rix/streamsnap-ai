@@ -16,7 +16,7 @@ import {
   categorizeProduct,
   estimateCommission
 } from "../services/amazon_service.js";
-import { lookupFrame, recordFrame } from "../services/frame_cache.js";
+import { lookupFrame, recordFrame, clearFrameCache } from "../services/frame_cache.js";
 import {
   downscaleDataUrl,
   enforceCatalogBudget,
@@ -167,6 +167,11 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
 chrome.storage.onChanged.addListener(async (changes, area) => {
   if (area !== "local") return;
+  // Sign-out (token removed): drop the in-memory frame->result cache so the
+  // next account can't get the previous account's results as a cache hit.
+  if (changes.sessionToken && changes.sessionToken.newValue === undefined) {
+    clearFrameCache();
+  }
   if (changes.autoScanIntervalSec) {
     const { autoScanIntervalSec } = await chrome.storage.local.get(["autoScanIntervalSec"]);
     syncAutoScanAlarm(autoScanIntervalSec);

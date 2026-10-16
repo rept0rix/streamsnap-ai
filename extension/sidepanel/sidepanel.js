@@ -485,14 +485,15 @@ function updateAuthGates(signedIn) {
 
   if (scanGate) scanGate.style.display = signedIn ? "none" : "flex";
   if (!signedIn) {
+    clearScanState();
     if (scanEmpty) scanEmpty.style.display = "none";
     if (scanResults) scanResults.style.display = "none";
     if (scanLoading) scanLoading.style.display = "none";
   } else {
     // When signed in, restore standard scanner display state
     const hasResults = Boolean(
-      (state.latestScan?.items?.exactMatches?.length || 0) +
-      (state.latestScan?.items?.lookAlikes?.length || 0) > 0
+      (state.scan?.items?.exactMatches?.length || 0) +
+      (state.scan?.items?.lookAlikes?.length || 0) > 0
     );
     if (hasResults) {
       if (scanResults) scanResults.style.display = "block";
@@ -1776,4 +1777,29 @@ function normalizeAutoScanInterval(value) {
   const n = Number(value);
   if (!Number.isFinite(n) || n <= 0) return 0;
   return Math.max(30, Math.round(n));
+}
+
+/**
+ * Drop every in-memory scan/result and empty the rendered results so a
+ * different account signing in on this browser never sees the previous
+ * account's last scan. Called from updateAuthGates(false), which every
+ * sign-out path (button, 401 expiry, account deletion) goes through.
+ */
+function clearScanState() {
+  state.scan = null;
+  liveSessionFeed = { exactMatches: [], lookAlikes: [] };
+  for (const id of ["exact-matches-list", "lookalikes-list"]) {
+    const el = byId(id);
+    if (el) el.replaceChildren();
+  }
+  const cropImg = byId("crop-preview-img");
+  if (cropImg) cropImg.removeAttribute("src");
+  show("crop-preview-box", false);
+  const notice = byId("filter-notice");
+  if (notice) { notice.textContent = ""; notice.style.display = "none"; }
+  const streamTag = byId("stream-name-tag");
+  if (streamTag) streamTag.textContent = "";
+  const countBadge = byId("scanned-count");
+  if (countBadge) countBadge.textContent = "0";
+  show("scan-results-container", false);
 }

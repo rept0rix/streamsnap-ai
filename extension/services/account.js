@@ -107,8 +107,20 @@ export async function fetchProfile() {
   }
 }
 
+// Per-account data that must not survive into the next account's session on
+// this browser. Browser-level settings (API key, affiliate tag, auto-scan,
+// confidence, history/cart/stats kept locally) are intentionally not listed.
+const PER_USER_KEYS = [
+  SESSION_KEY,
+  PROFILE_KEY,
+  "latestScanResults", // last scan payload incl. captured frame
+  "lastScanError",
+  "isStreamer", // from /sync/state for the signed-in account
+  "creatorAffiliateTag"
+];
+
 async function signOutLocal() {
-  await chrome.storage.local.remove([SESSION_KEY, PROFILE_KEY]);
+  await chrome.storage.local.remove(PER_USER_KEYS);
 }
 
 export async function signOut() {
