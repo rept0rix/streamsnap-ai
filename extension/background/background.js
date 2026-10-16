@@ -107,6 +107,12 @@ chrome.runtime.onUpdateAvailable?.addListener(async (details) => {
 
 chrome.runtime.onInstalled.addListener(async (details) => {
   const settings = await ensureDefaults();
+  // Migrate a legacy sub-30s value (the removed 15s option) in storage.
+  const clamped = normalizeAutoScanInterval(settings.autoScanIntervalSec);
+  if (clamped !== settings.autoScanIntervalSec) {
+    settings.autoScanIntervalSec = clamped;
+    await chrome.storage.local.set({ autoScanIntervalSec: clamped });
+  }
   await syncAutoScanAlarm(settings.autoScanIntervalSec);
   await syncActionBadge();
 });
@@ -129,14 +135,22 @@ chrome.sidePanel
 // Chrome enforces a 30s floor on alarm periods.
 // ---------------------------------------------------------------------------
 
+// Chrome alarms have a 30s floor; the old 15s option was never honoured.
+// Clamp any saved 1-29s value to the smallest offered option (30s).
+function normalizeAutoScanInterval(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.max(30, Math.round(n));
+}
+
 async function syncAutoScanAlarm(intervalSeconds) {
   await chrome.alarms.clear(AUTO_SCAN_ALARM);
   // A disabled extension must never wake itself to scan in the background.
   if (!(await isExtensionEnabled())) return;
-  const seconds = Number(intervalSeconds);
-  if (!Number.isFinite(seconds) || seconds <= 0) return;
+  const seconds = normalizeAutoScanInterval(intervalSeconds);
+  if (seconds === 0) return;
 
-  const periodInMinutes = Math.max(0.5, seconds / 60);
+  const periodInMinutes = seconds / 60;
   chrome.alarms.create(AUTO_SCAN_ALARM, { periodInMinutes });
   console.info(`[StreamSnap] auto-scan every ${(periodInMinutes * 60).toFixed(0)}s`);
 }

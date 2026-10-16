@@ -385,7 +385,7 @@ function initSettings() {
       }
 
       if (autoScanSelect && res.autoScanIntervalSec !== undefined) {
-        autoScanSelect.value = String(res.autoScanIntervalSec);
+        autoScanSelect.value = String(normalizeAutoScanInterval(res.autoScanIntervalSec));
       }
       if (confSlider && res.minConfidence !== undefined) {
         confSlider.value = res.minConfidence;
@@ -1768,4 +1768,12 @@ function renderAnalytics(data) {
     set("metric-earnings", `$${Number(analytics.estimatedEarnings || 0).toFixed(2)}`);
     set("active-tag-label", res.affiliateTag || state.affiliateTag);
   });
+}
+
+// Chrome alarms have a 30s floor; the old 15s option was never honoured.
+// Clamp any saved 1-29s value to the smallest offered option (30s).
+function normalizeAutoScanInterval(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.max(30, Math.round(n));
 }
