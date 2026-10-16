@@ -480,7 +480,7 @@ function updateAuthGates(signedIn) {
   // 0. Live Scan Gate: Must sign in before use, unless already signed in
   const scanGate = byId("scan-auth-gate");
   const scanEmpty = byId("scan-empty-state");
-  const scanResults = byId("scan-results-view");
+  const scanResults = byId("scan-results-container");
   const scanLoading = byId("scan-loading-state");
 
   if (scanGate) scanGate.style.display = signedIn ? "none" : "flex";
