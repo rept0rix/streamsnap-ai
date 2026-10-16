@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased] - planned next extension release (1.6.4 or later)
+
+### Changed
+- **Auto-Scan interval**: Removed the "Every 15 Seconds" option from the side panel and onboarding. MV3 `chrome.alarms` enforces a 30s minimum, so 15s was silently run at 30s. A saved value under 30s is clamped to 30s (stored value migrated on install/update; UI and alarm scheduling clamp too).
+- **Manifest**: Dropped the unused `scripting` permission (nothing calls `chrome.scripting`) and set `"minimum_chrome_version": "120"`.
+
+### Fixed
+- **Side panel — stale scan results after sign-out**: `updateAuthGates()` looked up `#scan-results-view`, which does not exist (the element is `#scan-results-container`), so signing out never hid previous scan results. It now targets `#scan-results-container`.
+
+---
+
 ## [1.6.3] - 2026-09-07 (09:30 IDT)
 
 ### Added
