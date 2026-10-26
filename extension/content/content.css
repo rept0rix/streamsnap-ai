@@ -321,7 +321,7 @@
   background: rgba(0, 0, 0, 0.45) !important;
   cursor: crosshair !important;
   user-select: none !important;
-  backdrop-filter: blur(1.5px);
+  /* no backdrop-filter: blurring a playing video delayed the first paint/input ~1s */
   pointer-events: auto !important;
 }
 

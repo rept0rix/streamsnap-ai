@@ -585,6 +585,8 @@
       // YouTube. Tell the guard to swallow that trailing click.
       window.__ssSwallowClickUntil = Date.now() + 600;
       cropper.remove();
+      window.removeEventListener("pointermove", handleMouseMove, true);
+      window.removeEventListener("pointerup", handleMouseUp, true);
       document.removeEventListener("keydown", handleKeyDown);
     }
 
@@ -594,6 +596,7 @@
     });
 
     function handleMouseDown(e) {
+      if (e.button !== undefined && e.button !== 0) return;
       if (e.target.closest(".streamsnap-cropper-banner")) return;
       e.stopPropagation();
       e.preventDefault();
@@ -656,9 +659,12 @@
       if (e.key === "Escape") teardown();
     }
 
-    ssOn(cropper, "mousedown", handleMouseDown);
-    cropper.addEventListener("mousemove", handleMouseMove, true);
-    cropper.addEventListener("mouseup", handleMouseUp, true);
+    // Pointer events, armed immediately: pointerdown comes through the guard
+    // before the page; move/up are on window so a drag that ends outside the
+    // box (or starts before layout settles) still completes.
+    ssOn(cropper, "pointerdown", handleMouseDown);
+    window.addEventListener("pointermove", handleMouseMove, true);
+    window.addEventListener("pointerup", handleMouseUp, true);
     document.addEventListener("keydown", handleKeyDown);
   }
 

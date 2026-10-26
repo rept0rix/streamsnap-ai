@@ -1190,10 +1190,12 @@ function mergeSessionItems(targetList, incomingList) {
 }
 
 let lastRenderedScanId = null;
-function renderScanResults(data, isIncremental = true) {
+function renderScanResults(data, isIncremental = true, { force = false } = {}) {
   if (!data?.items) return;
   // Each result arrives twice (storage change + broadcast): render once.
-  if (data.scanId && data.scanId === lastRenderedScanId) return;
+  // A tab restore is forced: after an empty view the same scanId must render
+  // again (this guard wiped restored snips: YouTube -> Twitch -> YouTube = 0).
+  if (!force && data.scanId && data.scanId === lastRenderedScanId) return;
   if (data.scanId) lastRenderedScanId = data.scanId;
   // A user's Snip / Click-to-Find shows its own fresh result, not a merge that
   // can hide it behind (or dedupe it into) earlier items.
@@ -1797,6 +1799,7 @@ function normalizeAutoScanInterval(value) {
  */
 function clearScanState() {
   state.scan = null;
+  lastRenderedScanId = null;
   liveSessionFeed = { exactMatches: [], lookAlikes: [] };
   for (const id of ["exact-matches-list", "lookalikes-list"]) {
     const el = byId(id);
@@ -1904,7 +1907,7 @@ async function showTabScan(tabId) {
     const entry = scanByTab[tabId];
     if (entry && entry.url === url && entry.payload) {
       liveSessionFeed = { exactMatches: [], lookAlikes: [] };
-      renderScanResults(entry.payload, false);
+      renderScanResults(entry.payload, false, { force: true });
     } else {
       showEmptyScanView();
     }
