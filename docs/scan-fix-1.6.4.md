@@ -17,3 +17,9 @@
 
 ## Deploy order
 Deploy the worker first (unsigned scans already work today, without the cap), then submit 1.6.4.
+
+## QA round 2 fixes
+- Root cause of dead in-page buttons: `shieldInteractions()` added a capture-phase listener on each button calling `stopImmediatePropagation()`. At the target, capture listeners run first, so the button's own click handler never ran (Scan Frame, Snip Box, Live click, minimize, hide all affected). Now bubble-phase `stopPropagation()` only.
+- Cropper is shielded so YouTube doesn't pause/play on drag; crop tries the `<video>` canvas first (no activeTab needed), screenshot only as fallback.
+- Scan/crop errors always toast (catch added).
+- Side panel: sign-in wall replaced by a non-blocking "free, sign in for more + sync" note; results cleared on tab switch/navigation.

@@ -477,31 +477,23 @@ function renderHeaderAccount(profile) {
 function updateAuthGates(signedIn) {
   state.signedIn = Boolean(signedIn);
 
-  // 0. Live Scan Gate: Must sign in before use, unless already signed in
+  // 0. Live scan: never blocked. Signed-out users scan free (server cap);
+  // the gate pane is now a small non-blocking note. Only wipe results when an
+  // account actually signs out, not on every signed-out render.
+  const wasSignedIn = state.__prevSignedIn === true;
+  state.__prevSignedIn = Boolean(signedIn);
   const scanGate = byId("scan-auth-gate");
   const scanEmpty = byId("scan-empty-state");
   const scanResults = byId("scan-results-container");
-  const scanLoading = byId("scan-loading-state");
-
-  if (scanGate) scanGate.style.display = signedIn ? "none" : "flex";
-  if (!signedIn) {
-    clearScanState();
-    if (scanEmpty) scanEmpty.style.display = "none";
-    if (scanResults) scanResults.style.display = "none";
-    if (scanLoading) scanLoading.style.display = "none";
-  } else {
-    // When signed in, restore standard scanner display state
+  if (scanGate) scanGate.style.display = signedIn ? "none" : "block";
+  if (wasSignedIn && !signedIn) clearScanState();
+  {
     const hasResults = Boolean(
       (state.scan?.items?.exactMatches?.length || 0) +
       (state.scan?.items?.lookAlikes?.length || 0) > 0
     );
-    if (hasResults) {
-      if (scanResults) scanResults.style.display = "block";
-      if (scanEmpty) scanEmpty.style.display = "none";
-    } else {
-      if (scanEmpty) scanEmpty.style.display = "block";
-      if (scanResults) scanResults.style.display = "none";
-    }
+    if (scanResults) scanResults.style.display = hasResults ? "block" : "none";
+    if (scanEmpty) scanEmpty.style.display = hasResults ? "none" : "block";
   }
 
   // 1. Catalog / History Gate
@@ -1858,3 +1850,28 @@ function showCapturePermissionPrompt() {
 chrome.storage.local.get(["needsCapturePermission"]).then(({ needsCapturePermission }) => {
   if (needsCapturePermission) showCapturePermissionPrompt();
 });
+
+// Clear the previous tab's/site's result when the user switches tabs or the
+// active tab navigates, so the panel never shows a stale scan.
+function resetForNewContext() {
+  clearScanState();
+  chrome.storage.local.remove(["latestScanResults"]);
+  show("scan-loading-state", false);
+  show("scan-error-state", false);
+  show("scan-empty-state", true);
+}
+let lastContextKey = null;
+async function checkContext(tabId) {
+  try {
+    const tab = tabId ? await chrome.tabs.get(tabId) : (await chrome.tabs.query({ active: true, currentWindow: true }))[0];
+    if (!tab) return;
+    const key = `${tab.id}|${(tab.url || "").split("#")[0]}`;
+    if (lastContextKey !== null && key !== lastContextKey) resetForNewContext();
+    lastContextKey = key;
+  } catch {}
+}
+chrome.tabs.onActivated.addListener(({ tabId }) => checkContext(tabId));
+chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
+  if (info.url && tab.active) checkContext(tabId);
+});
+checkContext();

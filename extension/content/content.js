@@ -123,11 +123,13 @@
     events.forEach((evtName) => {
       node.addEventListener(
         evtName,
+        // Bubble phase + stopPropagation only. The previous capture-phase
+        // stopImmediatePropagation() ran first at the target and cancelled the
+        // button's own click handler, so Scan Frame / Snip Box did nothing.
         (e) => {
           e.stopPropagation();
-          e.stopImmediatePropagation();
         },
-        true
+        false
       );
     });
   }
@@ -495,6 +497,7 @@
     selection.style.display = "none";
     cropper.append(banner, selection);
     container.appendChild(cropper);
+    shieldInteractions(cropper);
 
     let isDrawing = false;
     let startX = 0;
@@ -617,6 +620,39 @@
     });
   }
 
+  // Crop straight from the <video> when the browser allows reading it
+  // (YouTube/Twitch usually do). Returns null if tainted, blank or unavailable.
+  function cropFromVideoElement(container, cropX, cropY, cropW, cropH) {
+    try {
+      const video = container.querySelector("video");
+      if (!video || video.readyState < 2 || !video.videoWidth) return null;
+      const cRect = container.getBoundingClientRect();
+      const vRect = video.getBoundingClientRect();
+      // Account for letterboxing (object-fit: contain).
+      const scale = Math.min(vRect.width / video.videoWidth, vRect.height / video.videoHeight);
+      const drawnW = video.videoWidth * scale;
+      const drawnH = video.videoHeight * scale;
+      const offX = vRect.left - cRect.left + (vRect.width - drawnW) / 2;
+      const offY = vRect.top - cRect.top + (vRect.height - drawnH) / 2;
+      const sx = Math.max(0, (cropX - offX) / scale);
+      const sy = Math.max(0, (cropY - offY) / scale);
+      const sw = Math.min(video.videoWidth - sx, cropW / scale);
+      const sh = Math.min(video.videoHeight - sy, cropH / scale);
+      if (sw < 8 || sh < 8) return null;
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(sw);
+      canvas.height = Math.round(sh);
+      canvas.getContext("2d").drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+      if (typeof isNonBlankCanvas === "function" && !isNonBlankCanvas(canvas)) return null;
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+      canvas.width = 0;
+      canvas.height = 0;
+      return dataUrl && dataUrl.length > 1000 ? dataUrl : null;
+    } catch {
+      return null; // tainted canvas -> screenshot fallback
+    }
+  }
+
   function sendMessage(payload) {
     return new Promise((resolve) => {
       try {
@@ -645,8 +681,13 @@
       chrome.storage.local.set({ isScanning: true });
       showToast(container, "Slicing selection and analyzing…");
 
-      const capture = await sendMessage({ action: "CAPTURE_VISIBLE_TAB" });
-      if (!capture.dataUrl) {
+      // In-page clicks don't grant activeTab, so try the video element first
+      // (same as the full-frame path); fall back to a tab screenshot.
+      const directCrop = cropFromVideoElement(container, cropX, cropY, cropW, cropH);
+      const capture = directCrop
+        ? { dataUrl: null, direct: directCrop }
+        : await sendMessage({ action: "CAPTURE_VISIBLE_TAB" });
+      if (!capture.dataUrl && !capture.direct) {
         chrome.storage.local.set({ isScanning: false });
         if (capture.needsCapturePermission) {
           sendMessage({ action: "OPEN_SIDEPANEL" });
@@ -658,12 +699,12 @@
       }
 
       const rect = container.getBoundingClientRect();
-      const cropped = await cropFromScreenshot(capture.dataUrl, {
+      const cropped = capture.direct || (await cropFromScreenshot(capture.dataUrl, {
         left: rect.left + cropX,
         top: rect.top + cropY,
         width: cropW,
         height: cropH
-      });
+      }));
 
       // No hard sign-in gate: unsigned scans go to the server with the install ID
       // (small free daily cap). A personal Gemini key still runs locally.
@@ -687,6 +728,10 @@
       } else {
         showToast(container, res?.error || "Analysis failed.");
       }
+    } catch (err) {
+      console.warn("[StreamSnap] scan failed:", err);
+      chrome.storage.local.set({ isScanning: false });
+      showToast(container, `Scan failed: ${err?.message || "unexpected error"}`);
     } finally {
       scanInFlight = false;
     }
@@ -817,6 +862,10 @@
       } else if (!isSilent) {
         showToast(container, res?.error || "Scan failed.");
       }
+    } catch (err) {
+      console.warn("[StreamSnap] scan failed:", err);
+      chrome.storage.local.set({ isScanning: false });
+      showToast(container, `Scan failed: ${err?.message || "unexpected error"}`);
     } finally {
       scanInFlight = false;
     }
