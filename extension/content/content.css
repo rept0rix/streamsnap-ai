@@ -533,3 +533,13 @@
   }
 }
 
+
+.streamsnap-click-overlay {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 2147483645 !important;
+  background: rgba(255, 153, 0, 0.04) !important;
+  outline: 2px dashed rgba(255, 153, 0, 0.55) !important;
+  outline-offset: -2px !important;
+  cursor: crosshair !important;
+}

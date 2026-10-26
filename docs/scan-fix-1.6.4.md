@@ -23,3 +23,10 @@ Deploy the worker first (unsigned scans already work today, without the cap), th
 - Cropper is shielded so YouTube doesn't pause/play on drag; crop tries the `<video>` canvas first (no activeTab needed), screenshot only as fallback.
 - Scan/crop errors always toast (catch added).
 - Side panel: sign-in wall replaced by a non-blocking "free, sign in for more + sync" note; results cleared on tab switch/navigation.
+
+## QA round 3 fixes
+- **Click-to-Find:** it used a capture click listener on the player. The player still got mousedown/pointerdown, so YouTube paused and the video looked frozen, and Twitch's overlay swallowed the click. There was also one global flag shared by every player. It is now a transparent `.streamsnap-click-overlay` (like Snip), with per-player state. Stop removes the overlay.
+- **TikTok click leak:** TikTok's React root capture listeners saw the pointer/click before our button handlers. New `content/guard.js` runs at document_start and registers window capture listeners first. It stops pointerdown/mousedown/touchstart/click on StreamSnap UI and dispatches to our handlers (`ssOn`). Move/up events pass through, so dragging still works.
+- **TikTok in-room silent failure:** the canvas is tainted, so the scan falls back to captureVisibleTab, which needs `<all_urls>`. A content-script message can't open the side panel without a gesture. For user-started scans the background now opens `permission/permission.html` (an Allow button that calls `permissions.request`), and the toast explains what to do.
+- **Per-tab results:** the background saves each successful scan to `storage.session.scanByTab[tabId] = {url, payload}`. The panel restores that entry when you switch to the tab, and drops it only when the tab's URL (without the hash) changes. Entries are deleted on tab close.
+- **Snip/Click:** an orange outline of the searched region stays on screen for 4 s.

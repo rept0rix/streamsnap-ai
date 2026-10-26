@@ -499,6 +499,24 @@ function broadcast(message) {
   });
 }
 
+// Per-tab results so switching tabs doesn't lose (or show the wrong) scan.
+async function saveTabScan(tab, payload) {
+  if (!tab?.id) return;
+  const { scanByTab = {} } = await chrome.storage.session.get("scanByTab").catch(() => ({}));
+  scanByTab[tab.id] = { url: (tab.url || "").split("#")[0], payload };
+  const ids = Object.keys(scanByTab);
+  if (ids.length > 20) delete scanByTab[ids[0]];
+  await chrome.storage.session.set({ scanByTab }).catch(() => {});
+}
+
+chrome.tabs.onRemoved.addListener(async (tabId) => {
+  const { scanByTab = {} } = await chrome.storage.session.get("scanByTab").catch(() => ({}));
+  if (scanByTab[tabId]) {
+    delete scanByTab[tabId];
+    await chrome.storage.session.set({ scanByTab }).catch(() => {});
+  }
+});
+
 async function publishScanResult(payload) {
   await safeSet({ latestScanResults: payload, isScanning: false });
   broadcast({ action: "SCAN_RESULTS_UPDATED", data: payload });
@@ -667,13 +685,21 @@ const handlers = {
       if (!has) {
         await safeSet({ needsCapturePermission: true });
         broadcast({ action: "CAPTURE_PERMISSION_NEEDED" });
+        // chrome.permissions.request needs a click on an extension page; the
+        // side panel can't be opened reliably from a content-script message,
+        // so open a tiny permission page (user-initiated scans only).
+        if (_message?.interactive) {
+          chrome.tabs
+            .create({ url: chrome.runtime.getURL("permission/permission.html"), active: true })
+            .catch(() => {});
+        }
         return { error: "Screen capture permission needed.", needsCapturePermission: true };
       }
       return { error: err?.message || "Failed to capture tab." };
     }
   },
 
-  async ANALYZE_WITH_AI(message) {
+  async ANALYZE_WITH_AI(message, sender) {
     if (await isUpdateRequired()) {
       const reason = "StreamSnap must be updated before you can scan.";
       await publishScanError(reason);
@@ -691,6 +717,7 @@ const handlers = {
         streamContext: message.streamContext,
         mode: "frame"
       });
+      await saveTabScan(sender?.tab, data);
       return { success: true, data };
     } catch (err) {
       const reason = err?.message || "Scan failed.";
@@ -704,7 +731,7 @@ const handlers = {
     }
   },
 
-  async ANALYZE_CROPPED_IMAGE(message) {
+  async ANALYZE_CROPPED_IMAGE(message, sender) {
     if (await isUpdateRequired()) {
       const reason = "StreamSnap must be updated before you can scan.";
       await publishScanError(reason);
@@ -722,6 +749,7 @@ const handlers = {
         streamContext: message.streamContext,
         mode: "crop"
       });
+      await saveTabScan(sender?.tab, data);
       return { success: true, data };
     } catch (err) {
       const reason = err?.message || "Crop analysis failed.";

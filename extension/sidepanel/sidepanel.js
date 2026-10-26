@@ -1851,27 +1851,43 @@ chrome.storage.local.get(["needsCapturePermission"]).then(({ needsCapturePermiss
   if (needsCapturePermission) showCapturePermissionPrompt();
 });
 
-// Clear the previous tab's/site's result when the user switches tabs or the
-// active tab navigates, so the panel never shows a stale scan.
-function resetForNewContext() {
+// Per-tab results: switching tabs shows that tab's own last scan (or the empty
+// state); results are only dropped when that tab really navigates to a new page.
+function showEmptyScanView() {
   clearScanState();
-  chrome.storage.local.remove(["latestScanResults"]);
   show("scan-loading-state", false);
   show("scan-error-state", false);
   show("scan-empty-state", true);
 }
-let lastContextKey = null;
-async function checkContext(tabId) {
+const tabUrls = {};
+async function showTabScan(tabId) {
   try {
-    const tab = tabId ? await chrome.tabs.get(tabId) : (await chrome.tabs.query({ active: true, currentWindow: true }))[0];
-    if (!tab) return;
-    const key = `${tab.id}|${(tab.url || "").split("#")[0]}`;
-    if (lastContextKey !== null && key !== lastContextKey) resetForNewContext();
-    lastContextKey = key;
+    const tab = await chrome.tabs.get(tabId);
+    const url = (tab.url || "").split("#")[0];
+    tabUrls[tabId] = url;
+    const { scanByTab = {} } = await chrome.storage.session.get("scanByTab");
+    const entry = scanByTab[tabId];
+    if (entry && entry.url === url && entry.payload) {
+      liveSessionFeed = { exactMatches: [], lookAlikes: [] };
+      renderScanResults(entry.payload, false);
+    } else {
+      showEmptyScanView();
+    }
   } catch {}
 }
-chrome.tabs.onActivated.addListener(({ tabId }) => checkContext(tabId));
-chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
-  if (info.url && tab.active) checkContext(tabId);
+chrome.tabs.onActivated.addListener(({ tabId }) => showTabScan(tabId));
+chrome.tabs.onUpdated.addListener(async (tabId, info, tab) => {
+  if (!info.url) return;
+  const url = info.url.split("#")[0];
+  if (tabUrls[tabId] === url) return; // same page (hash/no-op)
+  tabUrls[tabId] = url;
+  const { scanByTab = {} } = await chrome.storage.session.get("scanByTab");
+  if (scanByTab[tabId] && scanByTab[tabId].url !== url) {
+    delete scanByTab[tabId];
+    await chrome.storage.session.set({ scanByTab });
+  }
+  if (tab.active) showEmptyScanView();
 });
-checkContext();
+chrome.tabs.query({ active: true, currentWindow: true }).then(([t]) => {
+  if (t) tabUrls[t.id] = (t.url || "").split("#")[0];
+});

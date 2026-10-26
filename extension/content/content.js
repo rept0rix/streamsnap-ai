@@ -107,6 +107,13 @@
     return video.parentElement;
   }
 
+  // Handlers routed through the document_start guard (content/guard.js), which
+  // stops events on our UI at the window before the page sees them.
+  function ssOn(node, type, fn) {
+    if (window.__ssOn) window.__ssOn(node, type, fn);
+    else node.addEventListener(type, fn); // guard missing: plain listener
+  }
+
   function shieldInteractions(node) {
     if (!node) return;
     const events = [
@@ -197,7 +204,7 @@
       element.classList.add("is-dragging");
     }
 
-    handle.addEventListener("pointerdown", onPointerDown, true);
+    ssOn(handle, "pointerdown", onPointerDown);
   }
 
   function initUniversalVideoHook() {
@@ -272,28 +279,53 @@
     liveBtn.append(createSvgIcon("live", iconSize), el("span", null, liveLabel));
     shieldInteractions(liveBtn);
 
-    liveBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      isLiveClickModeActive = !isLiveClickModeActive;
-      liveBtn.classList.toggle("active", isLiveClickModeActive);
+    // Click-to-Find uses a transparent overlay over the video (like Snip), so
+    // the player never receives the click (no pause/freeze, no ignored first
+    // click) and turning it off is just removing the overlay.
+    let clickOverlay = null;
+    let clickModeOn = false; // per player (TikTok feed has many)
+    function setClickMode(on) {
+      clickModeOn = on;
+      isLiveClickModeActive = on;
+      liveBtn.classList.toggle("active", on);
       liveBtn.replaceChildren(
         createSvgIcon("live", iconSize),
-        el("span", null, isLiveClickModeActive ? (isTikTok ? "Stop" : "Stop Click Mode") : liveLabel)
+        el("span", null, on ? (isTikTok ? "Stop" : "Stop Click Mode") : liveLabel)
       );
-      showToast(
-        parent,
-        isLiveClickModeActive
-          ? "Click mode on — click any object on the video."
-          : "Click mode off."
-      );
+      if (on && !clickOverlay) {
+        clickOverlay = el("div", "streamsnap-click-overlay");
+        clickOverlay.title = "Click any object to identify it";
+        ssOn(clickOverlay, "click", (e) => {
+          const rect = parent.getBoundingClientRect();
+          const clickX = e.clientX - rect.left;
+          const clickY = e.clientY - rect.top;
+          showClickPulse(parent, clickX, clickY);
+          const size = 180;
+          const left = Math.max(0, clickX - size / 2);
+          const top = Math.max(0, clickY - size / 2);
+          const w = Math.min(rect.width - left, size);
+          const h = Math.min(rect.height - top, size);
+          showSelectionOutline(parent, left, top, w, h);
+          cropAndSearch(parent, left, top, w, h);
+        });
+        parent.appendChild(clickOverlay);
+      } else if (!on && clickOverlay) {
+        clickOverlay.remove();
+        clickOverlay = null;
+      }
+      showToast(parent, on ? "Click mode on — click any object on the video." : "Click mode off.");
+    }
+
+    ssOn(liveBtn, "click", (e) => {
+      e.preventDefault();
+      setClickMode(!clickModeOn);
     });
 
     const snipBtn = el("button", "streamsnap-floating-btn streamsnap-snip-btn");
     snipBtn.title = "Draw a box around any item to search for it";
     snipBtn.append(createSvgIcon("snip", iconSize), el("span", null, snipLabel));
     shieldInteractions(snipBtn);
-    snipBtn.addEventListener("click", (e) => {
+    ssOn(snipBtn, "click", (e) => {
       e.stopPropagation();
       e.preventDefault();
       startInteractiveCropper(video, parent);
@@ -303,7 +335,7 @@
     scanBtn.title = "Scan the whole frame (Alt+S)";
     scanBtn.append(createSvgIcon("scan", iconSize), el("span", null, scanLabel));
     shieldInteractions(scanBtn);
-    scanBtn.addEventListener("click", (e) => {
+    ssOn(scanBtn, "click", (e) => {
       e.stopPropagation();
       e.preventDefault();
       triggerStreamScan(video, parent);
@@ -314,7 +346,7 @@
     minimizeBtn.title = "Minimize buttons to a small pill (קבץ כפתורים)";
     minimizeBtn.innerHTML = "—";
     shieldInteractions(minimizeBtn);
-    minimizeBtn.addEventListener("click", (e) => {
+    ssOn(minimizeBtn, "click", (e) => {
       e.stopPropagation();
       e.preventDefault();
       expandedToolbar.style.display = "none";
@@ -328,7 +360,7 @@
     hideBtn.title = "Hide buttons from video (הסתר כפתורים מהווידאו)";
     hideBtn.innerHTML = "✕";
     shieldInteractions(hideBtn);
-    hideBtn.addEventListener("click", (e) => {
+    ssOn(hideBtn, "click", (e) => {
       e.stopPropagation();
       e.preventDefault();
       btnGroup.style.display = "none";
@@ -338,7 +370,7 @@
     });
 
     // Expand when clicking mini pill
-    miniPill.addEventListener("click", (e) => {
+    ssOn(miniPill, "click", (e) => {
       e.stopPropagation();
       e.preventDefault();
       miniPill.style.display = "none";
@@ -354,7 +386,7 @@
     hiddenDot.title = "Click to restore StreamSnap video controls (שחזר כפתורים)";
     hiddenDot.style.display = "none";
     shieldInteractions(hiddenDot);
-    hiddenDot.addEventListener("click", (e) => {
+    ssOn(hiddenDot, "click", (e) => {
       e.stopPropagation();
       e.preventDefault();
       hiddenDot.style.display = "none";
@@ -409,37 +441,6 @@
       }
     });
 
-    parent.addEventListener(
-      "click",
-      (e) => {
-        if (!isLiveClickModeActive) return;
-        if (
-          e.target.closest(".streamsnap-btn-group") ||
-          e.target.closest(".streamsnap-toast") ||
-          e.target.closest(".ytp-chrome-bottom")
-        ) {
-          return;
-        }
-
-        e.stopPropagation();
-        const rect = parent.getBoundingClientRect();
-        const clickX = e.clientX - rect.left;
-        const clickY = e.clientY - rect.top;
-        showClickPulse(parent, clickX, clickY);
-
-        const size = 180;
-        const left = Math.max(0, clickX - size / 2);
-        const top = Math.max(0, clickY - size / 2);
-        cropAndSearch(
-          parent,
-          left,
-          top,
-          Math.min(rect.width - left, size),
-          Math.min(rect.height - top, size)
-        );
-      },
-      true
-    );
   }
 
   function injectYouTubeControlBarButton() {
@@ -479,6 +480,26 @@
     setTimeout(() => pulse.remove(), 1300);
   }
 
+  // Orange box left on the video while the selected region is being searched.
+  function showSelectionOutline(container, left, top, width, height) {
+    container.querySelectorAll(".streamsnap-selection-outline").forEach((n) => n.remove());
+    const box = el("div", "streamsnap-selection-outline");
+    Object.assign(box.style, {
+      position: "absolute",
+      left: `${left}px`,
+      top: `${top}px`,
+      width: `${width}px`,
+      height: `${height}px`,
+      border: "2px solid #FF9900",
+      borderRadius: "4px",
+      boxShadow: "0 0 16px rgba(255,153,0,0.6)",
+      pointerEvents: "none",
+      zIndex: "2147483646"
+    });
+    container.appendChild(box);
+    setTimeout(() => box.remove(), 4000);
+  }
+
   function startInteractiveCropper(video, container) {
     const existing = container.querySelector(".streamsnap-interactive-cropper");
     if (existing) {
@@ -510,7 +531,7 @@
       document.removeEventListener("keydown", handleKeyDown);
     }
 
-    closeBtn.addEventListener("click", (e) => {
+    ssOn(closeBtn, "click", (e) => {
       e.stopPropagation();
       teardown();
     });
@@ -570,6 +591,7 @@
 
       showClickPulse(container, left + width / 2, top + height / 2);
       teardown();
+      showSelectionOutline(container, left, top, width, height);
       cropAndSearch(container, left, top, width, height);
     }
 
@@ -577,7 +599,7 @@
       if (e.key === "Escape") teardown();
     }
 
-    cropper.addEventListener("mousedown", handleMouseDown, true);
+    ssOn(cropper, "mousedown", handleMouseDown);
     cropper.addEventListener("mousemove", handleMouseMove, true);
     cropper.addEventListener("mouseup", handleMouseUp, true);
     document.addEventListener("keydown", handleKeyDown);
@@ -686,12 +708,12 @@
       const directCrop = cropFromVideoElement(container, cropX, cropY, cropW, cropH);
       const capture = directCrop
         ? { dataUrl: null, direct: directCrop }
-        : await sendMessage({ action: "CAPTURE_VISIBLE_TAB" });
+        : await sendMessage({ action: "CAPTURE_VISIBLE_TAB", interactive: true });
       if (!capture.dataUrl && !capture.direct) {
         chrome.storage.local.set({ isScanning: false });
         if (capture.needsCapturePermission) {
           sendMessage({ action: "OPEN_SIDEPANEL" });
-          showToast(container, "Allow screen capture in the StreamSnap panel, then scan again.");
+          showToast(container, "This site blocks direct video capture. Click Allow in the StreamSnap tab that just opened, then try again.");
         } else {
           showToast(container, `Screen capture failed: ${capture.error || "unknown error"}`);
         }
@@ -760,7 +782,10 @@
     }
   }
 
+  let lastCaptureFailure = null;
+
   async function captureTargetVideoFrame(video, container) {
+    lastCaptureFailure = null;
     // 1. Try burst sampling directly from the HTML5 video element (fastest & highest resolution)
     if (video && video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
       for (let attempt = 0; attempt < 3; attempt++) {
@@ -793,8 +818,11 @@
     }
 
     // 2. Fallback: viewport screenshot with precision scale alignment
-    const capture = await sendMessage({ action: "CAPTURE_VISIBLE_TAB" });
-    if (!capture.dataUrl) return null;
+    const capture = await sendMessage({ action: "CAPTURE_VISIBLE_TAB", interactive: true });
+    if (!capture.dataUrl) {
+      lastCaptureFailure = capture;
+      return null;
+    }
 
     const targetEl = video || container;
     const rect = targetEl.getBoundingClientRect();
@@ -833,7 +861,12 @@
         chrome.storage.local.set({ isScanning: false });
         if (!isSilent) {
           sendMessage({ action: "OPEN_SIDEPANEL" });
-          showToast(container, "Could not capture the video frame. If asked, allow screen capture in the StreamSnap panel.");
+          showToast(
+            container,
+            lastCaptureFailure?.needsCapturePermission
+              ? "This site blocks direct video capture. Click Allow in the StreamSnap tab that just opened, then scan again."
+              : `Could not capture the video frame${lastCaptureFailure?.error ? `: ${lastCaptureFailure.error}` : "."}`
+          );
         }
         return;
       }

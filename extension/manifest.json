@@ -72,6 +72,25 @@
         "*://kick.com/*"
       ],
       "js": [
+        "content/guard.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "*://*.youtube.com/*",
+        "*://youtube.com/*",
+        "*://*.twitch.tv/*",
+        "*://twitch.tv/*",
+        "*://*.tiktok.com/*",
+        "*://tiktok.com/*",
+        "*://*.facebook.com/*",
+        "*://facebook.com/*",
+        "*://*.kick.com/*",
+        "*://kick.com/*"
+      ],
+      "js": [
         "content/content.js"
       ],
       "css": [
