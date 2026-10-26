@@ -648,7 +648,12 @@
       const capture = await sendMessage({ action: "CAPTURE_VISIBLE_TAB" });
       if (!capture.dataUrl) {
         chrome.storage.local.set({ isScanning: false });
-        showToast(container, `Screen capture failed: ${capture.error || "unknown error"}`);
+        if (capture.needsCapturePermission) {
+          sendMessage({ action: "OPEN_SIDEPANEL" });
+          showToast(container, "Allow screen capture in the StreamSnap panel, then scan again.");
+        } else {
+          showToast(container, `Screen capture failed: ${capture.error || "unknown error"}`);
+        }
         return;
       }
 
@@ -660,15 +665,9 @@
         height: cropH
       });
 
-      const { geminiApiKey, sessionToken } = await chrome.storage.local.get([
-        "geminiApiKey",
-        "sessionToken"
-      ]);
-      if (!geminiApiKey && !sessionToken) {
-        chrome.storage.local.set({ isScanning: false });
-        showToast(container, "Sign in from the StreamSnap panel (or add a Gemini key in Setup) to scan.");
-        return;
-      }
+      // No hard sign-in gate: unsigned scans go to the server with the install ID
+      // (small free daily cap). A personal Gemini key still runs locally.
+      const { geminiApiKey } = await chrome.storage.local.get(["geminiApiKey"]);
 
       const res = await sendMessage({
         action: "ANALYZE_CROPPED_IMAGE",
@@ -776,19 +775,9 @@
         sendMessage({ action: "OPEN_SIDEPANEL" });
       }
 
-      // Either credential works: a personal Gemini key runs the scan locally, a
-      // sign-in session runs it on our servers. Only block when there is neither.
-      const { geminiApiKey, sessionToken } = await chrome.storage.local.get([
-        "geminiApiKey",
-        "sessionToken"
-      ]);
-      if (!geminiApiKey && !sessionToken) {
-        if (!isSilent) {
-          showToast(container, "Sign in from the StreamSnap panel (or add a Gemini key in Setup) to scan.");
-          sendMessage({ action: "OPEN_SIDEPANEL" });
-        }
-        return;
-      }
+      // No hard sign-in gate: unsigned scans go to the server with the install
+      // ID; if the server asks for sign-in, the side panel shows it.
+      const { geminiApiKey } = await chrome.storage.local.get(["geminiApiKey"]);
 
       chrome.storage.local.set({ isScanning: true });
       const streamTitle = getStreamTitle();
@@ -797,7 +786,10 @@
       const image = await captureTargetVideoFrame(video, container);
       if (!image) {
         chrome.storage.local.set({ isScanning: false });
-        if (!isSilent) showToast(container, "Could not capture the video frame.");
+        if (!isSilent) {
+          sendMessage({ action: "OPEN_SIDEPANEL" });
+          showToast(container, "Could not capture the video frame. If asked, allow screen capture in the StreamSnap panel.");
+        }
         return;
       }
 
@@ -819,6 +811,9 @@
               : "Nothing matched above your confidence threshold."
           );
         }
+      } else if (res?.authRequired) {
+        sendMessage({ action: "OPEN_SIDEPANEL" });
+        if (!isSilent) showToast(container, "Sign in from the StreamSnap panel to keep scanning.");
       } else if (!isSilent) {
         showToast(container, res?.error || "Scan failed.");
       }

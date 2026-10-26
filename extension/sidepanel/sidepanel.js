@@ -845,6 +845,13 @@ function initListeners() {
           }).catch(() => {});
         }
         break;
+      case "AUTH_REQUIRED":
+        showScanError(message.error);
+        promptSignIn(message.error);
+        break;
+      case "CAPTURE_PERMISSION_NEEDED":
+        showCapturePermissionPrompt();
+        break;
       case "SCAN_FAILED":
         showScanError(message.error);
         break;
@@ -1803,3 +1810,51 @@ function clearScanState() {
   if (countBadge) countBadge.textContent = "0";
   show("scan-results-container", false);
 }
+
+
+// ---------------------------------------------------------------------------
+// Scan-fix helpers (1.6.4)
+// ---------------------------------------------------------------------------
+
+function promptSignIn(reason) {
+  showSignInError(reason || "Sign in to keep scanning.");
+  const btn = byId("header-signin-btn") || byId("signin-btn") || document.querySelector(".gate-signin-btn");
+  if (btn) {
+    btn.scrollIntoView({ block: "center" });
+    btn.focus();
+    btn.classList.add("pulse");
+  }
+}
+
+// chrome.permissions.request must run inside a user gesture on an extension
+// page, so the side panel shows a one-click banner instead of asking from the
+// content script (which cannot request permissions).
+function showCapturePermissionPrompt() {
+  if (byId("capture-perm-banner")) return;
+  const bar = document.createElement("div");
+  bar.id = "capture-perm-banner";
+  bar.style.cssText =
+    "position:sticky;top:0;z-index:50;padding:10px 12px;background:#1f2937;color:#fff;font-size:13px;display:flex;gap:8px;align-items:center;";
+  bar.innerHTML =
+    '<span style="flex:1">This site blocks direct video capture. Allow StreamSnap to take a screenshot of the tab when you scan?</span>';
+  const allow = document.createElement("button");
+  allow.textContent = "Allow";
+  allow.addEventListener("click", async () => {
+    const granted = await chrome.permissions
+      .request({ origins: ["<all_urls>"] })
+      .catch(() => false);
+    if (granted) {
+      chrome.storage.local.set({ needsCapturePermission: false });
+      bar.remove();
+    } else {
+      bar.querySelector("span").textContent =
+        "Permission declined. Click the StreamSnap toolbar icon (or Alt+Shift+S) to scan this tab instead.";
+    }
+  });
+  bar.appendChild(allow);
+  document.body.prepend(bar);
+}
+
+chrome.storage.local.get(["needsCapturePermission"]).then(({ needsCapturePermission }) => {
+  if (needsCapturePermission) showCapturePermissionPrompt();
+});

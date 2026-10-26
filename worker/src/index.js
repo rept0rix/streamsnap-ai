@@ -29,6 +29,8 @@ const LIMITS = {
   MAX_IMAGE_BYTES: 3 * 1024 * 1024,
   PER_HOUR: 60,
   PER_DAY: 400,
+  // Unsigned (install-ID only) scans: small free allowance, then 401 auth_required.
+  ANON_PER_DAY: 10,
   IMAGE_TTL_SECONDS: 300, // Google fetches within seconds; 5 min is generous
   CACHE_TTL_SECONDS: 60 * 60 * 24 * 7,
   UPSTREAM_TIMEOUT_MS: 20000
@@ -460,6 +462,29 @@ async function handleResolve(request, env, ctx) {
     if (cached && Array.isArray(cached.products) && cached.products.length > 0) {
       return json({ ok: true, cached: true, ...cached }, 200, request, env);
     }
+  }
+
+  // Unsigned requests are allowed with a small free daily cap per install ID.
+  const resolveUser = await getCurrentUser(env, request).catch(() => null);
+  if (resolveUser?.blocked) {
+    return json({ ok: false, error: "Account blocked." }, 403, request, env);
+  }
+  if (!resolveUser && env.CACHE) {
+    const anonKey = `rl:anon:${installId}:${Math.floor(Date.now() / 86400000)}`;
+    const used = parseInt((await env.CACHE.get(anonKey)) || "0", 10);
+    if (used >= LIMITS.ANON_PER_DAY) {
+      return json(
+        {
+          ok: false,
+          code: "auth_required",
+          error: `Free limit reached (${LIMITS.ANON_PER_DAY} scans today). Sign in to keep scanning.`
+        },
+        401,
+        request,
+        env
+      );
+    }
+    ctx?.waitUntil?.(env.CACHE.put(anonKey, String(used + 1), { expirationTtl: 90000 }));
   }
 
   const limit = await checkRateLimit(installId, env);

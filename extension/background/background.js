@@ -539,7 +539,10 @@ async function callServerResolve(imageDataUrl) {
 
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) {
-      throw new Error("Session could not be verified. Please sign in again.");
+      const body = await response.json().catch(() => ({}));
+      const err = new Error(body.error || "Please sign in to keep scanning.");
+      err.authRequired = true;
+      throw err;
     }
     const text = await response.text().catch(() => "");
     throw new Error(`Server error ${response.status}: ${text.slice(0, 100)}`);
@@ -647,11 +650,25 @@ const handlers = {
     return { status: "ok" };
   },
 
-  async CAPTURE_VISIBLE_TAB() {
+  async CAPTURE_VISIBLE_TAB(_message, sender) {
+    // captureVisibleTab needs <all_urls> or an activeTab grant. In-page buttons
+    // don't grant activeTab, so we rely on the optional <all_urls> host
+    // permission, which the side panel requests inside a real click.
     try {
-      const dataUrl = await chrome.tabs.captureVisibleTab(null, { format: "jpeg", quality: 85 });
+      const dataUrl = await chrome.tabs.captureVisibleTab(sender?.tab?.windowId ?? null, {
+        format: "jpeg",
+        quality: 85
+      });
       return dataUrl ? { dataUrl } : { error: "Capture returned no data." };
     } catch (err) {
+      const has = await chrome.permissions
+        .contains({ origins: ["<all_urls>"] })
+        .catch(() => false);
+      if (!has) {
+        await safeSet({ needsCapturePermission: true });
+        broadcast({ action: "CAPTURE_PERMISSION_NEEDED" });
+        return { error: "Screen capture permission needed.", needsCapturePermission: true };
+      }
       return { error: err?.message || "Failed to capture tab." };
     }
   },
@@ -677,6 +694,11 @@ const handlers = {
       return { success: true, data };
     } catch (err) {
       const reason = err?.message || "Scan failed.";
+      if (err?.authRequired) {
+        await safeSet({ isScanning: false, lastScanError: reason });
+        broadcast({ action: "AUTH_REQUIRED", error: reason });
+        return { success: false, error: reason, authRequired: true };
+      }
       await publishScanError(reason);
       return { success: false, error: reason };
     }
@@ -703,6 +725,11 @@ const handlers = {
       return { success: true, data };
     } catch (err) {
       const reason = err?.message || "Crop analysis failed.";
+      if (err?.authRequired) {
+        await safeSet({ isScanning: false, lastScanError: reason });
+        broadcast({ action: "AUTH_REQUIRED", error: reason });
+        return { success: false, error: reason, authRequired: true };
+      }
       await publishScanError(reason);
       return { success: false, error: reason };
     }

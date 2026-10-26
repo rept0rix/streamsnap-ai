@@ -4,6 +4,19 @@
  */
 
 export const CURRENT_BUILD = {
+  version: "1.6.4",
+  buildDate: "2026-10-26",
+  buildTime: "06:45",
+  buildTimestamp: "2026-10-26 06:45:00 IST",
+  title: "Scan Fix: No Sign-in Wall & Reliable Screen Capture",
+  highlights: [
+    "🔓 Scans work without signing in (small free daily allowance); sign-in prompt opens in the panel when needed.",
+    "📸 One-click screen-capture permission for sites that block direct video reads.",
+    "🛠️ Clearer errors when capture or the server fails."
+  ]
+};
+
+const BUILD_1_6_3 = {
   version: "1.6.3",
   buildDate: "2026-09-07",
   buildTime: "09:30",
@@ -18,6 +31,7 @@ export const CURRENT_BUILD = {
 
 export const VERSION_HISTORY = [
   CURRENT_BUILD,
+  BUILD_1_6_3,
   {
     version: "1.6.1",
     buildDate: "2026-09-01",
