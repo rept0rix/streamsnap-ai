@@ -37,3 +37,11 @@ Deploy the worker first (unsigned scans already work today, without the cap), th
 - **Tab switch 4→1:** the panel merges every scan into one session list, but each tab's saved entry only kept the last scan. Saved entries now accumulate the same way. A page counts as new only when its origin+path changes; query and hash changes don't count.
 - **Snip pausing:** the browser's click after mouseup landed on the `<video>` once the cropper was removed. The guard now swallows that trailing click for 600 ms.
 - **TikTok gated:** no in-page buttons on tiktok.com. Scan from the side panel ("Scan Active Stream") or Alt+S instead.
+
+## QA round 5 fixes
+- **Permission toast unseen:** the toast was shown, but the Allow tab took focus and the 6 s toast expired before the user got back. It is now a sticky toast (15 s), shown again when the page becomes visible. The permission tab returns focus to the tab that asked (`?tab=` param).
+- **Crop shows stale result:** `runAnalysis` used the frame cache for crops too. The cache is keyed by stream title only, so a crop could perceptual-hash-match the earlier full frame and return its items ("White gaming headset"). Crops now skip the cache. Payloads carry `mode`/`scanId`. The panel renders crop results as a replacement (fresh list) and drops the duplicate render (storage change + broadcast).
+- **Allow banner sticks:** the panel now listens for `chrome.permissions.onAdded` and checks `permissions.contains` on load.
+- **Page-change clear regressed:** the page key was origin+path, which ignored YouTube `watch?v=`. The key now includes `v` on youtube.com (panel and background).
+- **Site access off:** a panel scan that fails capture now clears the displayed results, shows the error state, and sends a best-effort `SHOW_TOAST` to the page. With site access off there is no content script, so no page toast is possible; the panel error is the visible outcome.
+- **Copy:** all hints now say Alt+Shift+S (the real shortcut).

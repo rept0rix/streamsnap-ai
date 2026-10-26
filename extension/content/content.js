@@ -256,7 +256,7 @@
   function initUniversalVideoHook() {
     // TikTok is gated: its page swallows/redirects in-page clicks and its video
     // can't be read, so TikTok scans go through the side panel ("Scan Active
-    // Stream", which can show the Allow prompt) or Alt+S.
+    // Stream", which can show the Allow prompt) or Alt+Shift+S.
     if (IS_TIKTOK) return;
     document.querySelectorAll("video").forEach((video) => {
       if (hookedVideos.has(video)) return;
@@ -384,7 +384,7 @@
     });
 
     const scanBtn = el("button", "streamsnap-floating-btn");
-    scanBtn.title = "Scan the whole frame (Alt+S)";
+    scanBtn.title = "Scan the whole frame (Alt+Shift+S)";
     scanBtn.append(createSvgIcon("scan", iconSize), el("span", null, scanLabel));
     shieldInteractions(scanBtn);
     ssOn(scanBtn, "click", (e) => {
@@ -505,7 +505,7 @@
     if (!video || !player) return;
 
     const btn = el("button", "ytp-button streamsnap-ytp-btn");
-    btn.title = "StreamSnap AI — snip an item on the video (Alt+S)";
+    btn.title = "StreamSnap AI — snip an item on the video (Alt+Shift+S)";
     const icon = el("span", null, "🎯");
     icon.style.cssText = "font-size:16px;color:#FF9900;line-height:36px;display:inline-block;";
     btn.appendChild(icon);
@@ -770,7 +770,7 @@
         chrome.storage.local.set({ isScanning: false });
         if (capture.needsCapturePermission) {
           sendMessage({ action: "OPEN_SIDEPANEL" });
-          showToast(container, "This site blocks direct video capture. Click Allow in the StreamSnap tab that just opened, then try again.", { error: true });
+          showPermissionToast(container);
         } else {
           showToast(container, `Screen capture failed: ${capture.error || "unknown error"}`, { error: true });
         }
@@ -918,13 +918,13 @@
         chrome.storage.local.set({ isScanning: false });
         if (!isSilent) {
           sendMessage({ action: "OPEN_SIDEPANEL" });
-          showToast(
-            container,
-            lastCaptureFailure?.needsCapturePermission
-              ? "Screen-capture permission missing: click Allow in the StreamSnap tab that just opened, then scan again."
-              : `Could not capture the video frame${lastCaptureFailure?.error ? `: ${lastCaptureFailure.error}` : " (video not readable)."}`,
-            { error: true }
-          );
+          if (lastCaptureFailure?.needsCapturePermission) showPermissionToast(container);
+          else
+            showToast(
+              container,
+              `Could not capture the video frame${lastCaptureFailure?.error ? `: ${lastCaptureFailure.error}` : " (video not readable)."}`,
+              { error: true }
+            );
         }
         return;
       }
@@ -1018,7 +1018,23 @@
 
   // Toasts must always be visible: if the container is hidden/off-screen (e.g.
   // a Twitch mini-player), fall back to a fixed toast on the page.
-  function showToast(container, text, { error = false } = {}) {
+  // The Allow tab takes focus, so a normal toast expires unseen. Show it
+  // sticky now AND again when the user comes back to this tab.
+  const PERM_TOAST =
+    "Screen-capture permission needed: click Allow in the StreamSnap tab that opened, then scan again.";
+  let pendingPermToast = null;
+  function showPermissionToast(container) {
+    pendingPermToast = container;
+    showToast(container, PERM_TOAST, { error: true, sticky: true });
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible" || !pendingPermToast) return;
+    const c = pendingPermToast;
+    pendingPermToast = null;
+    showToast(c, "If you clicked Allow, scan again now. Otherwise screen capture is still blocked.", { sticky: true });
+  });
+
+  function showToast(container, text, { error = false, sticky = false } = {}) {
     if (error) console.warn("[StreamSnap]", text);
     let host = container;
     const r = container?.getBoundingClientRect?.();
@@ -1039,7 +1055,7 @@
     setTimeout(() => {
       toast.style.opacity = "0";
       setTimeout(() => toast.remove(), 300);
-    }, error ? 6000 : 3500);
+    }, sticky ? 15000 : error ? 6000 : 3500);
   }
 
   // -------------------------------------------------------------------------
@@ -1069,6 +1085,10 @@
 
   chrome.runtime.onMessage.addListener((message) => {
     if (!extensionEnabled) return; // off means off, whatever asks
+    if (message.action === "SHOW_TOAST") {
+      const p = getActivePlayer();
+      showToast(p?.container || document.body, message.text, { error: !!message.error, sticky: !!message.error });
+    }
     if (message.action === "TRIGGER_SCAN") {
       const player = getActivePlayer();
       if (player) triggerStreamScan(player.video, player.container, false);

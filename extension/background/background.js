@@ -503,7 +503,8 @@ function broadcast(message) {
 function pageKey(url) {
   try {
     const u = new URL(url);
-    return u.origin + u.pathname;
+    const v = /(^|\.)youtube\.com$/.test(u.hostname) ? u.searchParams.get("v") : null;
+    return u.origin + u.pathname + (v ? `?v=${v}` : "");
   } catch {
     return String(url || "");
   }
@@ -629,7 +630,13 @@ async function runAnalysis({ imageDataUrl, apiKey, streamContext, mode }) {
   const isCrop = mode === "crop";
 
   // Skip the API entirely when this frame matches one we already analyzed.
-  const { hash, cachedResult, distance } = await lookupFrame(imageDataUrl, streamKey);
+  // User-initiated crops (Snip / Click-to-Find) never use the frame cache: it
+  // is keyed by stream title only, so a crop could perceptual-hash-match the
+  // earlier full frame and return its result (Twitch: crop of a chest/torch
+  // came back as the frame's "White gaming headset").
+  const { hash, cachedResult, distance } = isCrop
+    ? { hash: null, cachedResult: null, distance: null }
+    : await lookupFrame(imageDataUrl, streamKey);
   let raw;
   let fromCache = false;
 
@@ -674,6 +681,8 @@ async function runAnalysis({ imageDataUrl, apiKey, streamContext, mode }) {
     streamType: isCrop
       ? `Cropped: ${streamKey || "Live Stream"}`
       : streamKey || "Live Stream",
+    mode: isCrop ? "crop" : "frame",
+    scanId: Date.now(),
     frameSnapshot: snapshot,
     croppedThumbnail: isCrop ? snapshot : null,
     items: results,
@@ -721,8 +730,9 @@ const handlers = {
         // side panel can't be opened reliably from a content-script message,
         // so open a tiny permission page (user-initiated scans only).
         if (_message?.interactive) {
+          const back = sender?.tab?.id ? `?tab=${sender.tab.id}` : "";
           chrome.tabs
-            .create({ url: chrome.runtime.getURL("permission/permission.html"), active: true })
+            .create({ url: chrome.runtime.getURL(`permission/permission.html${back}`), active: true })
             .catch(() => {});
         }
         return { error: "Screen capture permission needed.", needsCapturePermission: true };

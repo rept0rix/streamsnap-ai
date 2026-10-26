@@ -1106,13 +1106,17 @@ function triggerDirectScan() {
 
       chrome.runtime.sendMessage({ action: "CAPTURE_VISIBLE_TAB" }, (capture) => {
         if (!capture?.dataUrl) {
-          showScanError(
-            capture?.error ||
-              "Could not capture this tab. StreamSnap works on YouTube, Twitch, TikTok, Facebook and Kick."
-          );
+          const reason = capture?.needsCapturePermission
+            ? "Screen-capture permission missing (site access is off). Click Allow above, or turn on site access."
+            : `Capture failed: ${capture?.error || "unknown error"}`;
+          // Don't leave the previous results looking current.
+          clearScanState();
+          show("scan-results-container", false);
+          // Best effort page toast (needs our content script on that page).
+          if (tabs?.[0]?.id) chrome.tabs.sendMessage(tabs[0].id, { action: "SHOW_TOAST", text: reason, error: true }).catch(() => {});
+          showScanError(reason);
           return;
         }
-
         chrome.runtime.sendMessage(
           {
             // No key → the service worker scans on our servers instead.
@@ -1185,8 +1189,15 @@ function mergeSessionItems(targetList, incomingList) {
   return targetList.slice(0, 30);
 }
 
+let lastRenderedScanId = null;
 function renderScanResults(data, isIncremental = true) {
   if (!data?.items) return;
+  // Each result arrives twice (storage change + broadcast): render once.
+  if (data.scanId && data.scanId === lastRenderedScanId) return;
+  if (data.scanId) lastRenderedScanId = data.scanId;
+  // A user's Snip / Click-to-Find shows its own fresh result, not a merge that
+  // can hide it behind (or dedupe it into) earlier items.
+  if (data.mode === "crop") isIncremental = false;
   state.scan = data;
 
   show("scan-empty-state", false);
@@ -1847,6 +1858,19 @@ function showCapturePermissionPrompt() {
   document.body.prepend(bar);
 }
 
+// Hide the Allow banner as soon as the permission exists, wherever it was
+// granted (banner, permission tab, chrome://extensions).
+function hideCapturePermissionPrompt() {
+  byId("capture-perm-banner")?.remove();
+  chrome.storage.local.set({ needsCapturePermission: false });
+}
+chrome.permissions.onAdded.addListener((p) => {
+  if (p.origins?.length) hideCapturePermissionPrompt();
+});
+chrome.permissions.contains({ origins: ["<all_urls>"] }).then((has) => {
+  if (has) hideCapturePermissionPrompt();
+});
+
 chrome.storage.local.get(["needsCapturePermission"]).then(({ needsCapturePermission }) => {
   if (needsCapturePermission) showCapturePermissionPrompt();
 });
@@ -1862,7 +1886,10 @@ function showEmptyScanView() {
 function pageKey(url) {
   try {
     const u = new URL(url);
-    return u.origin + u.pathname; // query/hash changes (Twitch, YouTube t=) are not a new page
+    // query/hash changes (Twitch, YouTube t=) are not a new page, but YouTube's
+    // watch?v= is the video id, so it is part of the page key.
+    const v = /(^|\.)youtube\.com$/.test(u.hostname) ? u.searchParams.get("v") : null;
+    return u.origin + u.pathname + (v ? `?v=${v}` : "");
   } catch {
     return String(url || "");
   }
