@@ -25,6 +25,12 @@
   const onEvent = (e) => {
     const t = e.target;
     if (!(t instanceof Element)) return;
+    if (e.type === "click" && window.__ssSwallowClickUntil && Date.now() < window.__ssSwallowClickUntil) {
+      window.__ssSwallowClickUntil = 0;
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      return;
+    }
     const root = t.closest(ROOTS);
     if (!root) return;
     e.stopImmediatePropagation();

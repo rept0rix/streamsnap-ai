@@ -1859,11 +1859,19 @@ function showEmptyScanView() {
   show("scan-error-state", false);
   show("scan-empty-state", true);
 }
+function pageKey(url) {
+  try {
+    const u = new URL(url);
+    return u.origin + u.pathname; // query/hash changes (Twitch, YouTube t=) are not a new page
+  } catch {
+    return String(url || "");
+  }
+}
 const tabUrls = {};
 async function showTabScan(tabId) {
   try {
     const tab = await chrome.tabs.get(tabId);
-    const url = (tab.url || "").split("#")[0];
+    const url = pageKey(tab.url);
     tabUrls[tabId] = url;
     const { scanByTab = {} } = await chrome.storage.session.get("scanByTab");
     const entry = scanByTab[tabId];
@@ -1878,16 +1886,19 @@ async function showTabScan(tabId) {
 chrome.tabs.onActivated.addListener(({ tabId }) => showTabScan(tabId));
 chrome.tabs.onUpdated.addListener(async (tabId, info, tab) => {
   if (!info.url) return;
-  const url = info.url.split("#")[0];
-  if (tabUrls[tabId] === url) return; // same page (hash/no-op)
+  const url = pageKey(info.url);
+  const prevUrl = tabUrls[tabId];
+  if (prevUrl === url) return; // same page (query/hash/no-op)
   tabUrls[tabId] = url;
   const { scanByTab = {} } = await chrome.storage.session.get("scanByTab");
-  if (scanByTab[tabId] && scanByTab[tabId].url !== url) {
+  const stale = scanByTab[tabId] && scanByTab[tabId].url !== url;
+  if (stale) {
     delete scanByTab[tabId];
     await chrome.storage.session.set({ scanByTab });
   }
-  if (tab.active) showEmptyScanView();
+  // Only blank the view for a real navigation of a tab we already knew about.
+  if (tab.active && (stale || prevUrl !== undefined)) showEmptyScanView();
 });
 chrome.tabs.query({ active: true, currentWindow: true }).then(([t]) => {
-  if (t) tabUrls[t.id] = (t.url || "").split("#")[0];
+  if (t) tabUrls[t.id] = pageKey(t.url);
 });

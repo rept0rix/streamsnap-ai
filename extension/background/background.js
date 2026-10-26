@@ -500,10 +500,42 @@ function broadcast(message) {
 }
 
 // Per-tab results so switching tabs doesn't lose (or show the wrong) scan.
+function pageKey(url) {
+  try {
+    const u = new URL(url);
+    return u.origin + u.pathname;
+  } catch {
+    return String(url || "");
+  }
+}
+
+function mergeTabItems(prev = [], next = []) {
+  const out = [...next];
+  const key = (i) => i.asin || String(i.title || i.detectionLabel || "").toLowerCase().trim();
+  const seen = new Set(out.map(key));
+  for (const i of prev) if (!seen.has(key(i))) out.push(i);
+  return out.slice(0, 30);
+}
+
+// Per-tab results, ACCUMULATED like the panel's session feed (the panel merges
+// every scan into one list; saving only the last scan made 4 results come back
+// as 1 after a tab switch).
 async function saveTabScan(tab, payload) {
-  if (!tab?.id) return;
+  if (!tab?.id || !payload?.items) return;
   const { scanByTab = {} } = await chrome.storage.session.get("scanByTab").catch(() => ({}));
-  scanByTab[tab.id] = { url: (tab.url || "").split("#")[0], payload };
+  const url = pageKey(tab.url);
+  const prev = scanByTab[tab.id]?.url === url ? scanByTab[tab.id].payload : null;
+  const merged = prev
+    ? {
+        ...payload,
+        items: {
+          ...payload.items,
+          exactMatches: mergeTabItems(prev.items?.exactMatches, payload.items.exactMatches),
+          lookAlikes: mergeTabItems(prev.items?.lookAlikes, payload.items.lookAlikes)
+        }
+      }
+    : payload;
+  scanByTab[tab.id] = { url, payload: merged };
   const ids = Object.keys(scanByTab);
   if (ids.length > 20) delete scanByTab[ids[0]];
   await chrome.storage.session.set({ scanByTab }).catch(() => {});

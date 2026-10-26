@@ -19,6 +19,7 @@
 
   const hookedVideos = new WeakSet();
   let isLiveClickModeActive = false;
+  const IS_TIKTOK = window.location.hostname.includes("tiktok.com");
   let scanInFlight = false;
   // Master on/off. Mirrors chrome.storage.local.extensionEnabled. When false,
   // the on-video controls are removed and scans are refused on the page too.
@@ -82,6 +83,51 @@
   // -------------------------------------------------------------------------
   // Control injection & container resolution
   // -------------------------------------------------------------------------
+
+  // ---------------------------------------------------------------------------
+  // Video picking: the largest visible, playing <video> in the viewport.
+  // Twitch keeps an ad / mini-player <video> inside the same container, and the
+  // first <video> (old behaviour) was often that one: blank or tiny frames,
+  // scans returning nothing, toasts drawn into an invisible box.
+  // ---------------------------------------------------------------------------
+  const AD_OR_MINI =
+    '.video-ads, .ytp-ad-module, .ytp-ad-player-overlay, [class*="ad-banner"], [data-a-target*="ad"], [data-test-selector*="sda"], [class*="stream-display-ad"], [class*="picture-by-picture"], [class*="persistent-player--mini"], [class*="mini-player"], [class*="miniplayer"]';
+
+  function videoScore(v) {
+    if (!(v instanceof HTMLVideoElement)) return -1;
+    if (v.closest(AD_OR_MINI)) return -1;
+    const r = v.getBoundingClientRect();
+    const w = Math.min(r.right, innerWidth) - Math.max(r.left, 0);
+    const h = Math.min(r.bottom, innerHeight) - Math.max(r.top, 0);
+    if (w < 160 || h < 90) return -1;
+    const cs = getComputedStyle(v);
+    if (cs.visibility === "hidden" || cs.display === "none" || Number(cs.opacity) < 0.1) return -1;
+    let score = w * h;
+    if (!v.paused && v.readyState >= 2) score *= 4;
+    else if (v.readyState < 2) score *= 0.25;
+    return score;
+  }
+
+  function pickBestVideo(root = document) {
+    let best = null;
+    let bestScore = 0;
+    for (const v of root.querySelectorAll("video")) {
+      const sc = videoScore(v);
+      if (sc > bestScore) {
+        best = v;
+        bestScore = sc;
+      }
+    }
+    return best;
+  }
+
+  // Resolve the video at click time (inside this toolbar's container first).
+  function resolvePlayer(fallbackVideo, fallbackContainer) {
+    const inside = fallbackContainer ? pickBestVideo(fallbackContainer) : null;
+    const video = inside || pickBestVideo() || fallbackVideo;
+    const container = inside ? fallbackContainer : getPlayerContainer(video) || fallbackContainer;
+    return { video, container };
+  }
 
   function getPlayerContainer(video) {
     if (!video) return null;
@@ -208,8 +254,13 @@
   }
 
   function initUniversalVideoHook() {
+    // TikTok is gated: its page swallows/redirects in-page clicks and its video
+    // can't be read, so TikTok scans go through the side panel ("Scan Active
+    // Stream", which can show the Allow prompt) or Alt+S.
+    if (IS_TIKTOK) return;
     document.querySelectorAll("video").forEach((video) => {
       if (hookedVideos.has(video)) return;
+      if (videoScore(video) < 0) return; // ads, mini-players, hidden/tiny: retry on next hook pass
       const container = getPlayerContainer(video);
       hookedVideos.add(video);
       attachStreamSnapControls(video, container);
@@ -328,7 +379,8 @@
     ssOn(snipBtn, "click", (e) => {
       e.stopPropagation();
       e.preventDefault();
-      startInteractiveCropper(video, parent);
+      const p = resolvePlayer(video, parent);
+      startInteractiveCropper(p.video, p.container);
     });
 
     const scanBtn = el("button", "streamsnap-floating-btn");
@@ -338,7 +390,8 @@
     ssOn(scanBtn, "click", (e) => {
       e.stopPropagation();
       e.preventDefault();
-      triggerStreamScan(video, parent);
+      const p = resolvePlayer(video, parent);
+      triggerStreamScan(p.video, p.container);
     });
 
     // 3. Minimize button (Collapse into small pill)
@@ -527,6 +580,10 @@
     let endY = 0;
 
     function teardown() {
+      // The browser fires a click after mouseup on whatever is now under the
+      // pointer: once the cropper is gone that's the <video>, which pauses
+      // YouTube. Tell the guard to swallow that trailing click.
+      window.__ssSwallowClickUntil = Date.now() + 600;
       cropper.remove();
       document.removeEventListener("keydown", handleKeyDown);
     }
@@ -646,7 +703,7 @@
   // (YouTube/Twitch usually do). Returns null if tainted, blank or unavailable.
   function cropFromVideoElement(container, cropX, cropY, cropW, cropH) {
     try {
-      const video = container.querySelector("video");
+      const video = pickBestVideo(container) || container.querySelector("video");
       if (!video || video.readyState < 2 || !video.videoWidth) return null;
       const cRect = container.getBoundingClientRect();
       const vRect = video.getBoundingClientRect();
@@ -713,9 +770,9 @@
         chrome.storage.local.set({ isScanning: false });
         if (capture.needsCapturePermission) {
           sendMessage({ action: "OPEN_SIDEPANEL" });
-          showToast(container, "This site blocks direct video capture. Click Allow in the StreamSnap tab that just opened, then try again.");
+          showToast(container, "This site blocks direct video capture. Click Allow in the StreamSnap tab that just opened, then try again.", { error: true });
         } else {
-          showToast(container, `Screen capture failed: ${capture.error || "unknown error"}`);
+          showToast(container, `Screen capture failed: ${capture.error || "unknown error"}`, { error: true });
         }
         return;
       }
@@ -748,12 +805,12 @@
             : "No confident match for that selection. Try a tighter crop."
         );
       } else {
-        showToast(container, res?.error || "Analysis failed.");
+        showToast(container, `Server error: ${res?.error || "analysis failed"}`, { error: true });
       }
     } catch (err) {
       console.warn("[StreamSnap] scan failed:", err);
       chrome.storage.local.set({ isScanning: false });
-      showToast(container, `Scan failed: ${err?.message || "unexpected error"}`);
+      showToast(container, `Scan failed: ${err?.message || "unexpected error"}`, { error: true });
     } finally {
       scanInFlight = false;
     }
@@ -864,8 +921,9 @@
           showToast(
             container,
             lastCaptureFailure?.needsCapturePermission
-              ? "This site blocks direct video capture. Click Allow in the StreamSnap tab that just opened, then scan again."
-              : `Could not capture the video frame${lastCaptureFailure?.error ? `: ${lastCaptureFailure.error}` : "."}`
+              ? "Screen-capture permission missing: click Allow in the StreamSnap tab that just opened, then scan again."
+              : `Could not capture the video frame${lastCaptureFailure?.error ? `: ${lastCaptureFailure.error}` : " (video not readable)."}`,
+            { error: true }
           );
         }
         return;
@@ -891,14 +949,16 @@
         }
       } else if (res?.authRequired) {
         sendMessage({ action: "OPEN_SIDEPANEL" });
-        if (!isSilent) showToast(container, "Sign in from the StreamSnap panel to keep scanning.");
+        if (!isSilent) showToast(container, "Free scan limit reached: sign in from the StreamSnap panel to keep scanning.", { error: true });
       } else if (!isSilent) {
-        showToast(container, res?.error || "Scan failed.");
+        showToast(container, `Server error: ${res?.error || "scan failed"}`, { error: true });
+      } else {
+        console.warn("[StreamSnap] auto-scan failed:", res?.error);
       }
     } catch (err) {
       console.warn("[StreamSnap] scan failed:", err);
       chrome.storage.local.set({ isScanning: false });
-      showToast(container, `Scan failed: ${err?.message || "unexpected error"}`);
+      showToast(container, `Scan failed: ${err?.message || "unexpected error"}`, { error: true });
     } finally {
       scanInFlight = false;
     }
@@ -956,20 +1016,30 @@
     }, 7000);
   }
 
-  function showToast(container, text) {
-    container.querySelector(".streamsnap-toast")?.remove();
+  // Toasts must always be visible: if the container is hidden/off-screen (e.g.
+  // a Twitch mini-player), fall back to a fixed toast on the page.
+  function showToast(container, text, { error = false } = {}) {
+    if (error) console.warn("[StreamSnap]", text);
+    let host = container;
+    const r = container?.getBoundingClientRect?.();
+    const visible =
+      r && r.width >= 200 && r.height >= 80 && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth;
+    if (!visible) host = document.body;
+    document.querySelectorAll(".streamsnap-toast").forEach((t) => t.remove());
     const toast = el("div", "streamsnap-toast");
-    const bolt = el("span", null, "⚡");
+    if (host === document.body) {
+      Object.assign(toast.style, { position: "fixed", top: "16px", left: "50%", transform: "translateX(-50%)", zIndex: "2147483647" });
+    }
+    if (error) toast.style.borderColor = "#ef4444";
+    const bolt = el("span", null, error ? "⚠️" : "⚡");
     bolt.style.color = "#FF9900";
-    // textContent for the message — it can contain a page title or API error.
-    // .streamsnap-toast is flex with a gap, so no leading whitespace.
     toast.append(bolt, el("span", null, text));
-    container.appendChild(toast);
+    host.appendChild(toast);
 
     setTimeout(() => {
       toast.style.opacity = "0";
       setTimeout(() => toast.remove(), 300);
-    }, 3500);
+    }, error ? 6000 : 3500);
   }
 
   // -------------------------------------------------------------------------
@@ -977,8 +1047,7 @@
   // -------------------------------------------------------------------------
 
   function getActivePlayer() {
-    const video =
-      document.querySelector("#movie_player video") || document.querySelector("video");
+    const video = pickBestVideo() || document.querySelector("#movie_player video");
     if (!video) return null;
     const container = getPlayerContainer(video);
     return container ? { video, container } : null;
