@@ -525,7 +525,10 @@ async function saveTabScan(tab, payload) {
   if (!tab?.id || !payload?.items) return;
   const { scanByTab = {} } = await chrome.storage.session.get("scanByTab").catch(() => ({}));
   const url = pageKey(tab.url);
-  const prev = scanByTab[tab.id]?.url === url ? scanByTab[tab.id].payload : null;
+  // Mirror the panel: a crop (Snip / Click-to-Find) replaces the displayed
+  // list there, so it replaces the saved entry too; full-frame scans merge.
+  const prev =
+    payload.mode !== "crop" && scanByTab[tab.id]?.url === url ? scanByTab[tab.id].payload : null;
   const merged = prev
     ? {
         ...payload,
