@@ -1694,6 +1694,43 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   padding: 6px 10px;
 }
 
+/* Review & Rating Promo Card */
+.rating-promo-card {
+  margin-bottom: 14px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.rating-visit-btn {
+  text-decoration: none;
+  white-space: nowrap;
+  font-size: 11px;
+  padding: 6px 12px;
+  background: #FF9900;
+  color: #0b0f19;
+  font-weight: 700;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rating-visit-btn:hover {
+  background: #ffaa22;
+  box-shadow: 0 0 10px rgba(255, 153, 0, 0.4);
+}
+
+.rating-footer-link {
+  color: #FF9900 !important;
+  font-weight: 700 !important;
+}
+
+.rating-footer-link:hover {
+  text-decoration: underline;
+  filter: brightness(1.15);
+}
+
 /* Footer */
 .panel-footer {
   background: var(--bg-surface);

@@ -1,0 +1,1720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StreamSnap AI — Official Product Demo Video</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@500;700;800;900&family=JetBrains+Mono:wght@500;700;800&family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #06080F;
+      --bg-panel: #0D111D;
+      --cyan: #00F0FF;
+      --amber: #FF9900;
+      --amber-glow: #FF5500;
+      --green: #10B981;
+      --red: #FF2A54;
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background: #030408;
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', 'Heebo', -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+    }
+
+    /* When running in headless capture mode, remove player chrome */
+    body.capture-mode {
+      background: #000;
+      overflow: hidden;
+    }
+    body.capture-mode .studio-toolbar,
+    body.capture-mode .studio-controls {
+      display: none !important;
+    }
+    body.capture-mode .stage-outer {
+      padding: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+    }
+    body.capture-mode .video-canvas {
+      border-radius: 0 !important;
+      border: none !important;
+      box-shadow: none !important;
+      transform: none !important;
+    }
+
+    /* Top Studio Bar */
+    .studio-toolbar {
+      width: 100%;
+      max-width: 1360px;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .studio-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: #fff;
+    }
+
+    .studio-brand-badge {
+      background: linear-gradient(135deg, var(--cyan), #0077FF);
+      color: #000;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      letter-spacing: 1px;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .studio-btn {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .studio-btn:hover {
+      background: rgba(0, 240, 255, 0.14);
+      border-color: var(--cyan);
+    }
+
+    .studio-btn.active {
+      background: var(--cyan);
+      color: #000;
+      border-color: var(--cyan);
+    }
+
+    .studio-btn.amber {
+      background: linear-gradient(135deg, var(--amber), var(--amber-glow));
+      color: #000;
+      border: none;
+      font-weight: 800;
+    }
+
+    /* Stage Container */
+    .stage-outer {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 24px;
+    }
+
+    /* Fixed internal coordinate system: 1920x1080 scaled smoothly */
+    .video-canvas {
+      width: 1920px;
+      height: 1080px;
+      background: radial-gradient(circle at 50% 15%, #161F38 0%, #090D18 55%, #04060C 100%);
+      position: relative;
+      overflow: hidden;
+      border-radius: 20px;
+      border: 1px solid rgba(0, 240, 255, 0.25);
+      box-shadow: 0 30px 100px rgba(0, 0, 0, 0.85), 0 0 60px rgba(0, 240, 255, 0.12);
+      transform-origin: center center;
+    }
+
+    /* Ambient Background Grid & Glows */
+    .cyber-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0, 240, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 240, 255, 0.04) 1px, transparent 1px);
+      background-size: 64px 64px;
+      perspective: 1000px;
+      pointer-events: none;
+    }
+
+    .orb-cyan {
+      position: absolute;
+      width: 900px;
+      height: 900px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0, 240, 255, 0.18) 0%, transparent 68%);
+      top: -250px;
+      left: -150px;
+      pointer-events: none;
+    }
+
+    .orb-amber {
+      position: absolute;
+      width: 900px;
+      height: 900px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 153, 0, 0.16) 0%, transparent 68%);
+      bottom: -300px;
+      right: -150px;
+      pointer-events: none;
+    }
+
+    /* Top HUD Watermark inside Video */
+    .video-hud-header {
+      position: absolute;
+      top: 28px;
+      left: 42px;
+      right: 42px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 80;
+      pointer-events: none;
+    }
+
+    .hud-brand-pill {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: rgba(9, 13, 24, 0.82);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      backdrop-filter: blur(16px);
+      padding: 10px 22px;
+      border-radius: 999px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .hud-bolt {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--cyan), #7928CA);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+    }
+
+    .hud-brand-name {
+      font-weight: 900;
+      font-size: 22px;
+      letter-spacing: -0.5px;
+      color: #fff;
+    }
+
+    .hud-brand-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--cyan);
+      font-weight: 700;
+      padding-left: 12px;
+      border-left: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .hud-telemetry-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      color: #cbd5e1;
+      background: rgba(9, 13, 24, 0.82);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      padding: 10px 20px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .pulse-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--red);
+      box-shadow: 0 0 12px var(--red);
+    }
+
+    /* Scene Containers */
+    .scene {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ============================================================
+       SCENE 1: THE HOOK ("STOP ASKING CHAT")
+    ============================================================ */
+    .s1-layout {
+      width: 1720px;
+      height: 860px;
+      margin-top: 30px;
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 48px;
+      align-items: center;
+    }
+
+    .s1-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .s1-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      align-self: flex-start;
+      background: rgba(255, 42, 84, 0.15);
+      border: 1px solid rgba(255, 42, 84, 0.45);
+      color: #FF6B8B;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 18px;
+      padding: 10px 22px;
+      border-radius: 999px;
+    }
+
+    .s1-headline {
+      font-size: 86px;
+      font-weight: 900;
+      line-height: 1.02;
+      letter-spacing: -2.5px;
+      color: #fff;
+    }
+
+    .s1-headline .cyan-grad {
+      background: linear-gradient(135deg, #00F0FF 0%, #38BDF8 50%, #FF9900 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .s1-sub {
+      font-size: 28px;
+      color: var(--text-muted);
+      line-height: 1.45;
+      font-weight: 600;
+      max-width: 780px;
+    }
+
+    .s1-chat-box {
+      background: rgba(13, 18, 32, 0.92);
+      border: 2px solid rgba(255, 255, 255, 0.12);
+      border-radius: 28px;
+      padding: 28px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.75);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .chat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 16px;
+      font-weight: 800;
+      color: #94A3B8;
+    }
+
+    .chat-msg {
+      background: rgba(255, 255, 255, 0.05);
+      border-left: 4px solid var(--cyan);
+      padding: 16px 20px;
+      border-radius: 14px;
+      font-size: 21px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    }
+
+    .chat-user {
+      color: var(--amber);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 17px;
+      white-space: nowrap;
+    }
+
+    .s1-stamp {
+      position: absolute;
+      inset: 0;
+      background: rgba(6, 8, 15, 0.82);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      text-align: center;
+      padding: 32px;
+    }
+
+    .s1-stamp-badge {
+      background: linear-gradient(135deg, var(--cyan), #0077FF);
+      color: #000;
+      font-size: 44px;
+      font-weight: 900;
+      padding: 18px 42px;
+      border-radius: 24px;
+      box-shadow: 0 0 60px rgba(0, 240, 255, 0.6);
+      letter-spacing: -1px;
+    }
+
+    /* ============================================================
+       SCENE 2 & 3: LIVE STREAM + EXTENSION SNIP + SIDEPANEL CART
+    ============================================================ */
+    .browser-stage {
+      width: 1780px;
+      height: 890px;
+      margin-top: 52px;
+      background: #0B0F1A;
+      border-radius: 26px;
+      border: 2px solid rgba(0, 240, 255, 0.35);
+      box-shadow: 0 35px 100px rgba(0, 0, 0, 0.9), 0 0 60px rgba(0, 240, 255, 0.18);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .browser-chrome {
+      height: 58px;
+      background: #111728;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 18px;
+    }
+
+    .window-dots {
+      display: flex;
+      gap: 10px;
+    }
+    .window-dots span {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+    }
+    .dot-r { background: #FF5F56; }
+    .dot-y { background: #FFBD2E; }
+    .dot-g { background: #27C93F; }
+
+    .url-bar {
+      flex: 1;
+      max-width: 780px;
+      background: #080B14;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      color: #94A3B8;
+      gap: 10px;
+    }
+
+    .ext-toolbar-pill {
+      margin-left: auto;
+      background: linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(121, 40, 202, 0.3));
+      border: 1px solid var(--cyan);
+      color: #fff;
+      padding: 6px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+    }
+
+    .browser-body {
+      flex: 1;
+      display: flex;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Video Player Area */
+    .stream-viewport {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: #05070E;
+    }
+
+    .stream-video-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform-origin: center center;
+    }
+
+    /* Stream Overlay Top Bar */
+    .stream-overlay-top {
+      position: absolute;
+      top: 24px;
+      left: 24px;
+      right: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 20;
+    }
+
+    .streamer-pill {
+      background: rgba(8, 11, 20, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(12px);
+      padding: 10px 18px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      font-size: 17px;
+    }
+
+    .live-red-tag {
+      background: var(--red);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 900;
+      padding: 4px 10px;
+      border-radius: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    /* StreamSnap In-Video Floating Controls */
+    .streamsnap-video-hud {
+      display: flex;
+      gap: 12px;
+    }
+
+    .hud-action-btn {
+      background: rgba(11, 15, 26, 0.88);
+      border: 1.5px solid rgba(0, 240, 255, 0.45);
+      color: #fff;
+      padding: 11px 20px;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+    }
+
+    .hud-action-btn.active-snip {
+      background: var(--cyan);
+      color: #000;
+      border-color: #fff;
+      box-shadow: 0 0 30px rgba(0, 240, 255, 0.8);
+    }
+
+    /* Optical Snip Box */
+    .snip-selection-box {
+      position: absolute;
+      border: 3px solid var(--cyan);
+      background: rgba(0, 240, 255, 0.12);
+      border-radius: 16px;
+      box-shadow: 0 0 40px rgba(0, 240, 255, 0.5), inset 0 0 25px rgba(0, 240, 255, 0.25);
+      z-index: 30;
+      overflow: hidden;
+    }
+
+    .snip-laser-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, transparent, #fff, var(--cyan), #fff, transparent);
+      box-shadow: 0 0 25px var(--cyan), 0 0 50px var(--cyan);
+    }
+
+    .snip-label-pill {
+      position: absolute;
+      top: -44px;
+      left: 0;
+      background: #090D18;
+      border: 2px solid var(--cyan);
+      color: var(--cyan);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      font-weight: 800;
+      padding: 6px 14px;
+      border-radius: 10px;
+      white-space: nowrap;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.7);
+    }
+
+    /* Secondary Hotspot Badges */
+    .hotspot-pin {
+      position: absolute;
+      background: rgba(9, 13, 24, 0.92);
+      border: 2px solid var(--amber);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 15px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 0 30px rgba(255, 153, 0, 0.5);
+      z-index: 28;
+    }
+
+    /* Right SidePanel (Chrome Extension SidePanel) */
+    .sidepanel-drawer {
+      width: 540px;
+      background: #0D1220;
+      border-left: 2px solid rgba(0, 240, 255, 0.35);
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+      gap: 18px;
+      z-index: 40;
+      box-shadow: -20px 0 60px rgba(0, 0, 0, 0.8);
+    }
+
+    .sp-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .sp-title {
+      font-size: 20px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sp-status-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--green);
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      padding: 4px 12px;
+      border-radius: 999px;
+    }
+
+    /* Source Frame Traceability Card */
+    .source-trace-strip {
+      background: rgba(0, 240, 255, 0.07);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      border-radius: 16px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 14px;
+      font-weight: 700;
+      color: #E2E8F0;
+    }
+
+    /* Product Cards inside Sidepanel */
+    .sp-product-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
+      border-radius: 20px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+    }
+
+    .sp-product-card.featured {
+      border-color: var(--cyan);
+      background: linear-gradient(145deg, rgba(0, 240, 255, 0.10), rgba(13, 18, 32, 0.95));
+      box-shadow: 0 12px 35px rgba(0, 240, 255, 0.15);
+    }
+
+    .sp-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .verified-asin-badge {
+      background: rgba(16, 185, 129, 0.18);
+      border: 1px solid var(--green);
+      color: #34D399;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    .match-score-pill {
+      background: var(--cyan);
+      color: #000;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 900;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    .sp-prod-name {
+      font-size: 19px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.3;
+    }
+
+    .sp-price-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .sp-price {
+      font-size: 26px;
+      font-weight: 900;
+      color: var(--amber);
+    }
+
+    .prime-pill {
+      background: #00A8E1;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 900;
+      font-style: italic;
+      padding: 3px 9px;
+      border-radius: 5px;
+    }
+
+    /* 1-Click Amazon Remote Cart CTA */
+    .sp-cart-footer {
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .amazon-cart-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #FF9900 0%, #FF5500 100%);
+      color: #000;
+      font-size: 20px;
+      font-weight: 900;
+      padding: 20px;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      box-shadow: 0 15px 40px rgba(255, 153, 0, 0.45);
+    }
+
+    .amazon-cart-btn.clicked {
+      background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+      color: #fff;
+      box-shadow: 0 0 50px rgba(16, 185, 129, 0.8);
+    }
+
+    .creator-bounty-bar {
+      background: rgba(255, 153, 0, 0.12);
+      border: 1px solid rgba(255, 153, 0, 0.4);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #FDBA74;
+      text-align: center;
+    }
+
+    /* ============================================================
+       SCENE 4: OMNI-PLATFORM (CHROME + ANDROID + iOS)
+    ============================================================ */
+    .s4-container {
+      width: 1740px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 44px;
+      margin-top: 40px;
+    }
+
+    .s4-header {
+      text-align: center;
+    }
+
+    .s4-title {
+      font-size: 68px;
+      font-weight: 900;
+      letter-spacing: -2px;
+      margin-bottom: 12px;
+    }
+
+    .s4-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      width: 100%;
+    }
+
+    .platform-card {
+      background: rgba(13, 18, 32, 0.9);
+      border: 2px solid rgba(0, 240, 255, 0.28);
+      border-radius: 28px;
+      padding: 36px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .platform-icon-box {
+      width: 72px;
+      height: 72px;
+      border-radius: 20px;
+      background: rgba(0, 240, 255, 0.12);
+      border: 1px solid var(--cyan);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+    }
+
+    .platform-title {
+      font-size: 32px;
+      font-weight: 900;
+      color: #fff;
+    }
+
+    .platform-desc {
+      font-size: 20px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      font-weight: 600;
+    }
+
+    .platform-tag {
+      margin-top: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--cyan);
+    }
+
+    /* ============================================================
+       SCENE 5: FINALE & CALL TO ACTION
+    ============================================================ */
+    .s5-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 28px;
+      max-width: 1400px;
+    }
+
+    .s5-logo-orb {
+      width: 140px;
+      height: 140px;
+      border-radius: 38px;
+      background: linear-gradient(135deg, var(--cyan) 0%, #7928CA 55%, var(--amber) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 74px;
+      box-shadow: 0 25px 80px rgba(0, 240, 255, 0.55);
+    }
+
+    .s5-title {
+      font-size: 96px;
+      font-weight: 900;
+      letter-spacing: -3px;
+      line-height: 1;
+    }
+
+    .s5-tagline {
+      font-size: 36px;
+      font-weight: 700;
+      color: #CBD5E1;
+    }
+
+    .s5-cta-row {
+      display: flex;
+      gap: 24px;
+      margin-top: 12px;
+    }
+
+    .s5-cta-primary {
+      background: linear-gradient(135deg, var(--amber), var(--amber-glow));
+      color: #000;
+      font-size: 28px;
+      font-weight: 900;
+      padding: 24px 48px;
+      border-radius: 22px;
+      box-shadow: 0 20px 60px rgba(255, 153, 0, 0.5);
+    }
+
+    .s5-cta-url {
+      background: rgba(0, 240, 255, 0.12);
+      border: 2px solid var(--cyan);
+      color: var(--cyan);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 28px;
+      font-weight: 800;
+      padding: 24px 44px;
+      border-radius: 22px;
+    }
+
+    /* Animated Virtual Cursor */
+    .virtual-cursor {
+      position: absolute;
+      width: 38px;
+      height: 38px;
+      z-index: 95;
+      pointer-events: none;
+      filter: drop-shadow(0 8px 16px rgba(0,0,0,0.85));
+    }
+
+    .cursor-ripple {
+      position: absolute;
+      top: -16px;
+      left: -16px;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 3px solid var(--cyan);
+      background: rgba(0, 240, 255, 0.25);
+      opacity: 0;
+      transform: scale(0.3);
+    }
+
+    /* Bilingual Marketing Subtitle Pill at Bottom */
+    .subtitle-banner {
+      position: absolute;
+      bottom: 34px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(6, 8, 15, 0.9);
+      border: 1.5px solid rgba(0, 240, 255, 0.45);
+      backdrop-filter: blur(20px);
+      padding: 14px 36px;
+      border-radius: 999px;
+      font-size: 26px;
+      font-weight: 800;
+      color: #fff;
+      z-index: 90;
+      white-space: nowrap;
+      box-shadow: 0 15px 45px rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    /* Player Bottom Controls */
+    .studio-controls {
+      width: 100%;
+      max-width: 1360px;
+      padding: 14px 24px 28px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .timeline-slider {
+      flex: 1;
+      accent-color: var(--cyan);
+      height: 8px;
+      cursor: pointer;
+    }
+
+    .time-readout {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      color: var(--cyan);
+      min-width: 110px;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Studio Controls -->
+  <div class="studio-toolbar">
+    <a href="index.html" class="studio-brand">
+      <span class="studio-brand-badge">PROMO STUDIO</span>
+      <strong>StreamSnap AI — Commercial Demo Generator</strong>
+    </a>
+    <div class="toolbar-actions">
+      <button class="studio-btn active" id="btn-lang-he" onclick="setLang('he')">🇮🇱 כתוביות בעברית</button>
+      <button class="studio-btn" id="btn-lang-en" onclick="setLang('en')">🇺🇸 English Captions</button>
+      <button class="studio-btn active" id="btn-sound" onclick="toggleSound()">🔊 Sound FX: ON</button>
+      <a class="studio-btn" href="promo-video-mobile.html">📱 9:16 Mobile Version</a>
+      <a class="studio-btn amber" href="assets/streamsnap_promo_16x9.mp4" download="StreamSnap_AI_Promo_1080p.mp4">⬇ Download MP4 (1080p)</a>
+    </div>
+  </div>
+
+  <!-- Main 1920x1080 Stage -->
+  <div class="stage-outer" id="stage-outer">
+    <div class="video-canvas" id="video-canvas">
+      <div class="cyber-grid"></div>
+      <div class="orb-cyan"></div>
+      <div class="orb-amber"></div>
+
+      <!-- Persistent Top HUD Header -->
+      <div class="video-hud-header">
+        <div class="hud-brand-pill">
+          <div class="hud-bolt">⚡</div>
+          <span class="hud-brand-name">StreamSnap AI</span>
+          <span class="hud-brand-tag">SHAZAM FOR LIVE STREAMS</span>
+        </div>
+        <div class="hud-telemetry-pill">
+          <span class="pulse-dot"></span>
+          <span id="hud-phase-label">OPTICAL AI ENGINE // GEMINI 2.5 FLASH</span>
+        </div>
+      </div>
+
+      <!-- ============================================================
+           SCENE 1: THE PROBLEM & HOOK (0.0s - 4.5s)
+      ============================================================ -->
+      <div class="scene" id="scene-1">
+        <div class="s1-layout">
+          <div class="s1-copy">
+            <div class="s1-kicker">🔴 LIVE STREAM SHOPPING REVOLUTION</div>
+            <h1 class="s1-headline">
+              SEE IT ON STREAM.<br/>
+              <span class="cyan-grad">BUY IT IN 1 CLICK.</span>
+            </h1>
+            <p class="s1-sub">
+              Ever watched a live stream on YouTube, Twitch, or TikTok and wondered what microphone, hoodie, or headset the creator is using?
+            </p>
+          </div>
+
+          <div class="s1-chat-box">
+            <div class="chat-header">
+              <span>🔴 LIVE CHAT // 51,640 WATCHING</span>
+              <span>240 MSG/SEC</span>
+            </div>
+            <div class="chat-msg" id="chat-1">
+              <span class="chat-user">@xX_Gamer99:</span>
+              <span>Bro what AC Milan jersey is Speed wearing?? 🔥🔥</span>
+            </div>
+            <div class="chat-msg" id="chat-2">
+              <span class="chat-user">@Noam_Stream:</span>
+              <span>מישהו יודע איזה מיקרופון וכובע אלה?? חייב לינק!</span>
+            </div>
+            <div class="chat-msg" id="chat-3">
+              <span class="chat-user">@HypeBeast_NY:</span>
+              <span>Anyone got the Amazon link for that studio mic?!</span>
+            </div>
+            <div class="chat-msg" id="chat-4" style="border-left-color: var(--red);">
+              <span class="chat-user">@AutoMod_Bot:</span>
+              <span style="color:#94A3B8;">Chat is moving too fast! No links answered.</span>
+            </div>
+
+            <!-- Stamp that slams in at 2.4s -->
+            <div class="s1-stamp" id="s1-stamp">
+              <div style="font-family:'JetBrains Mono',monospace; font-size:20px; color:var(--cyan); font-weight:800;">
+                STOP ASKING CHAT. START SNAPPING.
+              </div>
+              <div class="s1-stamp-badge">⚡ StreamSnap AI</div>
+              <div style="font-size:24px; font-weight:700; color:#fff;">
+                Instant Visual Product Recognition &amp; 1-Click Amazon Cart
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================
+           SCENE 2 & 3: LIVE SNIP + SIDEPANEL + 1-CLICK AMAZON CART (4.5s - 16.5s)
+      ============================================================ -->
+      <div class="scene" id="scene-2">
+        <div class="browser-stage">
+          <div class="browser-chrome">
+            <div class="window-dots">
+              <span class="dot-r"></span>
+              <span class="dot-y"></span>
+              <span class="dot-g"></span>
+            </div>
+            <div class="url-bar">
+              <span>🔒</span>
+              <span>https://www.youtube.com/watch?v=ishowspeed-live-stream-4k</span>
+            </div>
+            <div class="ext-toolbar-pill">
+              <span>⚡</span>
+              <span>StreamSnap AI v1.6.3 Active</span>
+            </div>
+          </div>
+
+          <div class="browser-body">
+            <!-- Video Stream Area -->
+            <div class="stream-viewport">
+              <img src="assets/ishowspeed_live.png" class="stream-video-img" id="stream-video-img" alt="Live Stream" />
+
+              <div class="stream-overlay-top">
+                <div class="streamer-pill">
+                  <span class="live-red-tag">● LIVE</span>
+                  <span>IShowSpeed · 51.6K Viewers</span>
+                </div>
+
+                <div class="streamsnap-video-hud">
+                  <div class="hud-action-btn" id="hud-btn-snip">
+                    <span>🎯</span>
+                    <span>Snip Box on Video</span>
+                  </div>
+                  <div class="hud-action-btn" id="hud-btn-scan">
+                    <span>⚡</span>
+                    <span>Full Frame Scan (Alt+S)</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Snip Box Drawn by User Cursor -->
+              <div class="snip-selection-box" id="snip-box">
+                <div class="snip-laser-line" id="snip-laser"></div>
+              </div>
+              <div class="snip-label-pill" id="snip-label" style="top: 310px; left: 430px;">
+                🎯 99.4% VERIFIED MATCH // PUMA AC MILAN JERSEY ($89.99)
+              </div>
+
+              <!-- Additional AI Multi-Object Detections -->
+              <div class="hotspot-pin" id="pin-cap" style="top: 195px; left: 680px;">
+                <span>🧢</span>
+                <span>LA Angels 9FIFTY Cap · $34.99 (98.7%)</span>
+              </div>
+              <div class="hotspot-pin" id="pin-tee" style="top: 415px; left: 250px;">
+                <span>👕</span>
+                <span>Heavyweight White Crewneck · $18.50 (97.1%)</span>
+              </div>
+            </div>
+
+            <!-- Chrome Extension SidePanel -->
+            <div class="sidepanel-drawer" id="sidepanel-drawer">
+              <div class="sp-header">
+                <div class="sp-title">
+                  <span>⚡</span>
+                  <span>StreamSnap SidePanel</span>
+                </div>
+                <span class="sp-status-tag">3 ITEMS DETECTED</span>
+              </div>
+
+              <div class="source-trace-strip">
+                <span>📸 Source Frame Trace Verified</span>
+                <span style="color:var(--cyan); font-family:'JetBrains Mono',monospace;">1.38s Gemini 2.5</span>
+              </div>
+
+              <!-- Item 1 -->
+              <div class="sp-product-card featured" id="card-1">
+                <div class="sp-card-top">
+                  <span class="verified-asin-badge">✓ VERIFIED ASIN: B0CBVR3M9T</span>
+                  <span class="match-score-pill">99.4% MATCH</span>
+                </div>
+                <div class="sp-prod-name">PUMA Men's AC Milan Home Replica Jersey</div>
+                <div class="sp-price-row">
+                  <span class="sp-price">$89.99</span>
+                  <span class="prime-pill">prime</span>
+                  <span style="font-size:14px; color:#94A3B8; font-weight:700;">⭐ 4.8 (8.2K)</span>
+                </div>
+              </div>
+
+              <!-- Item 2 -->
+              <div class="sp-product-card" id="card-2">
+                <div class="sp-card-top">
+                  <span class="verified-asin-badge">✓ VERIFIED ASIN: B079M7G65L</span>
+                  <span class="match-score-pill">98.7% MATCH</span>
+                </div>
+                <div class="sp-prod-name">New Era LA Angels Black 9FIFTY Snapback Cap</div>
+                <div class="sp-price-row">
+                  <span class="sp-price">$34.99</span>
+                  <span class="prime-pill">prime</span>
+                  <span style="font-size:14px; color:#94A3B8; font-weight:700;">⭐ 4.9 (3.4K)</span>
+                </div>
+              </div>
+
+              <!-- Cart CTA -->
+              <div class="sp-cart-footer">
+                <div class="amazon-cart-btn" id="amazon-cart-btn">
+                  <span id="cart-btn-icon">🛒</span>
+                  <span id="cart-btn-text">1-Click Add All to Amazon Cart ($124.98)</span>
+                </div>
+                <div class="creator-bounty-bar">
+                  💰 Creators: Add your Associates Tag &amp; earn up to 10% commission!
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================
+           SCENE 4: CROSS-PLATFORM ECOSYSTEM (16.5s - 20.5s)
+      ============================================================ -->
+      <div class="scene" id="scene-4">
+        <div class="s4-container">
+          <div class="s4-header">
+            <div style="font-family:'JetBrains Mono',monospace; color:var(--cyan); font-size:20px; font-weight:800; margin-bottom:10px;">
+              OMNI-CHANNEL VISUAL COMMERCE
+            </div>
+            <h2 class="s4-title">Every Screen. Every Stream. Instant Amazon Cart.</h2>
+          </div>
+
+          <div class="s4-cards">
+            <div class="platform-card" id="plat-1">
+              <div class="platform-icon-box">🧩</div>
+              <div class="platform-title">Chrome Extension</div>
+              <div class="platform-desc">
+                In-video Snip Box, 1-Click Full Scan (`Alt+S`), Perceptual Frame Cache, and SidePanel Amazon Cart on YouTube, Twitch, TikTok &amp; Kick.
+              </div>
+              <div class="platform-tag">✓ LIVE ON CHROME WEB STORE</div>
+            </div>
+
+            <div class="platform-card" id="plat-2">
+              <div class="platform-icon-box">🤖</div>
+              <div class="platform-title">Android Companion</div>
+              <div class="platform-desc">
+                Instant Share Sheet integration from TikTok, Reels &amp; YouTube Mobile + Live Camera Scanner that syncs straight to your cart.
+              </div>
+              <div class="platform-tag">✓ ANDROID APP READY</div>
+            </div>
+
+            <div class="platform-card" id="plat-3">
+              <div class="platform-icon-box">🍎</div>
+              <div class="platform-title">iOS Live Broadcast</div>
+              <div class="platform-desc">
+                ReplayKit Live Background Scanner samples frames automatically while you watch streams on your iPhone — zero interruptions.
+              </div>
+              <div class="platform-tag">⚡ REPLAYKIT + SHARE SHEET</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================
+           SCENE 5: GRAND FINALE & CALL TO ACTION (20.5s - 24.0s)
+      ============================================================ -->
+      <div class="scene" id="scene-5">
+        <div class="s5-container">
+          <div class="s5-logo-orb">⚡</div>
+          <div style="font-family:'JetBrains Mono',monospace; color:var(--cyan); font-size:22px; font-weight:800; letter-spacing:2px;">
+            THE SHAZAM FOR LIVE STREAMS
+          </div>
+          <h1 class="s5-title">StreamSnap AI</h1>
+          <p class="s5-tagline">
+            Turn any live video stream into an instant 1-Click Amazon store.
+          </p>
+          <div class="s5-cta-row">
+            <div class="s5-cta-primary">🛒 Install Free on Chrome &amp; Mobile</div>
+            <div class="s5-cta-url">streamsnap.online</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Animated Cursor Overlay -->
+      <div class="virtual-cursor" id="virtual-cursor">
+        <div class="cursor-ripple" id="cursor-ripple"></div>
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="none">
+          <path d="M4 2L20 11L13 13L16 21L13 22L10 14L4 19V2Z" fill="#00F0FF" stroke="#000000" stroke-width="1.8" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      <!-- Dynamic Marketing Caption Banner -->
+      <div class="subtitle-banner" id="subtitle-banner">
+        <span style="color:var(--cyan);">⚡</span>
+        <span id="subtitle-text">ראית מוצר בלייב ביוטיוב, טוויץ' או טיקטוק? אל תחכה לתשובה בצ'אט.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Player Bottom Scrubber -->
+  <div class="studio-controls">
+    <button class="studio-btn active" id="btn-play" onclick="togglePlay()">⏸ Pause</button>
+    <button class="studio-btn" onclick="restartVideo()">↺ Replay</button>
+    <input type="range" class="timeline-slider" id="timeline-slider" min="0" max="24" step="0.033" value="0" />
+    <div class="time-readout" id="time-readout">00.0s / 24.0s</div>
+  </div>
+
+  <script>
+    const DURATION = 24.0;
+    let currentTime = 0;
+    let isPlaying = true;
+    let currentLang = 'he';
+    let soundEnabled = true;
+    let lastRaf = performance.now();
+    let audioCtx = null;
+    let triggeredCues = new Set();
+
+    // Captions dictionary (Hebrew & English)
+    const CAPTIONS = [
+      {
+        start: 0.0, end: 2.4,
+        he: "ראית חולצה, מיקרופון או גאדג'ט בלייב? אל תתחנן ללינק בצ'אט 🔥",
+        en: "Spotted gear or fashion on a live stream? Stop begging the chat for links 🔥"
+      },
+      {
+        start: 2.4, end: 4.5,
+        he: "הכירו את StreamSnap AI — ה'שזאם' של עולם הסטרימינג והווידאו ⚡",
+        en: "Meet StreamSnap AI — The 'Shazam' for Live Streams & Video ⚡"
+      },
+      {
+        start: 4.5, end: 8.2,
+        he: "לוחצים Snip על הווידאו, מסמנים כל פריט על המסך — וה-AI מזהה אותו בשנייה 🎯",
+        en: "Click Snip right on the video, drag a box over any item — AI identifies it in 1.4s 🎯"
+      },
+      {
+        start: 8.2, end: 11.2,
+        he: "זיהוי מדויק של מותג ודגם עם Gemini 2.5 Flash ואימות מוצר אמיתי באמזון ✓",
+        en: "99.4% verified brand & model recognition with real Amazon ASIN matching ✓"
+      },
+      {
+        start: 11.2, end: 16.5,
+        he: "קליק אחד מוסיף את כל המוצרים ישירות לעגלת אמזון — והסטרימר מרוויח עמלה! 🛒",
+        en: "1-Click adds every detected item straight to your Amazon Cart — & creators earn commissions! 🛒"
+      },
+      {
+        start: 16.5, end: 20.5,
+        he: "עובד בכל מקום: תוסף כרום לדסקטופ + אפליקציית אנדרואיד ו-iOS למובייל 📱",
+        en: "Works everywhere: Chrome Extension + Android & iOS Mobile Live Scanner 📱"
+      },
+      {
+        start: 20.5, end: 24.1,
+        he: "StreamSnap AI — זמין עכשיו בחנות כרום ובמובייל · streamsnap.online 🚀",
+        en: "StreamSnap AI — Live Now on Chrome Web Store & Mobile · streamsnap.online 🚀"
+      }
+    ];
+
+    function clamp(v, min = 0, max = 1) {
+      return Math.max(min, Math.min(max, v));
+    }
+
+    function easeOutCubic(x) {
+      return 1 - Math.pow(1 - clamp(x), 3);
+    }
+
+    function easeInOutCubic(x) {
+      x = clamp(x);
+      return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+    }
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    // Responsive scaling for browser viewing
+    function fitStage() {
+      if (document.body.classList.contains('capture-mode')) return;
+      const canvas = document.getElementById('video-canvas');
+      const outer = document.getElementById('stage-outer');
+      const availW = window.innerWidth - 48;
+      const availH = window.innerHeight - 160;
+      const scale = Math.min(availW / 1920, availH / 1080, 1);
+      canvas.style.transform = `scale(${scale})`;
+      outer.style.height = `${1080 * scale + 16}px`;
+    }
+    window.addEventListener('resize', fitStage);
+    fitStage();
+
+    // Synthesized Web Audio FX for interactive browser viewing
+    function playSynthCue(type) {
+      if (!soundEnabled || document.body.classList.contains('capture-mode')) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'whoosh') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(140, now);
+          osc.frequency.exponentialRampToValueAtTime(520, now + 0.18);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+          osc.start(now);
+          osc.stop(now + 0.22);
+        } else if (type === 'click') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(900, now);
+          osc.frequency.exponentialRampToValueAtTime(300, now + 0.06);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+          osc.start(now);
+          osc.stop(now + 0.07);
+        } else if (type === 'scan') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(320, now);
+          osc.frequency.linearRampToValueAtTime(880, now + 0.45);
+          gain.gain.setValueAtTime(0.05, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+          osc.start(now);
+          osc.stop(now + 0.5);
+        } else if (type === 'chime') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(587.33, now); // D5
+          osc.frequency.setValueAtTime(880, now + 0.09); // A5
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+          osc.start(now);
+          osc.stop(now + 0.35);
+        }
+      } catch (_) {}
+    }
+
+    function checkAudioCues(t) {
+      const cues = [
+        { time: 0.2, id: 'c0', type: 'whoosh' },
+        { time: 2.4, id: 'c1', type: 'chime' },
+        { time: 5.5, id: 'c2', type: 'click' },
+        { time: 6.4, id: 'c3', type: 'scan' },
+        { time: 8.3, id: 'c4', type: 'chime' },
+        { time: 11.2, id: 'c5', type: 'whoosh' },
+        { time: 14.3, id: 'c6', type: 'chime' },
+        { time: 16.6, id: 'c7', type: 'whoosh' },
+        { time: 20.6, id: 'c8', type: 'chime' }
+      ];
+      for (const c of cues) {
+        if (t >= c.time && t < c.time + 0.25 && !triggeredCues.has(c.id)) {
+          triggeredCues.add(c.id);
+          playSynthCue(c.type);
+        }
+      }
+    }
+
+    // Core Deterministic Frame Renderer
+    function renderAtTime(t) {
+      currentTime = clamp(t, 0, DURATION);
+
+      // Update Scrubber UI
+      const slider = document.getElementById('timeline-slider');
+      const readout = document.getElementById('time-readout');
+      if (slider) slider.value = currentTime;
+      if (readout) readout.textContent = `${currentTime.toFixed(1).padStart(4, '0')}s / ${DURATION.toFixed(1)}s`;
+
+      checkAudioCues(currentTime);
+
+      // Update Caption
+      const cap = CAPTIONS.find(c => currentTime >= c.start && currentTime <= c.end) || CAPTIONS[CAPTIONS.length - 1];
+      const subEl = document.getElementById('subtitle-text');
+      const subBanner = document.getElementById('subtitle-banner');
+      if (subEl && cap) {
+        subEl.textContent = currentLang === 'he' ? cap.he : cap.en;
+        subBanner.style.direction = currentLang === 'he' ? 'rtl' : 'ltr';
+      }
+
+      // Scene Elements
+      const s1 = document.getElementById('scene-1');
+      const s2 = document.getElementById('scene-2');
+      const s4 = document.getElementById('scene-4');
+      const s5 = document.getElementById('scene-5');
+      const cursor = document.getElementById('virtual-cursor');
+      const ripple = document.getElementById('cursor-ripple');
+
+      // Reset Scenes
+      s1.style.opacity = 0;
+      s2.style.opacity = 0;
+      s4.style.opacity = 0;
+      s5.style.opacity = 0;
+      cursor.style.opacity = 0;
+      ripple.style.opacity = 0;
+
+      // ======================================================
+      // SCENE 1 (0.0s - 4.5s)
+      // ======================================================
+      if (currentTime < 4.5) {
+        const fadeIn = easeOutCubic(currentTime / 0.5);
+        const fadeOut = currentTime > 4.1 ? 1 - easeOutCubic((currentTime - 4.1) / 0.4) : 1;
+        s1.style.opacity = fadeIn * fadeOut;
+
+        ['chat-1', 'chat-2', 'chat-3', 'chat-4'].forEach((id, idx) => {
+          const el = document.getElementById(id);
+          const p = easeOutCubic((currentTime - (0.3 + idx * 0.42)) / 0.4);
+          el.style.opacity = p;
+          el.style.transform = `translateY(${(1 - p) * 28}px)`;
+        });
+
+        const stamp = document.getElementById('s1-stamp');
+        if (currentTime >= 2.35) {
+          const sp = easeOutCubic((currentTime - 2.35) / 0.4);
+          stamp.style.opacity = sp;
+          stamp.style.transform = `scale(${lerp(1.25, 1, sp)})`;
+        } else {
+          stamp.style.opacity = 0;
+        }
+      }
+
+      // ======================================================
+      // SCENE 2 & 3 (4.5s - 16.5s)
+      // ======================================================
+      if (currentTime >= 4.4 && currentTime < 16.6) {
+        const fadeIn = easeOutCubic((currentTime - 4.4) / 0.45);
+        const fadeOut = currentTime > 16.1 ? 1 - easeOutCubic((currentTime - 16.1) / 0.45) : 1;
+        s2.style.opacity = fadeIn * fadeOut;
+
+        // Subtle live stream motion
+        const videoImg = document.getElementById('stream-video-img');
+        const zoom = 1 + Math.sin(currentTime * 0.6) * 0.025;
+        videoImg.style.transform = `scale(${zoom})`;
+
+        const btnSnip = document.getElementById('hud-btn-snip');
+        const snipBox = document.getElementById('snip-box');
+        const snipLaser = document.getElementById('snip-laser');
+        const snipLabel = document.getElementById('snip-label');
+        const pinCap = document.getElementById('pin-cap');
+        const pinTee = document.getElementById('pin-tee');
+        const sidepanel = document.getElementById('sidepanel-drawer');
+        const cartBtn = document.getElementById('amazon-cart-btn');
+        const cartIcon = document.getElementById('cart-btn-icon');
+        const cartText = document.getElementById('cart-btn-text');
+
+        // Snip button active state after 5.5s
+        if (currentTime >= 5.5) {
+          btnSnip.classList.add('active-snip');
+        } else {
+          btnSnip.classList.remove('active-snip');
+        }
+
+        // Drawing Snip Box (6.1s -> 7.4s)
+        if (currentTime >= 6.1) {
+          const drawP = easeOutCubic((currentTime - 6.1) / 1.1);
+          snipBox.style.opacity = 1;
+          snipBox.style.left = '430px';
+          snipBox.style.top = '360px';
+          snipBox.style.width = `${lerp(20, 310, drawP)}px`;
+          snipBox.style.height = `${lerp(20, 350, drawP)}px`;
+
+          // Laser scanning inside snip box (7.2s -> 8.6s)
+          if (currentTime >= 7.2 && currentTime <= 9.2) {
+            const scanP = ((currentTime - 7.2) % 1.0);
+            snipLaser.style.opacity = 1;
+            snipLaser.style.top = `${scanP * 100}%`;
+          } else {
+            snipLaser.style.opacity = 0;
+          }
+        } else {
+          snipBox.style.opacity = 0;
+        }
+
+        // Snip Match Label appears at 8.2s
+        if (currentTime >= 8.2) {
+          const lp = easeOutCubic((currentTime - 8.2) / 0.35);
+          snipLabel.style.opacity = lp;
+          snipLabel.style.transform = `translateY(${(1 - lp) * 14}px)`;
+        } else {
+          snipLabel.style.opacity = 0;
+        }
+
+        // Secondary Pins appear at 8.8s and 9.2s
+        if (currentTime >= 8.8) {
+          const p1 = easeOutCubic((currentTime - 8.8) / 0.35);
+          pinCap.style.opacity = p1;
+          pinCap.style.transform = `scale(${lerp(0.7, 1, p1)})`;
+        } else {
+          pinCap.style.opacity = 0;
+        }
+
+        if (currentTime >= 9.2) {
+          const p2 = easeOutCubic((currentTime - 9.2) / 0.35);
+          pinTee.style.opacity = p2;
+          pinTee.style.transform = `scale(${lerp(0.7, 1, p2)})`;
+        } else {
+          pinTee.style.opacity = 0;
+        }
+
+        // SidePanel Slide-In at 10.6s
+        if (currentTime >= 10.6) {
+          const spP = easeOutCubic((currentTime - 10.6) / 0.65);
+          sidepanel.style.width = `${lerp(0, 540, spP)}px`;
+          sidepanel.style.opacity = spP;
+          sidepanel.style.padding = spP > 0.2 ? '24px' : '0px';
+        } else {
+          sidepanel.style.width = '0px';
+          sidepanel.style.opacity = 0;
+          sidepanel.style.padding = '0px';
+        }
+
+        // 1-Click Amazon Cart Button Click at 14.2s
+        if (currentTime >= 14.2) {
+          cartBtn.classList.add('clicked');
+          cartIcon.textContent = '✓';
+          cartText.textContent = 'Added to Amazon Cart! Opening Checkout...';
+        } else {
+          cartBtn.classList.remove('clicked');
+          cartIcon.textContent = '🛒';
+          cartText.textContent = '1-Click Add All to Amazon Cart ($124.98)';
+        }
+
+        // Virtual Cursor Choreography (4.8s -> 15.8s)
+        cursor.style.opacity = 1;
+        let cx = 960, cy = 540;
+        if (currentTime < 5.5) {
+          const p = easeInOutCubic((currentTime - 4.6) / 0.85);
+          cx = lerp(960, 1340, p);
+          cy = lerp(650, 215, p);
+        } else if (currentTime < 6.1) {
+          const p = easeInOutCubic((currentTime - 5.5) / 0.55);
+          cx = lerp(1340, 440, p);
+          cy = lerp(215, 370, p);
+        } else if (currentTime < 7.2) {
+          const p = easeOutCubic((currentTime - 6.1) / 1.1);
+          cx = lerp(440, 740, p);
+          cy = lerp(370, 710, p);
+        } else if (currentTime < 13.2) {
+          const p = easeInOutCubic((currentTime - 11.2) / 1.5);
+          cx = lerp(740, 1560, p);
+          cy = lerp(710, 815, p);
+        } else {
+          cx = 1560;
+          cy = 815;
+        }
+        cursor.style.transform = `translate(${cx}px, ${cy}px)`;
+
+        // Click ripples at 5.5s (Snip button) and 14.2s (Amazon Cart button)
+        if ((currentTime >= 5.45 && currentTime <= 5.85) || (currentTime >= 14.15 && currentTime <= 14.65)) {
+          const rp = currentTime < 6 ? (currentTime - 5.45) / 0.4 : (currentTime - 14.15) / 0.5;
+          ripple.style.opacity = 1 - rp;
+          ripple.style.transform = `scale(${lerp(0.4, 1.8, rp)})`;
+        }
+      }
+
+      // ======================================================
+      // SCENE 4: OMNI-PLATFORM (16.5s - 20.5s)
+      // ======================================================
+      if (currentTime >= 16.4 && currentTime < 20.6) {
+        const fadeIn = easeOutCubic((currentTime - 16.4) / 0.45);
+        const fadeOut = currentTime > 20.1 ? 1 - easeOutCubic((currentTime - 20.1) / 0.45) : 1;
+        s4.style.opacity = fadeIn * fadeOut;
+
+        ['plat-1', 'plat-2', 'plat-3'].forEach((id, idx) => {
+          const el = document.getElementById(id);
+          const p = easeOutCubic((currentTime - (16.6 + idx * 0.3)) / 0.5);
+          el.style.opacity = p;
+          el.style.transform = `translateY(${(1 - p) * 40}px)`;
+        });
+      }
+
+      // ======================================================
+      // SCENE 5: FINALE & CTA (20.5s - 24.0s)
+      // ======================================================
+      if (currentTime >= 20.4) {
+        const fadeIn = easeOutCubic((currentTime - 20.4) / 0.55);
+        s5.style.opacity = fadeIn;
+        s5.style.transform = `scale(${lerp(0.92, 1, fadeIn)})`;
+      }
+    }
+
+    // Expose deterministic hook for Playwright MP4 renderer
+    window.setVideoTime = function(t, lang = 'he') {
+      isPlaying = false;
+      currentLang = lang;
+      renderAtTime(t);
+    };
+
+    function setLang(lang) {
+      currentLang = lang;
+      document.getElementById('btn-lang-he').classList.toggle('active', lang === 'he');
+      document.getElementById('btn-lang-en').classList.toggle('active', lang === 'en');
+      renderAtTime(currentTime);
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      const btn = document.getElementById('btn-sound');
+      btn.textContent = soundEnabled ? '🔊 Sound FX: ON' : '🔇 Sound FX: OFF';
+      btn.classList.toggle('active', soundEnabled);
+    }
+
+    function togglePlay() {
+      isPlaying = !isPlaying;
+      document.getElementById('btn-play').textContent = isPlaying ? '⏸ Pause' : '▶ Play';
+      lastRaf = performance.now();
+    }
+
+    function restartVideo() {
+      triggeredCues.clear();
+      currentTime = 0;
+      isPlaying = true;
+      document.getElementById('btn-play').textContent = '⏸ Pause';
+      lastRaf = performance.now();
+      renderAtTime(0);
+    }
+
+    document.getElementById('timeline-slider').addEventListener('input', (e) => {
+      isPlaying = false;
+      document.getElementById('btn-play').textContent = '▶ Play';
+      renderAtTime(parseFloat(e.target.value));
+    });
+
+    function tick(now) {
+      const dt = (now - lastRaf) / 1000;
+      lastRaf = now;
+      if (isPlaying) {
+        let next = currentTime + dt;
+        if (next > DURATION) {
+          triggeredCues.clear();
+          next = 0;
+        }
+        renderAtTime(next);
+      }
+      requestAnimationFrame(tick);
+    }
+
+    renderAtTime(0);
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>

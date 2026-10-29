@@ -20,6 +20,22 @@
   pointer-events: auto !important;
   user-select: none !important;
   touch-action: none;
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s ease;
+}
+
+/* Auto-hide during playback and idle cursor so it never disturbs viewing */
+.streamsnap-btn-group.streamsnap-autohidden {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translateY(-6px);
+}
+
+.streamsnap-btn-group:hover,
+.streamsnap-btn-group.is-dragging,
+.streamsnap-btn-group.active {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  transform: translateY(0) !important;
 }
 
 .streamsnap-btn-group,

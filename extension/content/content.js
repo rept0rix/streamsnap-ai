@@ -371,6 +371,33 @@
     btnGroup.append(miniPill, expandedToolbar);
     parent.append(btnGroup, hiddenDot);
 
+    // Auto-hide controls when video is playing and cursor is idle
+    let idleTimer = null;
+    function resetIdleTimer() {
+      btnGroup.classList.remove("streamsnap-autohidden");
+      if (idleTimer) clearTimeout(idleTimer);
+      if (!video.paused && !isLiveClickModeActive && !btnGroup.classList.contains("is-dragging")) {
+        idleTimer = setTimeout(() => {
+          if (!video.paused && !isLiveClickModeActive && !btnGroup.matches(":hover")) {
+            btnGroup.classList.add("streamsnap-autohidden");
+          }
+        }, 2500);
+      }
+    }
+
+    parent.addEventListener("mousemove", resetIdleTimer, { passive: true });
+    parent.addEventListener("mouseenter", resetIdleTimer, { passive: true });
+    parent.addEventListener("mouseleave", () => {
+      if (!video.paused && !isLiveClickModeActive && !btnGroup.matches(":hover")) {
+        btnGroup.classList.add("streamsnap-autohidden");
+      }
+    }, { passive: true });
+    video.addEventListener("play", resetIdleTimer);
+    video.addEventListener("pause", () => {
+      btnGroup.classList.remove("streamsnap-autohidden");
+      if (idleTimer) clearTimeout(idleTimer);
+    });
+
     // Check stored display preferences
     chrome.storage.local.get(
       ["showFloatingControls", "floatingControlsMinimized", "floatingControlsHidden", "extensionEnabled"],
@@ -964,9 +991,16 @@
       fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif",
       boxShadow: "0 6px 20px rgba(0,0,0,0.45)",
       pointerEvents: "none",
-      backdropFilter: "blur(4px)"
+      backdropFilter: "blur(4px)",
+      transition: "opacity 0.4s ease, transform 0.4s ease"
     });
     document.body.appendChild(pill);
+    // Auto-dismiss after 3.5s so it doesn't clutter the page
+    setTimeout(() => {
+      pill.style.opacity = "0";
+      pill.style.transform = "translateY(10px)";
+      setTimeout(() => pill.remove(), 400);
+    }, 3500);
   }
 
   function removeGuardPill() {

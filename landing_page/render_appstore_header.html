@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StreamSnap App Store Header & Search Results</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      width: 100vw;
+      height: 100vh;
+      background: #080C14;
+      color: #F8FAFC;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    /* Fixed 2560x1440 Artboard scaled to fit any massive App Store viewport */
+    #artboard {
+      width: 2560px;
+      height: 1440px;
+      position: absolute;
+      transform-origin: center center;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 80px 120px;
+      overflow: hidden;
+      background: #080C14;
+    }
+
+    /* Radiant ambient glow */
+    .bg-grid {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        radial-gradient(ellipse 70% 65% at 75% 50%, rgba(255, 85, 0, 0.28) 0%, rgba(8, 12, 20, 0) 75%),
+        radial-gradient(circle at 18% 22%, rgba(255, 106, 0, 0.16) 0%, rgba(8, 12, 20, 0) 50%),
+        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 80px 80px, 80px 80px;
+      pointer-events: none;
+    }
+
+    /* Left Info Column */
+    .info-column {
+      flex: 1.15;
+      max-width: 55%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      z-index: 20;
+    }
+
+    .brand-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(255, 85, 0, 0.16);
+      border: 3px solid rgba(255, 106, 0, 0.55);
+      padding: 14px 34px;
+      border-radius: 999px;
+      width: fit-content;
+      margin-bottom: 32px;
+    }
+
+    .brand-pill-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #FF5500;
+      box-shadow: 0 0 20px #FF5500;
+    }
+
+    .brand-pill-text {
+      color: #FF8800;
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+    }
+
+    .headline {
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      font-size: 104px;
+      line-height: 1.05;
+      font-weight: 900;
+      letter-spacing: -2.5px;
+      color: #FFFFFF;
+      margin-bottom: 28px;
+    }
+
+    .headline span.orange {
+      background: linear-gradient(135deg, #FF6A00 0%, #FFA033 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subheadline {
+      font-size: 36px;
+      line-height: 1.45;
+      color: #94A3B8;
+      font-weight: 500;
+      margin-bottom: 46px;
+      max-width: 95%;
+    }
+
+    /* Feature Grid */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      margin-bottom: 46px;
+      max-width: 95%;
+    }
+
+    .feature-item {
+      background: rgba(17, 23, 34, 0.90);
+      border: 2px solid #1E2738;
+      border-radius: 26px;
+      padding: 24px 28px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      backdrop-filter: blur(16px);
+    }
+
+    .feature-icon-box {
+      width: 68px;
+      height: 68px;
+      border-radius: 20px;
+      background: rgba(255, 85, 0, 0.16);
+      border: 2px solid rgba(255, 85, 0, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
+      flex-shrink: 0;
+    }
+
+    .feature-title {
+      font-size: 26px;
+      font-weight: 800;
+      color: #F8FAFC;
+    }
+
+    .feature-desc {
+      font-size: 20px;
+      color: #64748B;
+      font-weight: 500;
+      margin-top: 4px;
+    }
+
+    .platform-row {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .platform-label {
+      font-size: 24px;
+      font-weight: 800;
+      color: #64748B;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    .platform-tags {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .p-tag {
+      background: #111722;
+      border: 1.5px solid #1E2738;
+      border-radius: 14px;
+      padding: 12px 24px;
+      font-size: 22px;
+      font-weight: 700;
+      color: #CBD5E1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Right Showcase Column (Phones & Floating Badges) */
+    .showcase-column {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      height: 100%;
+    }
+
+    /* Primary Phone (Radar Home Screen) */
+    .phone-mockup-main {
+      width: 580px;
+      height: 1180px;
+      background: #080C14;
+      border-radius: 76px;
+      border: 14px solid #232B3A;
+      box-shadow: 
+        0 40px 120px rgba(0, 0, 0, 0.95),
+        0 0 80px rgba(255, 85, 0, 0.40);
+      overflow: hidden;
+      position: relative;
+      transform: rotate(-3deg) translateY(-20px);
+      z-index: 15;
+    }
+
+    /* Secondary Phone (TikTok Paused & Matched) */
+    .phone-mockup-secondary {
+      width: 550px;
+      height: 1120px;
+      background: #080C14;
+      border-radius: 72px;
+      border: 12px solid #1C2331;
+      box-shadow: 0 30px 100px rgba(0, 0, 0, 0.9);
+      overflow: hidden;
+      position: absolute;
+      right: -20px;
+      transform: rotate(6deg) translateY(40px);
+      opacity: 0.92;
+      z-index: 10;
+    }
+
+    /* Inside Phone Components */
+    .mock-island {
+      width: 170px;
+      height: 34px;
+      background: #000;
+      border-radius: 999px;
+      margin: 14px auto 10px;
+      border: 1px solid rgba(255, 85, 0, 0.3);
+    }
+
+    .mock-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 28px;
+      border-bottom: 1.5px solid #161D2B;
+    }
+
+    .mock-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 24px;
+      font-weight: 900;
+      color: #F8FAFC;
+    }
+
+    .mock-logo-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: #FF5500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFF;
+      font-weight: 900;
+      font-size: 19px;
+    }
+
+    .mock-cart-badge {
+      background: #FF6A00;
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 15px;
+      font-weight: 800;
+      color: #FFF;
+    }
+
+    .mock-radar-banner {
+      background: rgba(255, 85, 0, 0.14);
+      border: 2px solid rgba(255, 85, 0, 0.5);
+      border-radius: 18px;
+      margin: 16px 24px 10px;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .mock-radar-title {
+      font-size: 16px;
+      font-weight: 900;
+      color: #FF8800;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .mock-radar-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 32px 0 24px;
+    }
+
+    .mock-pulse-radar {
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #FF5500 0%, #D94400 100%);
+      box-shadow: 
+        0 0 0 20px rgba(255, 85, 0, 0.25),
+        0 0 0 40px rgba(255, 85, 0, 0.12),
+        0 18px 50px rgba(255, 85, 0, 0.7);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #FFF;
+      text-align: center;
+    }
+
+    .mock-pulse-radar .icon {
+      font-size: 52px;
+      margin-bottom: 6px;
+    }
+
+    .mock-pulse-radar .title {
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+    }
+
+    .mock-pulse-radar .sub {
+      font-size: 14px;
+      font-weight: 800;
+      opacity: 0.88;
+      text-transform: uppercase;
+    }
+
+    .mock-quick-actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin: 16px 24px;
+    }
+
+    .mock-quick-btn {
+      flex: 1;
+      background: #111722;
+      border: 1.5px solid #1E2738;
+      border-radius: 14px;
+      padding: 12px 0;
+      text-align: center;
+      font-size: 16px;
+      font-weight: 800;
+      color: #94A3B8;
+    }
+
+    .mock-quick-btn.active {
+      border-color: #FF5500;
+      color: #FF8800;
+      background: rgba(255, 85, 0, 0.14);
+    }
+
+    .mock-product-card {
+      background: #111722;
+      border: 2px solid #1E2738;
+      border-radius: 22px;
+      margin: 14px 24px;
+      padding: 18px;
+    }
+
+    .mock-card-tag {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .tag-tiktok {
+      font-size: 13px;
+      font-weight: 800;
+      color: #38BDF8;
+      background: rgba(56, 189, 248, 0.12);
+      padding: 4px 10px;
+      border-radius: 8px;
+    }
+
+    .tag-match {
+      font-size: 13px;
+      font-weight: 900;
+      color: #10B981;
+      background: rgba(16, 185, 129, 0.14);
+      padding: 4px 10px;
+      border-radius: 8px;
+    }
+
+    .mock-dual-visuals {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .mock-v-box {
+      flex: 1;
+      height: 130px;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #000;
+      position: relative;
+    }
+
+    .mock-v-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .mock-v-box.amazon {
+      background: #FFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mock-v-badge {
+      position: absolute;
+      bottom: 6px;
+      left: 6px;
+      background: rgba(0, 0, 0, 0.8);
+      color: #FFF;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 6px;
+      border-radius: 6px;
+    }
+
+    .mock-card-name {
+      font-size: 16px;
+      font-weight: 800;
+      color: #F8FAFC;
+      line-height: 1.3;
+      margin-bottom: 10px;
+    }
+
+    .mock-card-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .mock-price {
+      font-size: 20px;
+      font-weight: 900;
+      color: #FF5500;
+    }
+
+    .mock-add-btn {
+      background: #FF5500;
+      color: #FFF;
+      font-size: 13px;
+      font-weight: 800;
+      padding: 8px 18px;
+      border-radius: 10px;
+    }
+
+    /* Floating Super Callout Badges */
+    .super-badge-float {
+      position: absolute;
+      background: rgba(17, 23, 34, 0.95);
+      border: 3px solid #FF5500;
+      border-radius: 26px;
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85), 0 0 40px rgba(255, 85, 0, 0.45);
+      backdrop-filter: blur(24px);
+      z-index: 30;
+    }
+
+    .badge-icon {
+      font-size: 40px;
+    }
+
+    .badge-label {
+      font-size: 26px;
+      font-weight: 900;
+      color: #FFF;
+    }
+
+    .badge-sub {
+      font-size: 18px;
+      color: #10B981;
+      font-weight: 800;
+    }
+
+    /* Specific Artboard Variants */
+    /* 21:9 Dedicated Header (3840 x 1646) */
+    .variant-header21x9 #artboard {
+      width: 2560px;
+      height: 1097px;
+      padding: 50px 100px;
+    }
+    .variant-header21x9 .headline {
+      font-size: 88px;
+      margin-bottom: 20px;
+    }
+    .variant-header21x9 .subheadline {
+      font-size: 30px;
+      margin-bottom: 34px;
+    }
+    .variant-header21x9 .feature-grid {
+      margin-bottom: 30px;
+    }
+    .variant-header21x9 .phone-mockup-main {
+      width: 500px;
+      height: 1020px;
+      transform: rotate(-3deg) translateY(10px);
+    }
+    .variant-header21x9 .phone-mockup-secondary {
+      width: 470px;
+      height: 960px;
+      transform: rotate(6deg) translateY(60px);
+    }
+
+    /* 3:2 Dedicated Search Results (3840 x 2560) */
+    .variant-search3x2 #artboard {
+      width: 2560px;
+      height: 1707px;
+      padding: 100px 120px;
+    }
+    .variant-search3x2 .headline {
+      font-size: 108px;
+    }
+    .variant-search3x2 .phone-mockup-main {
+      width: 600px;
+      height: 1240px;
+    }
+    .variant-search3x2 .phone-mockup-secondary {
+      width: 570px;
+      height: 1180px;
+    }
+  </style>
+</head>
+<body id="body-node">
+  <div id="artboard">
+    <div class="bg-grid"></div>
+
+    <!-- Left Column: Selling Points & Feature Highlights -->
+    <div class="info-column">
+      <div class="brand-pill">
+        <div class="brand-pill-dot"></div>
+        <div class="brand-pill-text">STREAMSNAP AI · OFFICIAL RELEASE</div>
+      </div>
+
+      <h1 class="headline">
+        Watch Any Stream.<br />
+        <span class="orange">Shop Every Product.</span>
+      </h1>
+
+      <p class="subheadline">
+        The revolutionary mobile AI scanner for TikTok, YouTube, and Instagram Reels. Pause on any video frame to detect and buy featured items directly on Amazon.
+      </p>
+
+      <div class="feature-grid">
+        <div class="feature-item">
+          <div class="feature-icon-box">⚡</div>
+          <div>
+            <div class="feature-title">Live Video Radar</div>
+            <div class="feature-desc">Continuous 60 FPS frame capture</div>
+          </div>
+        </div>
+
+        <div class="feature-item">
+          <div class="feature-icon-box">🎯</div>
+          <div>
+            <div class="feature-title">99.4% Visual Match</div>
+            <div class="feature-desc">Side-by-side Amazon verification</div>
+          </div>
+        </div>
+
+        <div class="feature-item">
+          <div class="feature-icon-box">🛒</div>
+          <div>
+            <div class="feature-title">1-Tap Direct Cart</div>
+            <div class="feature-desc">Instant Amazon checkout button</div>
+          </div>
+        </div>
+
+        <div class="feature-item">
+          <div class="feature-icon-box">📱</div>
+          <div>
+            <div class="feature-title">Universal Feeds</div>
+            <div class="feature-desc">TikTok, YouTube, Reels &amp; Twitch</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="platform-row">
+        <div class="platform-label">Supported Apps:</div>
+        <div class="platform-tags">
+          <div class="p-tag"><span>🎵</span> TikTok</div>
+          <div class="p-tag"><span>▶️</span> YouTube</div>
+          <div class="p-tag"><span>📸</span> Instagram</div>
+          <div class="p-tag"><span>🟣</span> Twitch</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Dual iPhone 3D Showcase -->
+    <div class="showcase-column">
+      <!-- Secondary iPhone: Live Stream paused with AC Milan Jersey match -->
+      <div class="phone-mockup-secondary">
+        <div class="mock-island"></div>
+        <div class="mock-header">
+          <div class="mock-logo">
+            <div class="mock-logo-icon">⚡</div>
+            <span>StreamSnap</span>
+          </div>
+          <div class="mock-cart-badge">🛒 2 Items</div>
+        </div>
+
+        <!-- Video stream frame preview -->
+        <div style="position:relative; height: 440px; overflow:hidden; margin: 16px 20px; border-radius: 22px; border: 2px solid #1E2738;">
+          <img src="assets/ishowspeed_live.png" style="width: 100%; height: 100%; object-fit: cover; object-position: 40% center;" alt="Livestream" />
+          <div style="position:absolute; top: 14px; left: 14px; background: rgba(0,0,0,0.75); backdrop-filter:blur(10px); padding: 6px 14px; border-radius: 10px; font-size: 13px; font-weight:800; color:#FF5500;">
+            ⏸ FRAME PAUSED · SCANNING
+          </div>
+          <!-- Bounding box -->
+          <div style="position:absolute; top: 22%; left: 32%; width: 170px; height: 190px; border: 3px solid #FF5500; border-radius: 14px; box-shadow: 0 0 24px rgba(255,85,0,0.7);">
+            <div style="position:absolute; top:-26px; left:0; background:#FF5500; color:#FFF; font-size:12px; font-weight:900; padding:3px 10px; border-radius:6px;">
+              MATCH 99%
+            </div>
+          </div>
+        </div>
+
+        <!-- Matched Product Card below -->
+        <div class="mock-product-card">
+          <div class="mock-card-tag">
+            <span class="tag-tiktok">🎵 TikTok Live @ishowspeed</span>
+            <span class="tag-match">✓ 99.4% Match</span>
+          </div>
+          <div class="mock-dual-visuals">
+            <div class="mock-v-box">
+              <img src="assets/ishowspeed_live.png" style="object-position: 38% center;" />
+              <div class="mock-v-badge">Stream Frame</div>
+            </div>
+            <div style="color: #64748B; font-size:22px; font-weight:900;">➔</div>
+            <div class="mock-v-box amazon">
+              <svg width="85" height="85" viewBox="0 0 200 200">
+                <path d="M55 30 L80 20 L120 20 L145 30 L175 65 L150 90 L138 72 L138 175 L62 175 L62 72 L50 90 L25 65 Z" fill="#111111" stroke="#E2E8F0" stroke-width="2"/>
+                <rect x="72" y="22" width="14" height="153" fill="#E11D48"/>
+                <rect x="100" y="22" width="14" height="153" fill="#E11D48"/>
+                <rect x="124" y="22" width="10" height="153" fill="#E11D48"/>
+              </svg>
+              <div class="mock-v-badge" style="background:#FF9900; color:#000;">Amazon Match</div>
+            </div>
+          </div>
+          <div class="mock-card-name">PUMA AC Milan 2023/24 Home Soccer Jersey</div>
+          <div class="mock-card-foot">
+            <div class="mock-price">$89.99 <span style="font-size:13px; color:#10B981;">Prime</span></div>
+            <div class="mock-add-btn">Add to Cart</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Primary iPhone: Home Live Scan Radar -->
+      <div class="phone-mockup-main">
+        <div class="mock-island"></div>
+        <div class="mock-header">
+          <div class="mock-logo">
+            <div class="mock-logo-icon">⚡</div>
+            <span>StreamSnap</span>
+          </div>
+          <div class="mock-cart-badge">🛒 2</div>
+        </div>
+
+        <div class="mock-radar-banner">
+          <div class="mock-radar-title">
+            <span style="width:10px; height:10px; border-radius:5px; background:#FF5500; display:inline-block; box-shadow:0 0 10px #FF5500;"></span>
+            STREAMSNAP RADAR ACTIVE
+          </div>
+          <span style="background:#FF5500; color:#FFF; font-size:12px; font-weight:800; padding:3px 8px; border-radius:6px;">60 FPS</span>
+        </div>
+
+        <div class="mock-radar-hero">
+          <div class="mock-pulse-radar">
+            <div class="icon">📡</div>
+            <div class="title">Live Scan</div>
+            <div class="sub">Scanning Active</div>
+          </div>
+        </div>
+
+        <div class="mock-quick-actions">
+          <div class="mock-quick-btn">📷 Camera</div>
+          <div class="mock-quick-btn">🖼 Gallery</div>
+          <div class="mock-quick-btn active">🔗 Paste Link</div>
+        </div>
+
+        <div style="padding: 0 24px 6px; display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:16px; font-weight:800; color:#F8FAFC;">Detected Products</span>
+          <span style="font-size:13px; color:#FF5500; font-weight:700;">View All →</span>
+        </div>
+
+        <!-- Matched Product Card 1 -->
+        <div class="mock-product-card" style="margin-top: 6px;">
+          <div class="mock-card-tag">
+            <span class="tag-tiktok">🎵 TikTok Live</span>
+            <span class="tag-match">✓ 99.4% Match</span>
+          </div>
+          <div class="mock-dual-visuals">
+            <div class="mock-v-box">
+              <img src="assets/ishowspeed_live.png" style="object-position: 38% center;" />
+              <div class="mock-v-badge">Paused Frame</div>
+            </div>
+            <div style="color: #64748B; font-size:20px; font-weight:900;">➔</div>
+            <div class="mock-v-box amazon">
+              <svg width="80" height="80" viewBox="0 0 200 200">
+                <path d="M55 30 L80 20 L120 20 L145 30 L175 65 L150 90 L138 72 L138 175 L62 175 L62 72 L50 90 L25 65 Z" fill="#111111" stroke="#E2E8F0" stroke-width="2"/>
+                <rect x="72" y="22" width="14" height="153" fill="#E11D48"/>
+                <rect x="100" y="22" width="14" height="153" fill="#E11D48"/>
+                <rect x="124" y="22" width="10" height="153" fill="#E11D48"/>
+              </svg>
+              <div class="mock-v-badge" style="background:#FF9900; color:#000;">Amazon Match</div>
+            </div>
+          </div>
+          <div class="mock-card-name">PUMA Men's AC Milan Home Replica Soccer Jersey</div>
+          <div class="mock-card-foot">
+            <div class="mock-price">$89.99</div>
+            <div class="mock-add-btn">✓ In Cart</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Floating Callout Super Badges -->
+      <div class="super-badge-float" style="top: 14%; left: -80px;">
+        <div class="badge-icon">⚡</div>
+        <div>
+          <div class="badge-label">Live Stream AI Scanner</div>
+          <div class="badge-sub">Auto-detects items at 60 FPS</div>
+        </div>
+      </div>
+
+      <div class="super-badge-float" style="bottom: 12%; right: -30px; border-color:#10B981;">
+        <div class="badge-icon">🛒</div>
+        <div>
+          <div class="badge-label">1-Tap Amazon Cart</div>
+          <div class="badge-sub">Verified Official Affiliate Match</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.setBannerMode = function(mode, targetW, targetH) {
+      const artboard = document.getElementById('artboard');
+      const body = document.getElementById('body-node');
+      body.className = '';
+      
+      let refW = 2560;
+      let refH = 1440;
+
+      if (mode === 'header21x9') {
+        body.classList.add('variant-header21x9');
+        refW = 2560;
+        refH = 1097;
+      } else if (mode === 'search3x2') {
+        body.classList.add('variant-search3x2');
+        refW = 2560;
+        refH = 1707;
+      }
+
+      // Calculate scale to perfectly fill target viewport
+      const scaleX = targetW / refW;
+      const scaleY = targetH / refH;
+      const scale = Math.min(scaleX, scaleY);
+      artboard.style.transform = `scale(${scale})`;
+    };
+  </script>
+</body>
+</html>

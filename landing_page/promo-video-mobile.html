@@ -1,0 +1,1730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StreamSnap AI — Official Mobile App Demo (9:16)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@500;700;800;900&family=Inter:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    /* ==========================================================================
+       EXACT STREAMSNAP MOBILE APP DESIGN TOKENS (from mobile/app/index.tsx)
+       Background: #080C14 / #0B0F17
+       Cards:      #111722 / #0F1622 (Border: #1E2738 / #1C2536)
+       Primary:    #FF5500 / #FF6A00 / #FF9900 (Electric Orange)
+       Verified:   #10B981 (Emerald Green)
+       Source Tag: #38BDF8 (TikTok Sky Blue)
+    ========================================================================== */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background: #05070B;
+      color: #F8FAFC;
+      font-family: 'Inter', 'Heebo', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+    }
+
+    body.capture-mode {
+      background: #080C14;
+      overflow: hidden;
+    }
+    body.capture-mode .studio-toolbar,
+    body.capture-mode .studio-controls {
+      display: none !important;
+    }
+    body.capture-mode .stage-outer {
+      padding: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+    }
+    body.capture-mode .video-canvas {
+      border-radius: 0 !important;
+      border: none !important;
+      box-shadow: none !important;
+      transform: none !important;
+    }
+
+    /* Studio Toolbar (Browser Preview Only) */
+    .studio-toolbar {
+      width: 100%;
+      max-width: 920px;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .studio-btn {
+      background: #111722;
+      border: 1px solid #1E2738;
+      color: #F8FAFC;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .studio-btn.active {
+      background: #FF5500;
+      color: #FFFFFF;
+      border-color: #FF6A00;
+    }
+    .studio-btn.download {
+      background: #FF9900;
+      color: #000000;
+      border: none;
+      font-weight: 800;
+    }
+
+    .stage-outer {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 16px;
+    }
+
+    /* Full-Screen 1080x1920 Native Mobile Screen Canvas */
+    .video-canvas {
+      width: 1080px;
+      height: 1920px;
+      background: #080C14;
+      position: relative;
+      overflow: hidden;
+      border-radius: 44px;
+      border: 3px solid #1E2738;
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.9);
+      transform-origin: center center;
+    }
+
+    /* Native iOS Status Bar + Dynamic Island */
+    .ios-statusbar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 110px;
+      padding: 28px 56px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    .ios-time {
+      font-size: 28px;
+      font-weight: 800;
+      color: #F8FAFC;
+      letter-spacing: -0.5px;
+    }
+
+    .ios-dynamic-island {
+      width: 310px;
+      height: 56px;
+      background: #000000;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 22px;
+      border: 1.5px solid rgba(255, 85, 0, 0.45);
+      box-shadow: 0 6px 24px rgba(0,0,0,0.8);
+    }
+
+    .di-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 7px;
+      background: #FF5500;
+      box-shadow: 0 0 12px #FF5500;
+    }
+
+    .di-label {
+      color: #FF8800;
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+    }
+
+    .ios-icons {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 24px;
+      font-weight: 800;
+      color: #F8FAFC;
+    }
+
+    /* ==========================================================================
+       APP SCREEN LAYER (Matches mobile/app/index.tsx 1:1)
+    ========================================================================== */
+    .app-screen {
+      position: absolute;
+      inset: 0;
+      padding-top: 118px;
+      background: #080C14;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header (index.tsx lines 180-220) */
+    .app-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px 42px;
+      border-bottom: 2px solid #141C2B;
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .brand-icon-wrapper {
+      width: 72px;
+      height: 72px;
+      border-radius: 22px;
+      background: #FF5500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 24px rgba(255, 85, 0, 0.55);
+    }
+
+    .app-logo-text {
+      color: #F8FAFC;
+      font-size: 42px;
+      font-weight: 900;
+      letter-spacing: 0.4px;
+      line-height: 1.05;
+    }
+
+    .app-tagline-text {
+      color: #64748B;
+      font-size: 23px;
+      font-weight: 600;
+      margin-top: 3px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .header-btn {
+      width: 78px;
+      height: 78px;
+      border-radius: 24px;
+      background: #111722;
+      border: 2px solid #1E2738;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      font-size: 36px;
+    }
+
+    .unread-badge {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: #FF5500;
+      border-radius: 18px;
+      min-width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 8px;
+      border: 3px solid #080C14;
+      color: #FFFFFF;
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .cart-badge-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #FF6A00;
+      border-radius: 24px;
+      padding: 18px 26px;
+      color: #FFFFFF;
+      font-weight: 900;
+      font-size: 28px;
+      box-shadow: 0 6px 20px rgba(255, 106, 0, 0.4);
+    }
+
+    /* Radar Status Banner (index.tsx lines 223-261) */
+    .idle-radar-banner {
+      margin: 22px 36px 8px;
+      background: #111722;
+      border-radius: 28px;
+      padding: 20px 30px;
+      border: 2px solid #1E2738;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .live-radar-banner {
+      margin: 22px 36px 8px;
+      background: rgba(255, 85, 0, 0.12);
+      border-radius: 32px;
+      padding: 22px 30px;
+      border: 3px solid rgba(255, 106, 0, 0.55);
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .live-radar-left {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+    }
+
+    .live-pulse-dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 12px;
+      background: #FF5500;
+      box-shadow: 0 0 0 12px rgba(255, 85, 0, 0.3);
+    }
+
+    .live-radar-title-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .live-radar-title {
+      color: #FF6A00;
+      font-size: 25px;
+      font-weight: 900;
+      letter-spacing: 0.6px;
+    }
+
+    .live-fps-badge {
+      background: #FF5500;
+      color: #FFFFFF;
+      font-size: 18px;
+      font-weight: 900;
+      padding: 4px 12px;
+      border-radius: 10px;
+    }
+
+    .live-radar-sub {
+      color: #CBD5E1;
+      font-size: 22px;
+      font-weight: 500;
+      margin-top: 4px;
+    }
+
+    .live-wave-box {
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      height: 44px;
+    }
+
+    .live-wave-bar {
+      width: 7px;
+      background: #FF6A00;
+      border-radius: 4px;
+    }
+
+    /* How It Works Card (index.tsx lines 269-301) */
+    .how-to-card {
+      background: #0F1622;
+      margin: 18px 36px 0;
+      border-radius: 34px;
+      padding: 30px 32px;
+      border: 2px solid #1C2536;
+    }
+
+    .how-to-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 22px;
+      color: #FF8800;
+      font-size: 23px;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+    }
+
+    .step-grid {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .step-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 6px;
+    }
+
+    .step-num {
+      width: 38px;
+      height: 38px;
+      border-radius: 19px;
+      background: #1C2536;
+      color: #94A3B8;
+      font-size: 20px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .step-bold {
+      color: #F1F5F9;
+      font-size: 25px;
+      font-weight: 800;
+    }
+
+    .step-sub {
+      color: #64748B;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    /* Radar Hero Section (ScanButton.tsx) */
+    .hero-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 36px 26px;
+    }
+
+    .radar-wrapper {
+      width: 340px;
+      height: 340px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pulse-ring-outer {
+      position: absolute;
+      width: 310px;
+      height: 310px;
+      border-radius: 50%;
+      background: #FF5500;
+      opacity: 0.22;
+    }
+
+    .pulse-ring-inner {
+      position: absolute;
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      background: #FF6A00;
+      opacity: 0.38;
+    }
+
+    .radar-button {
+      width: 260px;
+      height: 260px;
+      border-radius: 130px;
+      background: #FF5500;
+      border: 5px solid #FFA066;
+      box-shadow: 0 12px 50px rgba(255, 85, 0, 0.75);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+      gap: 6px;
+    }
+
+    .radar-button.scanning {
+      background: #EA4300;
+      border-color: #FFD0B3;
+    }
+
+    .radar-label {
+      color: #FFFFFF;
+      font-weight: 900;
+      font-size: 32px;
+      letter-spacing: 0.4px;
+    }
+
+    .radar-sublabel {
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 21px;
+      font-weight: 600;
+    }
+
+    .live-status-box {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-top: 26px;
+      background: #111722;
+      padding: 14px 28px;
+      border-radius: 40px;
+      border: 2px solid #1C2638;
+    }
+
+    .status-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 8px;
+      background: #64748B;
+    }
+    .status-dot.active {
+      background: #10B981;
+      box-shadow: 0 0 12px #10B981;
+    }
+
+    .hero-hint {
+      color: #94A3B8;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    /* Quick Action Bar (Camera, Gallery, Paste Link) */
+    .quick-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 32px;
+      width: 100%;
+    }
+
+    .quick-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #111722;
+      padding: 20px 30px;
+      border-radius: 28px;
+      border: 2px solid #202A3C;
+      color: #CBD5E1;
+      font-size: 26px;
+      font-weight: 700;
+    }
+
+    .quick-btn.highlight {
+      background: rgba(255, 106, 0, 0.14);
+      border-color: rgba(255, 106, 0, 0.45);
+      color: #FF8800;
+      font-weight: 800;
+    }
+
+    /* Catalog Section & ProductCard.tsx (1:1 Dual Visuals) */
+    .catalog-section {
+      padding: 24px 36px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section-title-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 34px;
+      font-weight: 900;
+      color: #F8FAFC;
+    }
+
+    .count-pill {
+      background: rgba(255, 85, 0, 0.16);
+      border: 2px solid rgba(255, 85, 0, 0.35);
+      color: #FF8800;
+      font-size: 23px;
+      font-weight: 800;
+      padding: 4px 16px;
+      border-radius: 20px;
+    }
+
+    .see-all {
+      color: #FF6A00;
+      font-size: 26px;
+      font-weight: 800;
+    }
+
+    /* ProductCard.tsx Exact Replica */
+    .product-card {
+      background: #111722;
+      border-radius: 34px;
+      padding: 26px;
+      border: 2px solid #1E2738;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .pc-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .video-source-tag {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1.5px solid rgba(56, 189, 248, 0.28);
+      padding: 10px 18px;
+      border-radius: 16px;
+      color: #38BDF8;
+      font-size: 23px;
+      font-weight: 700;
+      flex: 1;
+    }
+
+    .confidence-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 119, 0, 0.15);
+      border: 1.5px solid rgba(255, 119, 0, 0.35);
+      padding: 10px 18px;
+      border-radius: 16px;
+      color: #FF8800;
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    /* Side-by-Side Dual Thumbnails: [Paused Frame] ➔ [Amazon Match] */
+    .visuals-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .visual-box {
+      flex: 1;
+      height: 235px;
+      border-radius: 24px;
+      overflow: hidden;
+      background: #0B0F17;
+      border: 2px solid #1E2738;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .visual-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .visual-box.amazon-white {
+      background: #FFFFFF;
+      padding: 12px;
+    }
+
+    .thumb-badge {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.84);
+      color: #FFFFFF;
+      font-size: 18px;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .thumb-badge.amazon {
+      background: rgba(255, 85, 0, 0.94);
+    }
+
+    .verified-check {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 34px;
+      height: 34px;
+      border-radius: 17px;
+      background: #10B981;
+      color: #FFFFFF;
+      font-size: 20px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .arrow-box {
+      width: 56px;
+      height: 56px;
+      border-radius: 28px;
+      background: #16202E;
+      border: 2px solid #222D3E;
+      color: #FF5500;
+      font-size: 28px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .pc-title {
+      color: #F8FAFC;
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1.3;
+    }
+
+    .pc-reason {
+      color: #94A3B8;
+      font-size: 22px;
+      font-style: italic;
+    }
+
+    .pc-bottom-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 4px;
+    }
+
+    .pc-price-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .price-pill {
+      background: rgba(16, 185, 129, 0.16);
+      border: 1.5px solid rgba(16, 185, 129, 0.35);
+      color: #10B981;
+      font-size: 26px;
+      font-weight: 800;
+      padding: 6px 18px;
+      border-radius: 14px;
+    }
+
+    .amazon-badge {
+      background: rgba(255, 153, 0, 0.14);
+      border: 1.5px solid rgba(255, 153, 0, 0.3);
+      color: #FF9900;
+      font-size: 22px;
+      font-weight: 800;
+      padding: 6px 16px;
+      border-radius: 14px;
+    }
+
+    .pc-actions {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .view-deal-text {
+      color: #FF5500;
+      font-size: 25px;
+      font-weight: 800;
+    }
+
+    .add-cart-btn {
+      background: #FF5500;
+      color: #FFFFFF;
+      font-size: 23px;
+      font-weight: 800;
+      padding: 12px 24px;
+      border-radius: 16px;
+    }
+
+    /* ==========================================================================
+       SCENE 2: REAL TIKTOK / REELS MOBILE PAUSE & SCAN EXPERIENCE
+    ========================================================================== */
+    .tiktok-screen {
+      position: absolute;
+      inset: 0;
+      background: #000;
+      opacity: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .tiktok-video-crop {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      /* Crop into the center of the streamer so no desktop sidebars show */
+      object-position: 38% center;
+      transform: scale(1.38);
+    }
+
+    .tiktok-right-rail {
+      position: absolute;
+      right: 28px;
+      bottom: 360px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 36px;
+      z-index: 20;
+    }
+
+    .tt-rail-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      color: #fff;
+      font-size: 22px;
+      font-weight: 800;
+      text-shadow: 0 4px 12px rgba(0,0,0,0.8);
+    }
+
+    .tt-rail-circle {
+      width: 82px;
+      height: 82px;
+      border-radius: 41px;
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+
+    .tiktok-bottom-meta {
+      position: absolute;
+      left: 36px;
+      bottom: 240px;
+      right: 160px;
+      z-index: 20;
+      color: #fff;
+      text-shadow: 0 4px 14px rgba(0,0,0,0.9);
+    }
+
+    .pause-overlay-badge {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(8, 12, 20, 0.88);
+      border: 3px solid #FF5500;
+      padding: 26px 48px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      color: #FFFFFF;
+      font-size: 32px;
+      font-weight: 900;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 40px rgba(255, 85, 0, 0.5);
+      z-index: 35;
+    }
+
+    /* NotificationToast.tsx Replica */
+    .app-notification-toast {
+      position: absolute;
+      top: 130px;
+      left: 36px;
+      right: 36px;
+      background: #111722;
+      border: 2.5px solid #FF5500;
+      border-radius: 32px;
+      padding: 26px 32px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      box-shadow: 0 25px 70px rgba(0,0,0,0.95);
+      z-index: 80;
+    }
+
+    /* ==========================================================================
+       SCENE 4: CART SCREEN (mobile/app/cart.tsx Replica)
+    ========================================================================== */
+    .cart-screen {
+      position: absolute;
+      inset: 0;
+      padding-top: 118px;
+      background: #0B0F17;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .cart-header {
+      padding: 32px 42px;
+      border-bottom: 2px solid #1E2533;
+      font-size: 40px;
+      font-weight: 800;
+      color: #F8FAFC;
+    }
+
+    .cart-item-row {
+      display: flex;
+      align-items: center;
+      background: #111827;
+      border-radius: 26px;
+      padding: 26px;
+      margin: 24px 36px 0;
+      border: 2px solid #1E2533;
+      gap: 24px;
+    }
+
+    .cart-item-thumb {
+      width: 130px;
+      height: 130px;
+      border-radius: 18px;
+      background: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .cart-footer {
+      margin-top: auto;
+      background: #111827;
+      border-top: 2px solid #1E2533;
+      padding: 34px 36px 210px;
+    }
+
+    .cart-tag-label {
+      color: #64748B;
+      font-size: 23px;
+      text-align: center;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+
+    .cart-checkout-btn {
+      background: #FF9900;
+      border-radius: 26px;
+      padding: 30px;
+      text-align: center;
+      color: #000000;
+      font-weight: 900;
+      font-size: 32px;
+      box-shadow: 0 12px 35px rgba(255, 153, 0, 0.35);
+    }
+
+    /* ==========================================================================
+       SCENE 5: OFFICIAL BRAND FINALE (Real Logo & Colors)
+    ========================================================================== */
+    .finale-screen {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 35%, #161F30 0%, #080C14 70%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px;
+      text-align: center;
+      gap: 40px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Touch Tap Circle */
+    .tap-circle {
+      position: absolute;
+      width: 90px;
+      height: 90px;
+      border-radius: 45px;
+      background: rgba(255, 85, 0, 0.38);
+      border: 4px solid #FFFFFF;
+      box-shadow: 0 0 35px #FF5500;
+      z-index: 95;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      opacity: 0;
+    }
+
+    /* Subtitle Pill at Bottom */
+    .caption-bar {
+      position: absolute;
+      bottom: 42px;
+      left: 36px;
+      right: 36px;
+      background: rgba(8, 12, 20, 0.94);
+      border: 2px solid #FF5500;
+      padding: 22px 30px;
+      border-radius: 26px;
+      font-size: 29px;
+      font-weight: 800;
+      color: #F8FAFC;
+      text-align: center;
+      z-index: 98;
+      box-shadow: 0 15px 45px rgba(0,0,0,0.9);
+    }
+
+    .studio-controls {
+      width: 100%;
+      max-width: 920px;
+      padding: 10px 20px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .timeline-slider {
+      flex: 1;
+      accent-color: #FF5500;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="studio-toolbar">
+    <strong>📱 StreamSnap AI — Real Mobile App UI Demo (9:16)</strong>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <button class="studio-btn active" id="btn-he" onclick="setLang('he')">🇮🇱 עברית</button>
+      <button class="studio-btn" id="btn-en" onclick="setLang('en')">🇺🇸 English</button>
+      <a class="studio-btn" href="promo-video.html">🖥 Desktop Extension Video</a>
+      <a class="studio-btn download" href="assets/streamsnap_promo_mobile_9x16.mp4" download="StreamSnap_Mobile_App_Demo.mp4">⬇ Download MP4</a>
+    </div>
+  </div>
+
+  <div class="stage-outer" id="stage-outer">
+    <div class="video-canvas" id="video-canvas">
+
+      <!-- Native iOS Status Bar -->
+      <div class="ios-statusbar">
+        <span class="ios-time">9:41</span>
+        <div class="ios-dynamic-island" id="dynamic-island">
+          <span class="di-dot"></span>
+          <span class="di-label" id="di-text">StreamSnap Radar</span>
+          <span style="color:#10B981; font-weight:900; font-size:16px;">60FPS</span>
+        </div>
+        <div class="ios-icons">
+          <span>5G</span>
+          <span>🔋</span>
+        </div>
+      </div>
+
+      <!-- ==================================================================
+           SCREEN 1 & 3: REAL STREAMSNAP MOBILE HOME SCREEN (mobile/app/index.tsx)
+      ================================================================== -->
+      <div class="app-screen" id="screen-home">
+        <!-- App Header -->
+        <div class="app-header">
+          <div class="brand-row">
+            <div class="brand-icon-wrapper">
+              <svg width="42" height="42" viewBox="0 0 24 24" fill="#FFFFFF">
+                <path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/>
+              </svg>
+            </div>
+            <div>
+              <div class="app-logo-text">StreamSnap</div>
+              <div class="app-tagline-text">Auto-Scan Live Video</div>
+            </div>
+          </div>
+
+          <div class="header-actions">
+            <div class="header-btn">
+              <span>🔔</span>
+              <div class="unread-badge" id="notif-badge">2</div>
+            </div>
+            <div class="cart-badge-btn" id="header-cart-badge">
+              <span>🛒</span>
+              <span id="cart-count-text">2</span>
+            </div>
+            <div class="header-btn">⚙️</div>
+          </div>
+        </div>
+
+        <!-- Idle vs Active Radar Banner -->
+        <div class="idle-radar-banner" id="banner-idle">
+          <div style="display:flex; align-items:center; gap:14px;">
+            <span style="color:#FF6A00; font-size:28px;">📡</span>
+            <span style="color:#94A3B8; font-size:25px; font-weight:700;">Video Screen Scanner Ready</span>
+          </div>
+          <span style="color:#64748B; font-size:23px; font-weight:600;">Tap Radar Below</span>
+        </div>
+
+        <div class="live-radar-banner" id="banner-live">
+          <div class="live-radar-left">
+            <div class="live-pulse-dot"></div>
+            <div>
+              <div class="live-radar-title-row">
+                <span class="live-radar-title">STREAMSNAP RADAR ACTIVE</span>
+                <span class="live-fps-badge">60 FPS</span>
+              </div>
+              <div class="live-radar-sub" id="radar-sub-text">
+                Pause a video to scan it · 3 frames analyzed
+              </div>
+            </div>
+          </div>
+          <div class="live-wave-box">
+            <div class="live-wave-bar" style="height:26px;"></div>
+            <div class="live-wave-bar" style="height:42px;"></div>
+            <div class="live-wave-bar" style="height:20px;"></div>
+            <div class="live-wave-bar" style="height:34px;"></div>
+          </div>
+        </div>
+
+        <!-- Collapsible Top Container (How it works + Radar Hero) -->
+        <div id="home-top-deck">
+          <!-- 1. How It Works Deck -->
+          <div class="how-to-card">
+            <div class="how-to-header">
+              <span>💡</span>
+              <span>HOW LIVE SCAN WORKS</span>
+            </div>
+            <div class="step-grid">
+              <div class="step-item">
+                <div class="step-num">1</div>
+                <div style="font-size:36px; color:#FF6A00;">📡</div>
+                <div class="step-bold">Start Live Scan</div>
+                <div class="step-sub">Tap the radar below</div>
+              </div>
+              <div style="color:#334155; font-size:32px; font-weight:900;">›</div>
+              <div class="step-item">
+                <div class="step-num">2</div>
+                <div style="font-size:36px; color:#FF6A00;">📱</div>
+                <div class="step-bold">Browse Video</div>
+                <div class="step-sub">TikTok, Reels, YT</div>
+              </div>
+              <div style="color:#334155; font-size:32px; font-weight:900;">›</div>
+              <div class="step-item">
+                <div class="step-num">3</div>
+                <div style="font-size:36px; color:#10B981;">🛒</div>
+                <div class="step-bold">Instant Finds</div>
+                <div class="step-sub">Amazon alerts drop</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Live Scan Radar Button -->
+          <div class="hero-section">
+            <div class="radar-wrapper">
+              <div class="pulse-ring-outer" id="ring-outer"></div>
+              <div class="pulse-ring-inner" id="ring-inner"></div>
+              <div class="radar-button" id="radar-btn">
+                <div style="font-size:64px; color:#fff;" id="radar-icon">📡</div>
+                <div class="radar-label" id="radar-label">Live Scan</div>
+                <div class="radar-sublabel" id="radar-sub">Auto-Capture</div>
+              </div>
+            </div>
+
+            <div class="live-status-box">
+              <div class="status-dot" id="status-dot"></div>
+              <div class="hero-hint" id="hero-hint">
+                Continuous screen scanning · Saves items automatically
+              </div>
+            </div>
+
+            <!-- 3. Quick Action Bar -->
+            <div class="quick-bar">
+              <div class="quick-btn">
+                <span style="color:#FFA066;">📷</span>
+                <span>Camera</span>
+              </div>
+              <div class="quick-btn">
+                <span style="color:#FFA066;">🖼</span>
+                <span>Gallery</span>
+              </div>
+              <div class="quick-btn highlight">
+                <span style="color:#FF6A00;">🔗</span>
+                <span>Paste Link</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Detected Products Catalog (ProductCard.tsx Dual Visuals) -->
+        <div class="catalog-section" id="catalog-section">
+          <div class="section-header">
+            <div class="section-title-row">
+              <span style="color:#FF7700;">🕒</span>
+              <span>Detected Products</span>
+              <span class="count-pill">2</span>
+            </div>
+            <span class="see-all">View All →</span>
+          </div>
+
+          <!-- ProductCard 1: Dual Visuals [Paused Frame] -> [Amazon Match] -->
+          <div class="product-card" id="pcard-1">
+            <div class="pc-top-row">
+              <div class="video-source-tag">
+                <span>🎵</span>
+                <span>TikTok Live · @ishowspeed ↗</span>
+              </div>
+              <div class="confidence-pill">
+                <span>✨</span>
+                <span>99% Match</span>
+              </div>
+            </div>
+
+            <div class="visuals-container">
+              <!-- Left: Video Frame -->
+              <div class="visual-box">
+                <img src="assets/ishowspeed_live.png" style="object-position: 38% center; transform: scale(1.4);" alt="Paused Frame" />
+                <div class="thumb-badge">⏸ Paused Frame</div>
+              </div>
+
+              <!-- Center Arrow -->
+              <div class="arrow-box">➔</div>
+
+              <!-- Right: Clean Amazon Studio Listing Image -->
+              <div class="visual-box amazon-white">
+                <svg width="190" height="190" viewBox="0 0 200 200">
+                  <!-- Clean AC Milan Red & Black Striped Jersey Product Render -->
+                  <path d="M55 30 L80 20 L120 20 L145 30 L175 65 L150 90 L138 72 L138 175 L62 175 L62 72 L50 90 L25 65 Z" fill="#111111" stroke="#E2E8F0" stroke-width="2"/>
+                  <rect x="72" y="22" width="14" height="153" fill="#E11D48"/>
+                  <rect x="100" y="22" width="14" height="153" fill="#E11D48"/>
+                  <rect x="124" y="22" width="10" height="153" fill="#E11D48"/>
+                  <path d="M80 20 Q100 38 120 20" fill="none" stroke="#111" stroke-width="6"/>
+                  <rect x="75" y="82" width="50" height="18" rx="3" fill="#FFFFFF"/>
+                  <text x="100" y="95" font-size="10" font-weight="900" fill="#111" text-anchor="middle">Fly Emirates</text>
+                </svg>
+                <div class="thumb-badge amazon">a Amazon Match</div>
+                <div class="verified-check">✓</div>
+              </div>
+            </div>
+
+            <div class="pc-title">PUMA Men's AC Milan 2023/24 Home Replica Soccer Jersey</div>
+            <div class="pc-reason">💡 Red &amp; black vertical stripes with front sponsor logo</div>
+
+            <div class="pc-bottom-row">
+              <div class="pc-price-row">
+                <div class="price-pill">$89.99</div>
+                <div class="amazon-badge">a Amazon</div>
+              </div>
+              <div class="pc-actions">
+                <span class="view-deal-text">View Deal →</span>
+                <div class="add-cart-btn" id="btn-add-cart-1">+ Cart</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ProductCard 2 -->
+          <div class="product-card" id="pcard-2">
+            <div class="pc-top-row">
+              <div class="video-source-tag">
+                <span>🎵</span>
+                <span>TikTok Live · @ishowspeed ↗</span>
+              </div>
+              <div class="confidence-pill">
+                <span>✨</span>
+                <span>98% Match</span>
+              </div>
+            </div>
+
+            <div class="visuals-container">
+              <div class="visual-box">
+                <img src="assets/ishowspeed_live.png" style="object-position: 62% 25%; transform: scale(1.8);" alt="Paused Frame" />
+                <div class="thumb-badge">⏸ Paused Frame</div>
+              </div>
+              <div class="arrow-box">➔</div>
+              <div class="visual-box amazon-white">
+                <svg width="180" height="180" viewBox="0 0 200 200">
+                  <!-- Clean Black Snapback Cap Render -->
+                  <path d="M40 120 C40 60, 160 60, 160 120 Z" fill="#1E293B"/>
+                  <path d="M35 118 L185 125 C175 142, 110 142, 35 125 Z" fill="#0F172A"/>
+                  <text x="100" y="105" font-size="28" font-weight="900" fill="#EF4444" text-anchor="middle">A</text>
+                </svg>
+                <div class="thumb-badge amazon">a Amazon Match</div>
+                <div class="verified-check">✓</div>
+              </div>
+            </div>
+
+            <div class="pc-title">New Era Los Angeles Angels 9FIFTY Snapback Cap</div>
+            <div class="pc-bottom-row">
+              <div class="pc-price-row">
+                <div class="price-pill">$34.99</div>
+                <div class="amazon-badge">a Amazon</div>
+              </div>
+              <div class="pc-actions">
+                <span class="view-deal-text">View Deal →</span>
+                <div class="add-cart-btn">+ Cart</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================================================================
+           SCREEN 2: BROWSING TIKTOK & PAUSING TO AUTO-SCAN (5.5s - 10.8s)
+      ================================================================== -->
+      <div class="tiktok-screen" id="screen-tiktok">
+        <img src="assets/ishowspeed_live.png" class="tiktok-video-crop" id="tt-video" alt="TikTok Video" />
+
+        <!-- Toast Alert from StreamSnap Background Scanner -->
+        <div class="app-notification-toast" id="tt-toast">
+          <div class="brand-icon-wrapper" style="width:68px; height:68px; flex-shrink:0;">
+            <svg width="38" height="38" viewBox="0 0 24 24" fill="#FFFFFF">
+              <path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/>
+            </svg>
+          </div>
+          <div style="flex:1;">
+            <div style="color:#FF8800; font-size:20px; font-weight:900;">STREAMSNAP AI · FOUND IN VIDEO</div>
+            <div style="color:#F8FAFC; font-size:26px; font-weight:800; margin-top:4px;">PUMA AC Milan Jersey ($89.99)</div>
+            <div style="color:#10B981; font-size:21px; font-weight:700; margin-top:2px;">✓ Verified Amazon Match · Saved to Catalog</div>
+          </div>
+        </div>
+
+        <!-- Pause Indicator when User Pauses Video -->
+        <div class="pause-overlay-badge" id="tt-pause-badge">
+          <span style="color:#FF5500;">⏸</span>
+          <span>Video Paused · Scanning Frame...</span>
+        </div>
+
+        <div class="tiktok-right-rail">
+          <div class="tt-rail-item">
+            <div class="tt-rail-circle">❤️</div>
+            <span>142K</span>
+          </div>
+          <div class="tt-rail-item">
+            <div class="tt-rail-circle">💬</div>
+            <span>3,810</span>
+          </div>
+          <div class="tt-rail-item">
+            <div class="tt-rail-circle">↗️</div>
+            <span>Share</span>
+          </div>
+        </div>
+
+        <div class="tiktok-bottom-meta">
+          <div style="font-size:32px; font-weight:900; margin-bottom:8px;">@ishowspeed · 🔴 LIVE</div>
+          <div style="font-size:25px; color:#E2E8F0; font-weight:600;">Miami stream live right now!! 🔥⚽️ #stream #soccer</div>
+        </div>
+      </div>
+
+      <!-- ==================================================================
+           SCREEN 4: CART SCREEN (mobile/app/cart.tsx Replica) (16.2s - 20.5s)
+      ================================================================== -->
+      <div class="cart-screen" id="screen-cart">
+        <div class="cart-header">🛒 Cart (2)</div>
+
+        <div class="cart-item-row">
+          <div class="cart-item-thumb">
+            <span style="font-size:64px;">👕</span>
+          </div>
+          <div style="flex:1;">
+            <div style="color:#F8FAFC; font-size:27px; font-weight:700; line-height:1.3;">
+              PUMA Men's AC Milan 2023/24 Home Replica Soccer Jersey
+            </div>
+            <div style="color:#FF9900; font-size:28px; font-weight:800; margin-top:8px;">$89.99</div>
+            <div style="color:#64748B; font-size:22px; margin-top:4px;">Qty: 1 · Verified ASIN</div>
+          </div>
+          <div style="color:#64748B; font-size:34px; padding:12px;">✕</div>
+        </div>
+
+        <div class="cart-item-row">
+          <div class="cart-item-thumb">
+            <span style="font-size:64px;">🧢</span>
+          </div>
+          <div style="flex:1;">
+            <div style="color:#F8FAFC; font-size:27px; font-weight:700; line-height:1.3;">
+              New Era Los Angeles Angels Black 9FIFTY Snapback Cap
+            </div>
+            <div style="color:#FF9900; font-size:28px; font-weight:800; margin-top:8px;">$34.99</div>
+            <div style="color:#64748B; font-size:22px; margin-top:4px;">Qty: 1 · Verified ASIN</div>
+          </div>
+          <div style="color:#64748B; font-size:34px; padding:12px;">✕</div>
+        </div>
+
+        <div class="cart-footer">
+          <div class="cart-tag-label">Tag: streamsnap03-20</div>
+          <div class="cart-checkout-btn" id="cart-checkout-btn">
+            Checkout on Amazon (2 items) →
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================================================================
+           SCREEN 5: OFFICIAL BRAND FINALE (Real Logo from logo_full.svg)
+      ================================================================== -->
+      <div class="finale-screen" id="screen-finale">
+        <!-- Exact Official SVG Logo from extension/assets/branding/logo_full.svg -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 90" width="760" height="165" fill="none">
+          <defs>
+            <linearGradient id="logo_bolt_grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#FFB800" />
+              <stop offset="60%" stop-color="#FF9900" />
+              <stop offset="100%" stop-color="#FF5500" />
+            </linearGradient>
+            <linearGradient id="logo_ring_grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#00A8E1" />
+              <stop offset="100%" stop-color="#FF9900" />
+            </linearGradient>
+          </defs>
+          <g transform="translate(10, 10)">
+            <rect x="0" y="0" width="70" height="70" rx="18" fill="#101622" stroke="url(#logo_ring_grad)" stroke-width="2.5" />
+            <path d="M 16 26 L 16 16 L 26 16" fill="none" stroke="#00A8E1" stroke-width="2.5" stroke-linecap="round" />
+            <path d="M 54 26 L 54 16 L 44 16" fill="none" stroke="#00A8E1" stroke-width="2.5" stroke-linecap="round" />
+            <path d="M 16 44 L 16 54 L 26 54" fill="none" stroke="#00A8E1" stroke-width="2.5" stroke-linecap="round" />
+            <path d="M 54 44 L 54 54 L 44 54" fill="none" stroke="#00A8E1" stroke-width="2.5" stroke-linecap="round" />
+            <circle cx="35" cy="35" r="18" fill="rgba(0, 168, 225, 0.15)" />
+            <polygon points="38 15 23 38 34 38 32 55 48 30 36 30" fill="url(#logo_bolt_grad)" />
+          </g>
+          <g transform="translate(98, 52)">
+            <text font-family="Inter, -apple-system, sans-serif" font-weight="900" font-size="34" fill="#FFFFFF" letter-spacing="-0.8">Stream<tspan fill="#FF9900">Snap</tspan></text>
+            <g transform="translate(202, -26)">
+              <rect width="48" height="24" rx="6" fill="rgba(255, 153, 0, 0.18)" stroke="rgba(255, 153, 0, 0.45)" stroke-width="1.2" />
+              <text x="24" y="16" font-family="Inter, sans-serif" font-size="11" font-weight="900" fill="#FF9900" text-anchor="middle">AI</text>
+            </g>
+            <text x="2" y="24" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8">Live Stream Visual Shopping</text>
+          </g>
+        </svg>
+
+        <div style="font-size:48px; font-weight:900; color:#F8FAFC; line-height:1.2; max-width:860px;">
+          Auto-Scan Live Video.<br/>
+          <span style="color:#FF6A00;">Shop Instant Finds on Amazon.</span>
+        </div>
+
+        <div style="background:#FF5500; color:#FFFFFF; font-size:34px; font-weight:900; padding:28px 56px; border-radius:28px; box-shadow:0 16px 45px rgba(255,85,0,0.45);">
+          Available on iOS, Android &amp; Chrome
+        </div>
+
+        <div style="color:#94A3B8; font-size:32px; font-weight:700;">
+          streamsnap.online
+        </div>
+      </div>
+
+      <!-- Touch Tap Circle -->
+      <div class="tap-circle" id="tap-circle"></div>
+
+      <!-- Subtitle Pill -->
+      <div class="caption-bar" id="caption-bar">
+        פותחים את StreamSnap AI בנייד ולוחצים על כפתור ה-Live Scan הכתום 📡
+      </div>
+
+    </div>
+  </div>
+
+  <div class="studio-controls">
+    <button class="studio-btn active" id="btn-play" onclick="togglePlay()">⏸ Pause</button>
+    <button class="studio-btn" onclick="restartVideo()">↺ Replay</button>
+    <input type="range" class="timeline-slider" id="timeline-slider" min="0" max="24" step="0.04" value="0" />
+    <span id="time-readout" style="font-family:monospace; font-size:14px; color:#FF8800;">00.0s / 24.0s</span>
+  </div>
+
+  <script>
+    const DURATION = 24.0;
+    let currentTime = 0;
+    let isPlaying = true;
+    let currentLang = 'he';
+    let lastRaf = performance.now();
+
+    const CAPTIONS = [
+      {
+        start: 0.0, end: 5.5,
+        he: "1. באפליקציית StreamSnap לוחצים על הרדאר הכתום להפעלת Live Scan (או מדביקים לינק) 📡",
+        en: "1. In the StreamSnap app, tap the orange Live Scan radar (or paste a video link) 📡"
+      },
+      {
+        start: 5.5, end: 10.8,
+        he: "2. עוברים לטיקטוק, רילס או יוטיוב — ועוצרים (Pause) על כל מוצר שרוצים לזהות! ⏸",
+        en: "2. Switch to TikTok, Reels, or YouTube — simply pause on any item you want! ⏸"
+      },
+      {
+        start: 10.8, end: 16.2,
+        he: "3. הפריים שנסרק מוצג לצד ההתאמה המדויקת באמזון עם אחוז התאמה ומחיר! 🎯",
+        en: "3. See the paused video frame side-by-side with the verified Amazon match & price! 🎯"
+      },
+      {
+        start: 16.2, end: 20.5,
+        he: "4. מוסיפים לעגלה בלחיצה (+ Cart) ועוברים ישר ל-Checkout באמזון! 🛒",
+        en: "4. Tap '+ Cart' and jump straight to Amazon Checkout in 1 tap! 🛒"
+      },
+      {
+        start: 20.5, end: 24.1,
+        he: "StreamSnap AI — זיהוי מוצרים אוטומטי מווידאו · streamsnap.online ⚡",
+        en: "StreamSnap AI — Auto-Scan Live Video · streamsnap.online ⚡"
+      }
+    ];
+
+    function clamp(v, min = 0, max = 1) { return Math.max(min, Math.min(max, v)); }
+    function easeOutCubic(x) { return 1 - Math.pow(1 - clamp(x), 3); }
+    function lerp(a, b, t) { return a + (b - a) * t; }
+
+    function fitStage() {
+      if (document.body.classList.contains('capture-mode')) return;
+      const canvas = document.getElementById('video-canvas');
+      const outer = document.getElementById('stage-outer');
+      const availW = window.innerWidth - 32;
+      const availH = window.innerHeight - 130;
+      const scale = Math.min(availW / 1080, availH / 1920, 1);
+      canvas.style.transform = `scale(${scale})`;
+      outer.style.height = `${1920 * scale + 10}px`;
+    }
+    window.addEventListener('resize', fitStage);
+    fitStage();
+
+    function renderAtTime(t) {
+      currentTime = clamp(t, 0, DURATION);
+
+      const slider = document.getElementById('timeline-slider');
+      const readout = document.getElementById('time-readout');
+      if (slider) slider.value = currentTime;
+      if (readout) readout.textContent = `${currentTime.toFixed(1).padStart(4, '0')}s / 24.0s`;
+
+      const cap = CAPTIONS.find(c => currentTime >= c.start && currentTime <= c.end) || CAPTIONS[CAPTIONS.length - 1];
+      const capBar = document.getElementById('caption-bar');
+      if (capBar && cap) {
+        capBar.textContent = currentLang === 'he' ? cap.he : cap.en;
+        capBar.style.direction = currentLang === 'he' ? 'rtl' : 'ltr';
+      }
+
+      const screenHome = document.getElementById('screen-home');
+      const screenTiktok = document.getElementById('screen-tiktok');
+      const screenCart = document.getElementById('screen-cart');
+      const screenFinale = document.getElementById('screen-finale');
+      const tap = document.getElementById('tap-circle');
+
+      screenHome.style.opacity = 0;
+      screenTiktok.style.opacity = 0;
+      screenCart.style.opacity = 0;
+      screenFinale.style.opacity = 0;
+      tap.style.opacity = 0;
+
+      // Pulse animation for Radar rings
+      const pulsePhase = (currentTime % 1.4) / 1.4;
+      const ringOuter = document.getElementById('ring-outer');
+      const ringInner = document.getElementById('ring-inner');
+      ringOuter.style.transform = `scale(${lerp(1, 1.45, pulsePhase)})`;
+      ringOuter.style.opacity = (1 - pulsePhase) * 0.35;
+      ringInner.style.transform = `scale(${lerp(1, 1.28, pulsePhase)})`;
+      ringInner.style.opacity = (1 - pulsePhase) * 0.5;
+
+      // ==========================================================
+      // SCENE 1 (0.0s - 5.5s): HOME SCREEN -> TAP LIVE SCAN RADAR
+      // ==========================================================
+      if (currentTime < 5.5) {
+        screenHome.style.opacity = 1;
+        document.getElementById('home-top-deck').style.display = 'block';
+
+        const isActive = currentTime >= 2.2;
+        document.getElementById('banner-idle').style.display = isActive ? 'none' : 'flex';
+        document.getElementById('banner-live').style.display = isActive ? 'flex' : 'none';
+
+        const radarBtn = document.getElementById('radar-btn');
+        const radarLabel = document.getElementById('radar-label');
+        const radarSub = document.getElementById('radar-sub');
+        const statusDot = document.getElementById('status-dot');
+        const heroHint = document.getElementById('hero-hint');
+
+        if (isActive) {
+          radarBtn.classList.add('scanning');
+          radarLabel.textContent = 'Scanning...';
+          radarSub.textContent = 'Tap to pause';
+          statusDot.classList.add('active');
+          heroHint.textContent = 'Live Screen Broadcast Active · Open TikTok or YouTube';
+        } else {
+          radarBtn.classList.remove('scanning');
+          radarLabel.textContent = 'Live Scan';
+          radarSub.textContent = 'Auto-Capture';
+          statusDot.classList.remove('active');
+          heroHint.textContent = 'Continuous screen scanning · Saves items automatically';
+        }
+
+        // Tap on Radar Button at 1.8s - 2.4s
+        if (currentTime >= 1.7 && currentTime <= 2.4) {
+          const p = (currentTime - 1.7) / 0.7;
+          tap.style.opacity = 1 - p;
+          tap.style.left = '540px';
+          tap.style.top = '820px';
+          tap.style.transform = `translate(-50%, -50%) scale(${lerp(0.6, 1.8, p)})`;
+        }
+      }
+
+      // ==========================================================
+      // SCENE 2 (5.5s - 10.8s): TIKTOK VIDEO -> PAUSE -> AUTO-SCAN TOAST
+      // ==========================================================
+      if (currentTime >= 5.5 && currentTime < 10.8) {
+        screenTiktok.style.opacity = 1;
+        const ttVideo = document.getElementById('tt-video');
+        const pauseBadge = document.getElementById('tt-pause-badge');
+        const toast = document.getElementById('tt-toast');
+
+        // Video moves until paused at 7.2s
+        const tMove = Math.min(currentTime, 7.2);
+        ttVideo.style.transform = `scale(${1.38 + Math.sin(tMove * 2) * 0.03})`;
+
+        if (currentTime >= 6.9 && currentTime <= 7.5) {
+          const p = (currentTime - 6.9) / 0.6;
+          tap.style.opacity = 1 - p;
+          tap.style.left = '540px';
+          tap.style.top = '960px';
+          tap.style.transform = `translate(-50%, -50%) scale(${lerp(0.6, 1.8, p)})`;
+        }
+
+        if (currentTime >= 7.2) {
+          const pp = easeOutCubic((currentTime - 7.2) / 0.35);
+          pauseBadge.style.opacity = pp;
+        } else {
+          pauseBadge.style.opacity = 0;
+        }
+
+        if (currentTime >= 8.2) {
+          const tp = easeOutCubic((currentTime - 8.2) / 0.45);
+          toast.style.opacity = tp;
+          toast.style.transform = `translateY(${(1 - tp) * -80}px)`;
+        } else {
+          toast.style.opacity = 0;
+        }
+      }
+
+      // ==========================================================
+      // SCENE 3 (10.8s - 16.2s): DETECTED PRODUCTS FEED (ProductCard.tsx)
+      // ==========================================================
+      if (currentTime >= 10.8 && currentTime < 16.2) {
+        screenHome.style.opacity = 1;
+        document.getElementById('banner-idle').style.display = 'none';
+        document.getElementById('banner-live').style.display = 'flex';
+        // Focus view on Detected Products feed so both cards are prominent
+        document.getElementById('home-top-deck').style.display = 'none';
+
+        const c1 = document.getElementById('pcard-1');
+        const c2 = document.getElementById('pcard-2');
+        const p1 = easeOutCubic((currentTime - 10.9) / 0.45);
+        const p2 = easeOutCubic((currentTime - 11.3) / 0.45);
+        c1.style.opacity = p1;
+        c1.style.transform = `translateY(${(1 - p1) * 35}px)`;
+        c2.style.opacity = p2;
+        c2.style.transform = `translateY(${(1 - p2) * 35}px)`;
+
+        const addBtn = document.getElementById('btn-add-cart-1');
+        if (currentTime >= 14.5) {
+          addBtn.style.background = '#10B981';
+          addBtn.textContent = '✓ In Cart';
+        } else {
+          addBtn.style.background = '#FF5500';
+          addBtn.textContent = '+ Cart';
+        }
+
+        // Tap on "+ Cart" button at 14.3s - 15.0s
+        if (currentTime >= 14.3 && currentTime <= 15.0) {
+          const p = (currentTime - 14.3) / 0.7;
+          tap.style.opacity = 1 - p;
+          tap.style.left = '940px';
+          tap.style.top = '935px';
+          tap.style.transform = `translate(-50%, -50%) scale(${lerp(0.6, 1.7, p)})`;
+        }
+      }
+
+      // ==========================================================
+      // SCENE 4 (16.2s - 20.5s): CART SCREEN -> CHECKOUT ON AMAZON
+      // ==========================================================
+      if (currentTime >= 16.2 && currentTime < 20.5) {
+        screenCart.style.opacity = easeOutCubic((currentTime - 16.2) / 0.4);
+        const checkoutBtn = document.getElementById('cart-checkout-btn');
+        if (currentTime >= 18.6) {
+          checkoutBtn.style.background = '#10B981';
+          checkoutBtn.style.color = '#FFFFFF';
+          checkoutBtn.textContent = '✓ Opening Amazon App Cart...';
+        } else {
+          checkoutBtn.style.background = '#FF9900';
+          checkoutBtn.style.color = '#000000';
+          checkoutBtn.textContent = 'Checkout on Amazon (2 items) →';
+        }
+
+        if (currentTime >= 18.3 && currentTime <= 19.0) {
+          const p = (currentTime - 18.3) / 0.7;
+          tap.style.opacity = 1 - p;
+          tap.style.left = '540px';
+          tap.style.top = '1635px';
+          tap.style.transform = `translate(-50%, -50%) scale(${lerp(0.6, 1.8, p)})`;
+        }
+      }
+
+      // ==========================================================
+      // SCENE 5 (20.5s - 24.0s): OFFICIAL BRAND FINALE
+      // ==========================================================
+      if (currentTime >= 20.5) {
+        screenFinale.style.opacity = easeOutCubic((currentTime - 20.5) / 0.5);
+      }
+    }
+
+    window.setVideoTime = function(t, lang = 'he') {
+      isPlaying = false;
+      currentLang = lang;
+      renderAtTime(t);
+    };
+
+    function setLang(lang) {
+      currentLang = lang;
+      document.getElementById('btn-he').classList.toggle('active', lang === 'he');
+      document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+      renderAtTime(currentTime);
+    }
+
+    function togglePlay() {
+      isPlaying = !isPlaying;
+      document.getElementById('btn-play').textContent = isPlaying ? '⏸ Pause' : '▶ Play';
+      lastRaf = performance.now();
+    }
+
+    function restartVideo() {
+      currentTime = 0;
+      isPlaying = true;
+      document.getElementById('btn-play').textContent = '⏸ Pause';
+      lastRaf = performance.now();
+      renderAtTime(0);
+    }
+
+    document.getElementById('timeline-slider').addEventListener('input', (e) => {
+      isPlaying = false;
+      document.getElementById('btn-play').textContent = '▶ Play';
+      renderAtTime(parseFloat(e.target.value));
+    });
+
+    function tick(now) {
+      const dt = (now - lastRaf) / 1000;
+      lastRaf = now;
+      if (isPlaying) {
+        let next = currentTime + dt;
+        if (next > DURATION) next = 0;
+        renderAtTime(next);
+      }
+      requestAnimationFrame(tick);
+    }
+
+    renderAtTime(0);
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>
