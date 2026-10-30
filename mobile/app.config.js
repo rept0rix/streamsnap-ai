@@ -15,7 +15,7 @@ module.exports = ({ config }) => ({
   scheme: "streamsnap",
   ios: {
     supportsTablet: false,
-    bundleIdentifier: "com.streamsnap.ai",
+    bundleIdentifier: "org.name.StreamSnapAI",
     infoPlist: {
       NSCameraUsageDescription:
         "StreamSnap uses your camera to scan items in live streams and find them on Amazon.",

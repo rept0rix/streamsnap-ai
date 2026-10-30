@@ -124,13 +124,28 @@ export default function SettingsScreen() {
         <Text style={styles.saveButtonText}>Save Settings</Text>
       </TouchableOpacity>
 
-      {/* About */}
+      {/* About & Legal */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>About</Text>
+        <Text style={styles.sectionTitle}>About & Support</Text>
         <Text style={styles.hint}>StreamSnap AI v1.0.0</Text>
-        <TouchableOpacity onPress={() => Linking.openURL("https://streamsnap.online")}>
-          <Text style={styles.link}>streamsnap.online ↗</Text>
-        </TouchableOpacity>
+        
+        <View style={{ marginTop: 12, gap: 10 }}>
+          <TouchableOpacity onPress={() => Linking.openURL("https://streamsnap.online")}>
+            <Text style={styles.link}>🌐 Official Website (streamsnap.online) ↗</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => Linking.openURL("https://streamsnap.online/privacy.html")}>
+            <Text style={styles.link}>🔒 Privacy Policy ↗</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => Linking.openURL("https://streamsnap.online/terms.html")}>
+            <Text style={styles.link}>📄 Terms of Service ↗</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => Linking.openURL("mailto:naor@streamsnap.online")}>
+            <Text style={styles.link}>💬 Support & Feedback (naor@streamsnap.online) ↗</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </ScrollView>
   );

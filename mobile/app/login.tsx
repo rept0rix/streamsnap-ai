@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image, Linking } from "react-native";
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import * as AuthSession from "expo-auth-session";
@@ -80,6 +80,18 @@ export default function LoginScreen() {
         <TouchableOpacity style={styles.skipButton} onPress={() => router.replace("/")}>
           <Text style={styles.skipText}>Continue as guest</Text>
         </TouchableOpacity>
+
+        <View style={styles.legalRow}>
+          <Text style={styles.legalText}>By continuing, you agree to StreamSnap's </Text>
+          <TouchableOpacity onPress={() => Linking.openURL("https://streamsnap.online/terms.html")}>
+            <Text style={styles.legalLink}>Terms of Service</Text>
+          </TouchableOpacity>
+          <Text style={styles.legalText}> and </Text>
+          <TouchableOpacity onPress={() => Linking.openURL("https://streamsnap.online/privacy.html")}>
+            <Text style={styles.legalLink}>Privacy Policy</Text>
+          </TouchableOpacity>
+          <Text style={styles.legalText}>.</Text>
+        </View>
       </View>
     </View>
   );
@@ -102,5 +114,14 @@ const styles = StyleSheet.create({
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: "#fff", fontSize: 16, fontWeight: "700" },
   skipButton: { paddingVertical: 12, alignItems: "center" },
-  skipText: { color: "#64748B", fontSize: 15, fontWeight: "600" }
+  skipText: { color: "#64748B", fontSize: 15, fontWeight: "600" },
+  legalRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 24
+  },
+  legalText: { color: "#64748B", fontSize: 12, textAlign: "center" },
+  legalLink: { color: "#FF5500", fontSize: 12, textDecorationLine: "underline" }
 });

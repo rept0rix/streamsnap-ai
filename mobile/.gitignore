@@ -4,3 +4,9 @@
 
 expo-env.d.ts
 # @end expo-cli
+
+# Android release signing material (keep private and out of Git)
+android/app/streamsnap-upload.keystore
+android/keystore.properties
+*.aab
+*.apk

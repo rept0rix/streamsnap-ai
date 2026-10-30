@@ -270,3 +270,46 @@ export async function healthCheck(): Promise<boolean> {
     return false;
   }
 }
+
+// ---------------------------------------------------------------------------
+// App version gate
+// ---------------------------------------------------------------------------
+
+export interface VersionGateResult {
+  blocked: boolean;
+  updateAvailable: boolean;
+  currentVersion: string;
+  minVersion: string | null;
+  latestVersion: string | null;
+  updateUrl: string;
+}
+
+export function compareVersions(a: string, b: string): number {
+  const pa = String(a || "0").split(".").map((n) => parseInt(n, 10) || 0);
+  const pb = String(b || "0").split(".").map((n) => parseInt(n, 10) || 0);
+  const len = Math.max(pa.length, pb.length);
+  for (let i = 0; i < len; i++) {
+    const da = pa[i] || 0;
+    const db = pb[i] || 0;
+    if (da < db) return -1;
+    if (da > db) return 1;
+  }
+  return 0;
+}
+
+export async function checkAppVersionGate(currentVersion = "1.0.0"): Promise<VersionGateResult> {
+  const updateUrlDefault = "https://streamsnap.online";
+  try {
+    const res = await fetch(`${WORKER_URL}/version`, { method: "GET" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const minVersion = data.minMobileVersion || data.minVersion || null;
+    const latestVersion = data.latestMobileVersion || data.latestVersion || null;
+    const updateUrl = data.mobileUpdateUrl || data.updateUrl || updateUrlDefault;
+    const blocked = Boolean(minVersion) && compareVersions(currentVersion, minVersion) < 0;
+    const updateAvailable = Boolean(latestVersion) && compareVersions(currentVersion, latestVersion) < 0;
+    return { blocked, updateAvailable, currentVersion, minVersion, latestVersion, updateUrl };
+  } catch {
+    return { blocked: false, updateAvailable: false, currentVersion, minVersion: null, latestVersion: null, updateUrl: updateUrlDefault };
+  }
+}
