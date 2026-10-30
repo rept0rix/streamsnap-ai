@@ -160,6 +160,12 @@ async function initVersionGate() {
     recheckBtn.textContent = original;
   });
 
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === "local" && (changes.versionGate || changes.updateReady)) {
+      run();
+    }
+  });
+
   await run();
 }
 
@@ -373,15 +379,58 @@ function initSettings() {
   }
 
   const floatingControlsToggle = byId("toggle-floating-controls-checkbox");
+  const sizeBtnStandard = byId("size-btn-standard");
+  const sizeBtnCompact = byId("size-btn-compact");
+  const sizeBtnMini = byId("size-btn-mini");
+  const smallVideoGuardToggle = byId("toggle-small-video-guard");
+  const hoverOnlyToggle = byId("toggle-hover-only");
+  const controlsDisabledNote = byId("controls-disabled-note");
+
+  function setControlsSize(size) {
+    [sizeBtnStandard, sizeBtnCompact, sizeBtnMini].forEach((btn) => {
+      if (btn) btn.classList.toggle("active", btn.dataset.size === size);
+    });
+    chrome.storage.local.set({
+      floatingControlsSize: size,
+      floatingControlsMinimized: size === "mini",
+      floatingControlsHidden: false
+    });
+  }
 
   chrome.storage.local.get(
-    ["geminiApiKey", "autoScanIntervalSec", "minConfidence", "affiliateTag", "showFloatingControls"],
+    [
+      "geminiApiKey",
+      "autoScanIntervalSec",
+      "minConfidence",
+      "affiliateTag",
+      "showFloatingControls",
+      "floatingControlsSize",
+      "hideOnSmallVideos",
+      "floatingControlsHoverOnly"
+    ],
     (res = {}) => {
       if (keyInput && res.geminiApiKey) keyInput.value = res.geminiApiKey;
       paintKeyStatus(Boolean(res.geminiApiKey));
 
-      if (floatingControlsToggle && res.showFloatingControls !== undefined) {
-        floatingControlsToggle.checked = Boolean(res.showFloatingControls);
+      const showControls = res.showFloatingControls !== false;
+      if (floatingControlsToggle) {
+        floatingControlsToggle.checked = showControls;
+      }
+      if (controlsDisabledNote) {
+        controlsDisabledNote.style.display = showControls ? "none" : "block";
+      }
+
+      const activeSize = res.floatingControlsSize || "standard";
+      [sizeBtnStandard, sizeBtnCompact, sizeBtnMini].forEach((btn) => {
+        if (btn) btn.classList.toggle("active", btn.dataset.size === activeSize);
+      });
+
+      if (smallVideoGuardToggle) {
+        smallVideoGuardToggle.checked = res.hideOnSmallVideos !== false;
+      }
+
+      if (hoverOnlyToggle) {
+        hoverOnlyToggle.checked = Boolean(res.floatingControlsHoverOnly);
       }
 
       if (autoScanSelect && res.autoScanIntervalSec !== undefined) {
@@ -401,7 +450,23 @@ function initSettings() {
   );
 
   floatingControlsToggle?.addEventListener("change", () => {
-    chrome.storage.local.set({ showFloatingControls: floatingControlsToggle.checked });
+    const isShown = floatingControlsToggle.checked;
+    chrome.storage.local.set({ showFloatingControls: isShown });
+    if (controlsDisabledNote) {
+      controlsDisabledNote.style.display = isShown ? "none" : "block";
+    }
+  });
+
+  sizeBtnStandard?.addEventListener("click", () => setControlsSize("standard"));
+  sizeBtnCompact?.addEventListener("click", () => setControlsSize("compact"));
+  sizeBtnMini?.addEventListener("click", () => setControlsSize("mini"));
+
+  smallVideoGuardToggle?.addEventListener("change", () => {
+    chrome.storage.local.set({ hideOnSmallVideos: smallVideoGuardToggle.checked });
+  });
+
+  hoverOnlyToggle?.addEventListener("change", () => {
+    chrome.storage.local.set({ floatingControlsHoverOnly: hoverOnlyToggle.checked });
   });
 
   saveKeyBtn?.addEventListener("click", () => {
@@ -480,7 +545,7 @@ function updateAuthGates(signedIn) {
   // 0. Live Scan Gate: Must sign in before use, unless already signed in
   const scanGate = byId("scan-auth-gate");
   const scanEmpty = byId("scan-empty-state");
-  const scanResults = byId("scan-results-view");
+  const scanResults = byId("scan-results-container");
   const scanLoading = byId("scan-loading-state");
 
   if (scanGate) scanGate.style.display = signedIn ? "none" : "flex";

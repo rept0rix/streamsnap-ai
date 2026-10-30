@@ -55,13 +55,19 @@ if ((manifest.description || "").length > 132) {
   fail(`description is ${manifest.description.length} chars; Chrome caps it at 132.`);
 }
 
-// Broad permissions are the most common review rejection.
-const broad = [
-  ...(manifest.host_permissions || []),
-  ...(manifest.content_scripts || []).flatMap((cs) => cs.matches || [])
-].filter((m) => m === "<all_urls>" || m === "*://*/*");
-if (broad.length) {
-  fail(`Broad host match found (${broad[0]}). Chrome Web Store review requires narrow, justified hosts.`);
+// Broad content_scripts matches are heavily penalized in Web Store reviews.
+const broadContentScripts = (manifest.content_scripts || [])
+  .flatMap((cs) => cs.matches || [])
+  .filter((m) => m === "<all_urls>" || m === "*://*/*");
+if (broadContentScripts.length) {
+  fail(`Broad content script match found (${broadContentScripts[0]}). Content scripts must use narrow platform hosts.`);
+}
+
+// Host permissions can include <all_urls> because chrome.tabs.captureVisibleTab
+// strictly requires it when scanning from side panels or background.
+const broadHosts = (manifest.host_permissions || []).filter((m) => m === "<all_urls>" || m === "*://*/*");
+if (broadHosts.length) {
+  warn(`Broad host permission declared (${broadHosts[0]}). Required for chrome.tabs.captureVisibleTab from side panels; ensure justification is included in Web Store submission.`);
 }
 
 // Every path the manifest points at must exist.

@@ -2,6 +2,8 @@
 *.log
 node_modules/
 .system_generated/
+.codex/
+.metadata_never_index
 
 # Build output — release zips are produced by tools/package.sh
 dist/

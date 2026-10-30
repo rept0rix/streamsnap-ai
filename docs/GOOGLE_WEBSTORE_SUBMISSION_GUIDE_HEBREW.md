@@ -44,6 +44,18 @@
 * **Language (שפה ראשית):**
   בחר `English (United States)`.
 
+* **Additional fields (שדות נוספים בתחתית העמוד):**
+  - **Official URL:** השאר על `None` (אלא אם חיברת את הדומיין ב-Google Search Console).
+  - **Homepage URL (כתובת אתר הבית):**
+    ```text
+    https://streamsnap.online
+    ```
+  - **Support URL (כתובת אתר תמיכה):**
+    ```text
+    https://streamsnap.online
+    ```
+  - **Mature content:** כבוי (Disabled).
+
 ---
 
 ## 🎨 שלב 4: העלאת תמונות ונכסים גרפיים (Graphic Assets)

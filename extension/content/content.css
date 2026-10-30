@@ -80,11 +80,72 @@
   cursor: grabbing;
 }
 
-/* Control Row (Minimize & Hide) */
+/* Control Row (Size Toggle, Minimize & Hide) */
 .streamsnap-control-row {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+}
+
+/* Compact Toolbar Mode — Saves 70% of screen space (Icon-only, ~130px width) */
+.streamsnap-btn-group.streamsnap-compact .streamsnap-expanded-toolbar {
+  gap: 5px !important;
+  padding: 3px 5px !important;
+}
+
+.streamsnap-btn-group.streamsnap-compact .streamsnap-floating-btn {
+  padding: 6px 7px !important;
+  min-width: 30px !important;
+  height: 30px !important;
+  justify-content: center !important;
+  gap: 0 !important;
+}
+
+.streamsnap-btn-group.streamsnap-compact .streamsnap-floating-btn span {
+  display: none !important;
+}
+
+.streamsnap-btn-group.streamsnap-compact .streamsnap-floating-btn svg {
+  margin-right: 0 !important;
+  width: 14px !important;
+  height: 14px !important;
+}
+
+.streamsnap-btn-group.streamsnap-compact .streamsnap-drag-handle {
+  font-size: 11px !important;
+  padding: 0 2px 0 4px !important;
+}
+
+.streamsnap-btn-group.streamsnap-compact .streamsnap-control-btn {
+  width: 22px !important;
+  height: 22px !important;
+  font-size: 10px !important;
+}
+
+/* Hover-Only Mode — Completely hidden until user moves mouse over video */
+.streamsnap-btn-group.streamsnap-hover-only {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translateY(-5px) !important;
+  transition: opacity 0.25s ease, transform 0.25s ease !important;
+}
+
+*:hover > .streamsnap-btn-group.streamsnap-hover-only,
+.streamsnap-btn-group.streamsnap-hover-only:hover,
+.streamsnap-btn-group.streamsnap-hover-only.active,
+.streamsnap-btn-group.streamsnap-hover-only.is-dragging {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  transform: translateY(0) !important;
+}
+
+/* Size Switcher Button (Compact / Standard) */
+.streamsnap-control-btn.size-toggle-btn {
+  font-size: 11px;
+}
+.streamsnap-control-btn.size-toggle-btn:hover {
+  color: var(--snap-primary);
+  border-color: var(--snap-primary);
 }
 
 /* TikTok-Specific Vertical Sidebar Dock on Left Side */

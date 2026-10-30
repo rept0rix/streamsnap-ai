@@ -662,21 +662,68 @@
             </p>
           </details>
 
-          <!-- Video Player Floating Controls -->
-          <div class="settings-section">
+          <!-- Video Player Floating Controls & Usability Settings -->
+          <div class="settings-section usability-settings-card">
             <label class="settings-label">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:4px;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FF9900" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:4px;">
                 <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
                 <line x1="8" y1="21" x2="16" y2="21"></line>
                 <line x1="12" y1="17" x2="12" y2="21"></line>
               </svg>
-              Video Player Floating Controls
+              כפתורי סריקה על גבי הווידאו (On-Video Controls)
             </label>
-            <p class="settings-subtext">Show, minimize, or hide the floating scan buttons over videos (TikTok, YouTube, Twitch).</p>
-            <label class="toggle-switch-row" style="display:flex; align-items:center; justify-content:space-between; margin-top:8px; cursor:pointer;">
-              <span style="font-size:12px; font-weight:600; color:var(--text-primary);">Show floating buttons on video</span>
+            <p class="settings-subtext">התאמה אישית של כפתורי הסריקה הצפים (YouTube, Twitch, TikTok, Kick).</p>
+
+            <!-- 1. Master Toggle: Show/Hide on video -->
+            <label class="toggle-switch-row" style="display:flex; align-items:center; justify-content:space-between; margin-top:8px; cursor:pointer; padding:6px 0;">
+              <div>
+                <span style="font-size:12px; font-weight:700; color:var(--text-primary); display:block;">הצג כפתורים על הווידאו</span>
+                <span style="font-size:10.5px; color:#94A3B8;">כיבוי יסיר לחלוטין את הכפתורים מכל הסרטונים</span>
+              </div>
               <input type="checkbox" id="toggle-floating-controls-checkbox" checked style="width:18px; height:18px; accent-color:#FF9900; cursor:pointer;" />
             </label>
+
+            <!-- 2. Size / Style Selection -->
+            <div id="controls-appearance-options" style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.08);">
+              <label style="font-size:11px; font-weight:700; color:#CBD5E1; display:block; margin-bottom:6px;">גודל וסגנון הכפתורים (Button Size):</label>
+              <div class="size-options-grid" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px;">
+                <button type="button" class="size-choice-btn active" data-size="standard" id="size-btn-standard">
+                  <strong>Standard</strong>
+                  <span>מלא (400px)</span>
+                </button>
+                <button type="button" class="size-choice-btn" data-size="compact" id="size-btn-compact">
+                  <strong>Compact</strong>
+                  <span>אייקונים (130px)</span>
+                </button>
+                <button type="button" class="size-choice-btn" data-size="mini" id="size-btn-mini">
+                  <strong>Mini Pill</strong>
+                  <span>סמל ⚡ קטן</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 3. Smart Small Video Protection -->
+            <label class="toggle-switch-row" style="display:flex; align-items:center; justify-content:space-between; margin-top:10px; cursor:pointer; padding:4px 0;">
+              <div>
+                <span style="font-size:12px; font-weight:600; color:var(--text-primary); display:block;">הקטנה אוטומטית בווידאו קטן (Miniplayer Guard)</span>
+                <span style="font-size:10.5px; color:#94A3B8;">מכווץ את הסרגל כשהווידאו קטן כדי שלא יתפוס את כל המסך</span>
+              </div>
+              <input type="checkbox" id="toggle-small-video-guard" checked style="width:18px; height:18px; accent-color:#FF9900; cursor:pointer;" />
+            </label>
+
+            <!-- 4. Hover Only Mode -->
+            <label class="toggle-switch-row" style="display:flex; align-items:center; justify-content:space-between; margin-top:8px; cursor:pointer; padding:4px 0;">
+              <div>
+                <span style="font-size:12px; font-weight:600; color:var(--text-primary); display:block;">הצג רק במעבר עכבר (Hover Only)</span>
+                <span style="font-size:10.5px; color:#94A3B8;">הכפתורים יופיעו רק כשמזיזים את העכבר מעל נגן הווידאו</span>
+              </div>
+              <input type="checkbox" id="toggle-hover-only" style="width:18px; height:18px; accent-color:#FF9900; cursor:pointer;" />
+            </label>
+
+            <!-- Helper Note -->
+            <div id="controls-disabled-note" style="display:none; margin-top:10px; padding:8px 10px; background:rgba(255,153,0,0.1); border:1px solid rgba(255,153,0,0.25); border-radius:6px; font-size:11px; color:#FDBA74; line-height:1.4;">
+              💡 <strong>טיפ:</strong> כשהכפתורים הצפים כבויים, ניתן לסרוק בכל עת באמצעות כפתור <strong>"SCAN ACTIVE STREAM"</strong> בלשונית Live או באמצעות קיצור המקלדת <strong>Option+Shift+S</strong> (Alt+Shift+S).
+            </div>
           </div>
 
           <!-- Auto-Scan Interval -->
@@ -733,7 +780,7 @@
             
             <div id="version-info-container" class="version-card">
               <div class="version-badge-header">
-                <span class="version-pill-tag" id="panel-version-tag">v1.6.3</span>
+                <span class="version-pill-tag" id="panel-version-tag">v1.6.4</span>
                 <span class="version-timestamp-tag" id="panel-version-time">01/09/2026 13:15 IDT</span>
               </div>
               <div class="version-title-text" id="panel-version-title">TikTok Left Dock & Direct Click Shielding</div>
@@ -843,7 +890,7 @@
         <span>•</span>
         <a href="https://chromewebstore.google.com/detail/streamsnap-ai-%E2%80%94-live-stre/efbfecbochblmakpdllbnpdgkmmfmmel/reviews" target="_blank" rel="noopener noreferrer" class="footer-link rating-footer-link" title="Leave a review on Chrome Web Store">⭐ Rate us</a>
         <span>•</span>
-        <span id="footer-version-tag" class="footer-version-badge" title="StreamSnap AI v1.6.3 Built 2026-09-07 09:30 IDT">v1.6.3 (2026-09-07 09:30)</span>
+        <span id="footer-version-tag" class="footer-version-badge" title="StreamSnap AI v1.6.4 Built 2026-10-30 02:50:00 IDT">v1.6.4 (2026-10-30 02:50)</span>
         <span>•</span>
         <span id="footer-storage-note">Data stored locally</span>
       </div>

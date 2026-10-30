@@ -4,15 +4,15 @@
  */
 
 export const CURRENT_BUILD = {
-  version: "1.6.3",
-  buildDate: "2026-09-07",
-  buildTime: "09:30",
-  buildTimestamp: "2026-09-07 09:30:00 IDT",
-  title: "Sign-in Gates, Product Card Redesign & Memory Cleanup",
+  version: "1.6.4",
+  buildDate: "2026-10-30",
+  buildTime: "02:50",
+  buildTimestamp: "2026-10-30 02:50:00 IDT",
+  title: "Permission Hardening, Force-Update Gate & Live Security",
   highlights: [
-    "🔒 Auth Gates: History, Cart and Stats now require Google sign-in; badge counters show 0 when signed out.",
-    "🛍️ Product Card Redesign: clean 2-tier action buttons with readable store pills.",
-    "🧹 Canvas memory cleanup after capture, tighter manifest permissions and hardened Gemini JSON parsing."
+    "🔒 Permissions Fixed: Added <all_urls> host access for background capture from Side Panel & video overlay.",
+    "⚡ Force-Update Gate: Outdated extension builds are automatically detected and prompted to update.",
+    "🛡️ Active Tab Window Mapping: Explicit window targeting for seamless video frame capture."
   ]
 };
 

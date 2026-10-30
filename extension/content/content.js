@@ -12,7 +12,7 @@
   "use strict";
 
   console.log(
-    "%c⚡ [StreamSnap AI] Active Build: v1.6.3 (2026-09-07 09:30 IDT) | Platform: " +
+    "%c⚡ [StreamSnap AI] Active Build: v1.6.4 (2026-10-30 02:50 IDT) | Platform: " +
       window.location.hostname,
     "background: #131921; color: #FF9900; font-weight: bold; padding: 4px 8px; border: 1px solid #FF9900; border-radius: 4px;"
   );
@@ -107,7 +107,7 @@
     return video.parentElement;
   }
 
-  function shieldInteractions(node) {
+  function isolateWidgetEvents(node) {
     if (!node) return;
     const events = [
       "mousedown",
@@ -125,9 +125,8 @@
         evtName,
         (e) => {
           e.stopPropagation();
-          e.stopImmediatePropagation();
         },
-        true
+        false
       );
     });
   }
@@ -253,22 +252,19 @@
 
     // 1. Minimized Pill (Shown when collapsed)
     const miniPill = el("div", "streamsnap-minimized-pill");
-    miniPill.title = "StreamSnap AI v1.5.2 (31/08/2026 14:45) — Click to expand";
+    miniPill.title = "StreamSnap AI v1.6.4 (2026-10-30 02:50) — Click to expand (לחץ להרחבה)";
     miniPill.append(createSvgIcon("scan", 13), el("span", null, isTikTok ? "⚡ Snap" : "⚡ StreamSnap"));
     miniPill.style.display = "none";
-    shieldInteractions(miniPill);
 
     // 2. Expanded Toolbar
     const expandedToolbar = el("div", "streamsnap-expanded-toolbar");
 
     const dragHandle = el("div", "streamsnap-drag-handle", "⋮⋮");
-    dragHandle.title = "StreamSnap AI v1.5.2 (31/08/2026 14:45) — Drag toolbar (גרור לשינוי מיקום)";
-    shieldInteractions(dragHandle);
+    dragHandle.title = "StreamSnap AI v1.6.4 (2026-10-30 02:50) — Drag toolbar (גרור לשינוי מיקום)";
 
     const liveBtn = el("button", "streamsnap-floating-btn streamsnap-live-btn");
     liveBtn.title = "Click-to-Find: click any object on the video to identify it";
     liveBtn.append(createSvgIcon("live", iconSize), el("span", null, liveLabel));
-    shieldInteractions(liveBtn);
 
     liveBtn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -290,7 +286,6 @@
     const snipBtn = el("button", "streamsnap-floating-btn streamsnap-snip-btn");
     snipBtn.title = "Draw a box around any item to search for it";
     snipBtn.append(createSvgIcon("snip", iconSize), el("span", null, snipLabel));
-    shieldInteractions(snipBtn);
     snipBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       e.preventDefault();
@@ -300,32 +295,48 @@
     const scanBtn = el("button", "streamsnap-floating-btn");
     scanBtn.title = "Scan the whole frame (Alt+S)";
     scanBtn.append(createSvgIcon("scan", iconSize), el("span", null, scanLabel));
-    shieldInteractions(scanBtn);
     scanBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       e.preventDefault();
       triggerStreamScan(video, parent);
     });
 
-    // 3. Minimize button (Collapse into small pill)
+    // 3. Size Switcher Button (Compact icon-only mode vs Standard mode)
+    const sizeToggleBtn = el("button", "streamsnap-control-btn size-toggle-btn");
+    sizeToggleBtn.title = "Toggle compact size (החלף בין תצוגת אייקונים לתצוגה מלאה)";
+    sizeToggleBtn.innerHTML = "⇲";
+    sizeToggleBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const isCurrentlyCompact = btnGroup.classList.contains("streamsnap-compact");
+      const newSize = isCurrentlyCompact ? "standard" : "compact";
+      chrome.storage.local.set({ floatingControlsSize: newSize });
+      btnGroup.classList.toggle("streamsnap-compact", !isCurrentlyCompact);
+      showToast(
+        parent,
+        !isCurrentlyCompact
+          ? "Compact mode active (מצב אייקונים קומפקטי)"
+          : "Standard mode active (מצב תצוגה מלא)"
+      );
+    });
+
+    // 4. Minimize button (Collapse into small pill)
     const minimizeBtn = el("button", "streamsnap-control-btn minimize-btn");
-    minimizeBtn.title = "Minimize buttons to a small pill (קבץ כפתורים)";
+    minimizeBtn.title = "Minimize buttons to a small pill (קבץ כפתורים לסמל קטן)";
     minimizeBtn.innerHTML = "—";
-    shieldInteractions(minimizeBtn);
     minimizeBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       e.preventDefault();
       expandedToolbar.style.display = "none";
       miniPill.style.display = "inline-flex";
       chrome.storage.local.set({ floatingControlsMinimized: true });
-      showToast(parent, "Controls minimized — click ⚡ StreamSnap to expand.");
+      showToast(parent, "Controls minimized — click ⚡ to expand.");
     });
 
-    // 4. Hide button (Dismiss completely with restore dot)
+    // 5. Hide button (Dismiss completely with restore dot)
     const hideBtn = el("button", "streamsnap-control-btn hide-btn");
     hideBtn.title = "Hide buttons from video (הסתר כפתורים מהווידאו)";
     hideBtn.innerHTML = "✕";
-    shieldInteractions(hideBtn);
     hideBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       e.preventDefault();
@@ -341,7 +352,7 @@
       e.preventDefault();
       miniPill.style.display = "none";
       expandedToolbar.style.display = "flex";
-      chrome.storage.local.set({ floatingControlsMinimized: false });
+      chrome.storage.local.set({ floatingControlsMinimized: false, floatingControlsHidden: false });
     });
 
     // Hidden restore dot
@@ -351,7 +362,6 @@
     }
     hiddenDot.title = "Click to restore StreamSnap video controls (שחזר כפתורים)";
     hiddenDot.style.display = "none";
-    shieldInteractions(hiddenDot);
     hiddenDot.addEventListener("click", (e) => {
       e.stopPropagation();
       e.preventDefault();
@@ -362,10 +372,14 @@
       chrome.storage.local.set({ floatingControlsHidden: false, floatingControlsMinimized: false });
     });
 
+    // Isolate events on widgets so clicks/gestures don't bubble to YouTube/TikTok players
+    isolateWidgetEvents(btnGroup);
+    isolateWidgetEvents(hiddenDot);
+
     makeDraggable(btnGroup, dragHandle, parent);
 
     const controlRow = el("div", "streamsnap-control-row");
-    controlRow.append(minimizeBtn, hideBtn);
+    controlRow.append(sizeToggleBtn, minimizeBtn, hideBtn);
 
     expandedToolbar.append(dragHandle, liveBtn, snipBtn, scanBtn, controlRow);
     btnGroup.append(miniPill, expandedToolbar);
@@ -398,41 +412,119 @@
       if (idleTimer) clearTimeout(idleTimer);
     });
 
-    // Check stored display preferences
-    chrome.storage.local.get(
-      ["showFloatingControls", "floatingControlsMinimized", "floatingControlsHidden", "extensionEnabled"],
-      (prefs = {}) => {
-        if (prefs.extensionEnabled === false || prefs.showFloatingControls === false) {
-          btnGroup.style.display = "none";
-          hiddenDot.style.display = "none";
-          return;
-        }
+    // Synchronize display preferences and adapt dynamically to small videos
+    function applyDisplayPreferences(prefs = {}) {
+      if (prefs.extensionEnabled === false || prefs.showFloatingControls === false) {
+        btnGroup.style.display = "none";
+        hiddenDot.style.display = "none";
+        return;
+      }
 
-        if (prefs.floatingControlsHidden) {
-          btnGroup.style.display = "none";
-          hiddenDot.style.display = "block";
-        } else if (prefs.floatingControlsMinimized) {
-          expandedToolbar.style.display = "none";
-          miniPill.style.display = "inline-flex";
-        }
+      // Hover-only mode
+      btnGroup.classList.toggle("streamsnap-hover-only", Boolean(prefs.floatingControlsHoverOnly));
+
+      // If user explicitly closed it with (X)
+      if (prefs.floatingControlsHidden) {
+        btnGroup.style.display = "none";
+        hiddenDot.style.display = "block";
+        return;
+      }
+
+      hiddenDot.style.display = "none";
+      btnGroup.style.display = "flex";
+
+      // Detect container width for miniplayer / small embedded videos
+      const pRect = parent.getBoundingClientRect();
+      const parentWidth = pRect.width || video.clientWidth || 0;
+      const hideSmall = prefs.hideOnSmallVideos !== false;
+
+      let targetSize = prefs.floatingControlsSize || "standard";
+
+      // Auto-adapt for small players:
+      // If width < 320px: show as mini pill
+      // If width < 520px: show as compact (icons only)
+      if (hideSmall && parentWidth > 0 && parentWidth < 320) {
+        targetSize = "mini";
+      } else if (hideSmall && parentWidth > 0 && parentWidth < 520 && targetSize === "standard") {
+        targetSize = "compact";
+      }
+
+      if (prefs.floatingControlsMinimized || targetSize === "mini") {
+        expandedToolbar.style.display = "none";
+        miniPill.style.display = "inline-flex";
+      } else {
+        miniPill.style.display = "none";
+        expandedToolbar.style.display = "flex";
+        btnGroup.classList.toggle("streamsnap-compact", targetSize === "compact");
+      }
+    }
+
+    // Load stored display preferences
+    chrome.storage.local.get(
+      [
+        "showFloatingControls",
+        "floatingControlsSize",
+        "hideOnSmallVideos",
+        "floatingControlsHoverOnly",
+        "floatingControlsMinimized",
+        "floatingControlsHidden",
+        "extensionEnabled"
+      ],
+      (prefs = {}) => {
+        applyDisplayPreferences(prefs);
       }
     );
 
     // Listen for setting changes in real time
-    chrome.storage.onChanged.addListener((changes, area) => {
+    const storagePrefListener = (changes, area) => {
       if (area !== "local") return;
-      if (changes.showFloatingControls) {
-        if (changes.showFloatingControls.newValue === false) {
-          btnGroup.style.display = "none";
-          hiddenDot.style.display = "none";
-        } else {
-          btnGroup.style.display = "flex";
-          expandedToolbar.style.display = "flex";
-          miniPill.style.display = "none";
-          hiddenDot.style.display = "none";
-        }
+      if (
+        changes.showFloatingControls ||
+        changes.floatingControlsSize ||
+        changes.hideOnSmallVideos ||
+        changes.floatingControlsHoverOnly ||
+        changes.floatingControlsMinimized ||
+        changes.floatingControlsHidden ||
+        changes.extensionEnabled
+      ) {
+        chrome.storage.local.get(
+          [
+            "showFloatingControls",
+            "floatingControlsSize",
+            "hideOnSmallVideos",
+            "floatingControlsHoverOnly",
+            "floatingControlsMinimized",
+            "floatingControlsHidden",
+            "extensionEnabled"
+          ],
+          (prefs = {}) => {
+            applyDisplayPreferences(prefs);
+          }
+        );
       }
-    });
+    };
+    chrome.storage.onChanged.addListener(storagePrefListener);
+
+    // Watch for size changes (e.g. YouTube miniplayer toggle, window resize)
+    if (typeof ResizeObserver !== "undefined") {
+      const ro = new ResizeObserver(() => {
+        chrome.storage.local.get(
+          [
+            "showFloatingControls",
+            "floatingControlsSize",
+            "hideOnSmallVideos",
+            "floatingControlsHoverOnly",
+            "floatingControlsMinimized",
+            "floatingControlsHidden",
+            "extensionEnabled"
+          ],
+          (prefs = {}) => {
+            applyDisplayPreferences(prefs);
+          }
+        );
+      });
+      ro.observe(parent);
+    }
 
     parent.addEventListener(
       "click",
@@ -661,6 +753,12 @@
   }
 
   async function cropAndSearch(container, cropX, cropY, cropW, cropH) {
+    const { versionGate } = await chrome.storage.local.get(["versionGate"]);
+    if (versionGate?.blocked) {
+      showUpdateRequiredModal(container, versionGate.minVersion);
+      sendMessage({ action: "OPEN_SIDEPANEL" });
+      return;
+    }
     if (scanInFlight) {
       showToast(container, "A scan is already running…");
       return;
@@ -712,6 +810,9 @@
             ? `Found ${count} match${count === 1 ? "" : "es"} — see the side panel.`
             : "No confident match for that selection. Try a tighter crop."
         );
+      } else if (res?.updateRequired) {
+        showUpdateRequiredModal(container, res.minVersion);
+        sendMessage({ action: "OPEN_SIDEPANEL" });
       } else {
         showToast(container, res?.error || "Analysis failed.");
       }
@@ -794,6 +895,12 @@
       if (!isSilent) showToast(container, "StreamSnap is OFF. Turn it on from the side panel to scan.");
       return;
     }
+    const { versionGate } = await chrome.storage.local.get(["versionGate"]);
+    if (versionGate?.blocked) {
+      if (!isSilent) showUpdateRequiredModal(container, versionGate.minVersion);
+      sendMessage({ action: "OPEN_SIDEPANEL" });
+      return;
+    }
     if (scanInFlight) return;
     scanInFlight = true;
 
@@ -847,7 +954,12 @@
           );
         }
       } else if (!isSilent) {
-        showToast(container, res?.error || "Scan failed.");
+        if (res?.updateRequired) {
+          showUpdateRequiredModal(container, res.minVersion);
+          sendMessage({ action: "OPEN_SIDEPANEL" });
+        } else {
+          showToast(container, res?.error || "Scan failed.");
+        }
       }
     } finally {
       scanInFlight = false;
@@ -920,6 +1032,109 @@
       toast.style.opacity = "0";
       setTimeout(() => toast.remove(), 300);
     }, 3500);
+  }
+
+  function showUpdateRequiredModal(container, minVersion) {
+    if (!container) return;
+    container.querySelector(".streamsnap-update-modal-backdrop")?.remove();
+    const backdrop = el("div", "streamsnap-update-modal-backdrop");
+    Object.assign(backdrop.style, {
+      position: "absolute",
+      inset: "0",
+      backgroundColor: "rgba(11, 15, 23, 0.88)",
+      backdropFilter: "blur(6px)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: "2147483647",
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      color: "#F8FAFC"
+    });
+
+    const card = el("div", "streamsnap-update-modal-card");
+    Object.assign(card.style, {
+      backgroundColor: "#161D2A",
+      border: "1px solid rgba(255, 153, 0, 0.4)",
+      borderRadius: "14px",
+      padding: "24px 28px",
+      maxWidth: "380px",
+      width: "90%",
+      textAlign: "center",
+      boxShadow: "0 20px 40px rgba(0, 0, 0, 0.6)"
+    });
+
+    const icon = el("div", null, "⚡");
+    Object.assign(icon.style, {
+      fontSize: "36px",
+      marginBottom: "12px",
+      lineHeight: "1"
+    });
+
+    const title = el("h3", null, "Update Required");
+    Object.assign(title.style, {
+      margin: "0 0 8px 0",
+      fontSize: "18px",
+      fontWeight: "700",
+      color: "#FF9900"
+    });
+
+    const msg = el(
+      "p",
+      null,
+      `StreamSnap must be updated to v${minVersion || "latest"} or newer to continue scanning video streams.`
+    );
+    Object.assign(msg.style, {
+      margin: "0 0 20px 0",
+      fontSize: "13px",
+      color: "#94A3B8",
+      lineHeight: "1.5"
+    });
+
+    const btnRow = el("div");
+    Object.assign(btnRow.style, {
+      display: "flex",
+      gap: "10px",
+      justifyContent: "center"
+    });
+
+    const updateBtn = el("button", null, "Update Now ↗");
+    Object.assign(updateBtn.style, {
+      backgroundColor: "#FF9900",
+      color: "#000",
+      border: "none",
+      borderRadius: "8px",
+      padding: "10px 18px",
+      fontWeight: "700",
+      fontSize: "13px",
+      cursor: "pointer"
+    });
+    updateBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      window.open("https://streamsnap.online", "_blank");
+      sendMessage({ action: "OPEN_SIDEPANEL" });
+    });
+
+    const panelBtn = el("button", null, "Open Side Panel");
+    Object.assign(panelBtn.style, {
+      backgroundColor: "rgba(255, 255, 255, 0.1)",
+      color: "#FFF",
+      border: "1px solid rgba(255, 255, 255, 0.2)",
+      borderRadius: "8px",
+      padding: "10px 18px",
+      fontWeight: "600",
+      fontSize: "13px",
+      cursor: "pointer"
+    });
+    panelBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      sendMessage({ action: "OPEN_SIDEPANEL" });
+      backdrop.remove();
+    });
+
+    btnRow.append(updateBtn, panelBtn);
+    card.append(icon, title, msg, btnRow);
+    backdrop.appendChild(card);
+    container.appendChild(backdrop);
   }
 
   // -------------------------------------------------------------------------

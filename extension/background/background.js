@@ -32,7 +32,10 @@ const DEFAULTS = {
   autoScanIntervalSec: 0, // 0 = manual
   minConfidence: 50,
   affiliateTag: "streamsnap03-20",
-  showFloatingControls: true,
+  showFloatingControls: true, // Master toggle: show/hide controls on video
+  floatingControlsSize: "standard", // "standard" | "compact" | "mini"
+  hideOnSmallVideos: true, // Auto-compact/hide on miniplayer and small videos
+  floatingControlsHoverOnly: false, // Only show when cursor hovers over video
   onboardingCompleted: false,
   extensionEnabled: true // master on/off switch
 };
@@ -628,9 +631,14 @@ const handlers = {
     return { status: "ok" };
   },
 
-  async CAPTURE_VISIBLE_TAB() {
+  async CAPTURE_VISIBLE_TAB(_message, sender) {
     try {
-      const dataUrl = await chrome.tabs.captureVisibleTab(null, { format: "jpeg", quality: 85 });
+      let windowId = sender?.tab?.windowId;
+      if (!windowId) {
+        const [activeTab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+        windowId = activeTab?.windowId ?? null;
+      }
+      const dataUrl = await chrome.tabs.captureVisibleTab(windowId, { format: "jpeg", quality: 85 });
       return dataUrl ? { dataUrl } : { error: "Capture returned no data." };
     } catch (err) {
       return { error: err?.message || "Failed to capture tab." };
@@ -639,9 +647,11 @@ const handlers = {
 
   async ANALYZE_WITH_AI(message) {
     if (await isUpdateRequired()) {
-      const reason = "StreamSnap must be updated before you can scan.";
+      const { versionGate } = await chrome.storage.local.get(["versionGate"]);
+      const minVersion = versionGate?.minVersion || "latest";
+      const reason = `StreamSnap must be updated to v${minVersion} before you can scan.`;
       await publishScanError(reason);
-      return { success: false, error: reason, updateRequired: true };
+      return { success: false, error: reason, updateRequired: true, minVersion };
     }
     if (!(await isExtensionEnabled())) {
       const reason = "StreamSnap is turned off. Turn it on to scan.";
@@ -665,9 +675,11 @@ const handlers = {
 
   async ANALYZE_CROPPED_IMAGE(message) {
     if (await isUpdateRequired()) {
-      const reason = "StreamSnap must be updated before you can scan.";
+      const { versionGate } = await chrome.storage.local.get(["versionGate"]);
+      const minVersion = versionGate?.minVersion || "latest";
+      const reason = `StreamSnap must be updated to v${minVersion} before you can scan.`;
       await publishScanError(reason);
-      return { success: false, error: reason, updateRequired: true };
+      return { success: false, error: reason, updateRequired: true, minVersion };
     }
     if (!(await isExtensionEnabled())) {
       const reason = "StreamSnap is turned off. Turn it on to scan.";

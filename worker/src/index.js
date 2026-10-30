@@ -40,8 +40,8 @@ const LIMITS = {
  * via the MIN_EXTENSION_VERSION var in wrangler.toml so a forced update does
  * not require a code deploy.
  */
-const FALLBACK_MIN_EXTENSION_VERSION = "1.6.0";
-const LATEST_EXTENSION_VERSION = "1.6.3";
+const FALLBACK_MIN_EXTENSION_VERSION = "1.6.4";
+const LATEST_EXTENSION_VERSION = "1.6.4";
 
 export function minExtensionVersion(env) {
   const raw = String(env?.MIN_EXTENSION_VERSION || "").trim();
@@ -64,7 +64,10 @@ export default {
           ok: true,
           minVersion: minExtensionVersion(env),
           latestVersion: LATEST_EXTENSION_VERSION,
-          updateUrl: "https://streamsnap.online"
+          minMobileVersion: "1.0.0",
+          latestMobileVersion: "1.0.0",
+          updateUrl: "https://streamsnap.online",
+          mobileUpdateUrl: "https://streamsnap.online"
         },
         200,
         request,

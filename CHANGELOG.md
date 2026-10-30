@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.4] - 2026-10-30 (02:50 IDT)
+### Fixed & Changed
+- **Permissions**: Added `<all_urls>` to `host_permissions` so `captureVisibleTab` works reliably from Side Panel and video controls.
+- **Active Tab Window Targeting**: Service worker resolves the focused browser window ID when capturing frames from the side panel.
+- **Force-Update Gate**: Set server minimum required version to **1.6.4** so older builds (e.g. 1.6.3) receive a prompt to update.
+- **Automated Versioning**: Centralized single-command bump script across all repository assets.
+
 All notable changes to the **StreamSnap AI** Chrome Extension & Web Platform will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
